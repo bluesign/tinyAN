@@ -46,8 +46,25 @@ type ProtocolStorage struct {
 
 func NewProtocolStorage() (*ProtocolStorage, error) {
 
-	opts := &pebble.Options{}
+	opts := &pebble.Options{
+		FormatMajorVersion: pebble.FormatNewest,
 
+		// Soft and hard limits on read amplificaction of L0 respectfully.
+		L0CompactionThreshold: 2,
+		L0StopWritesThreshold: 1000,
+
+		// When the maximum number of bytes for a level is exceeded, compaction is requested.
+		LBaseMaxBytes: 64 << 20, // 64 MB
+		Levels:        make([]pebble.LevelOptions, 7),
+		MaxOpenFiles:  16384,
+
+		// Writes are stopped when the sum of the queued memtable sizes exceeds MemTableStopWritesThreshold*MemTableSize.
+		MemTableSize:                64 << 20 <<5,
+		MemTableStopWritesThreshold: 4,
+
+		// The default is 1.
+		MaxConcurrentCompactions: func() int { return 4 },
+	}
 	checkpointDb, err := pebble.Open("tinyCheckpoint", opts)
 	if err != nil {
 		return nil, err
@@ -76,7 +93,7 @@ func (s *ProtocolStorage) Bootstrap(spork string, sporkHeight uint64) {
 	var wg sync.WaitGroup
 	ch := make(chan int)
 
-	for w := 1; w <= 5; w++ {
+	for w := 1; w <= 4;  w++ {
 		go importWorker(s.checkpointDb, spork, sporkHeight, ch, &wg)
 	}
 

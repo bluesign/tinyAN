@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/cockroachdb/pebble"
-	"github.com/onflow/flow-archive/codec/zbor"
+	//"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-go/ledger/complete/mtrie/flattener"
 	"github.com/onflow/flow-go/ledger/complete/mtrie/node"
 	"io"
@@ -29,7 +29,7 @@ func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, 
 
 	r := resp.Body
 
-	bufReader := bufio.NewReaderSize(r, 1024*4)
+	bufReader := bufio.NewReaderSize(r, 1024*100)
 
 	//read header
 	header := make([]byte, 4)
@@ -41,7 +41,7 @@ func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, 
 	interim := make([]byte, 51)
 	sc := make([]byte, 1024)
 	i := 0
-	codec := zbor.NewCodec()
+	//codec := zbor.NewCodec()
 
 	batch := ledger.NewBatch()
 	for {
@@ -66,18 +66,18 @@ func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, 
 		key, _ := payload.Key()
 
 		k := makePrefix(0xf0, key.CanonicalForm(), uint64(0xFFFFFFFFFFFFFFFF-height))
-		v, err := codec.Encode(payloadDecoded)
+		/*v, err := codec.Encode(payload)
 		if err != nil {
 			log.Println(err)
 			return
-		}
+		}*/
 
-		batch.Set(k, v, pebble.Sync)
+		batch.Set(k, payloadDecoded, pebble.Sync)
 		if i%100 == 0 {
 			//break
 		}
-		if i%1000000 == 0 {
-			print(".")
+		if i%2_000_000 == 0 {
+			fmt.Println(".",part, i/1000_000)
 			batch.Commit(pebble.Sync)
 			batch.Close()
 			batch = ledger.NewBatch()
