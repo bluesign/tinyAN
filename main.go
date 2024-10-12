@@ -183,7 +183,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					}
 					if !ok {
 						//TODO: handle me
-						log.Fatalf("subscription closed")
+						log.Fatalf("subscription subexec closed")
 					}
 
 					if height == 0 {
@@ -238,7 +238,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					}
 					if !ok {
 						//TODO: handle me
-						log.Fatalf("subscription closed")
+						log.Fatalf("subscription blocks closed")
 					}
 
 					if headerHeight == 0 {
