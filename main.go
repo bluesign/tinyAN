@@ -257,7 +257,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					if err != nil {
 						log.Fatalf("failed to process block data: %v", err)
 					}
-					height = height + 1
+					headerHeight = headerHeight + 1
 				}
 			}
 		}()
