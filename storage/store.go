@@ -1644,6 +1644,7 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 				fmt.Println("save error", err)
 			}
 		}
+		fmt.Println(evmEvents)
 		evmBlockHash, err := evmEvents.Block().Hash()
 		if err != nil {
 			fmt.Println("error decoding evm block hash")
