@@ -1591,6 +1591,20 @@ func (s *ProtocolStorage) GetBlockHeaderByHeight(height uint64) (*flow.Header, e
 
 }
 
+func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*models.CadenceEvents, error) {
+	data, closer, err := s.evmRawDb.Get(makePrefix(codeEVMBlockRaw, height))
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	evmEvents := new(models.CadenceEvents)
+	err = s.codec.Decode(data, evmEvents)
+	if err != nil {
+		return nil, err
+	}
+	return evmEvents, nil
+}
+
 func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
 
 	blockEvents := sdk.BlockEvents{
