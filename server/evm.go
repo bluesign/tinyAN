@@ -69,7 +69,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 		return nil, err
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
-	transactions := make([]models.Transaction, len(evmBlock.Transactions))
+	transactions := make([]models.Transaction, 0)
 
 	if len(evmBlock.Transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
