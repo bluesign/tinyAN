@@ -1241,65 +1241,6 @@ func (s *ProtocolStorage) InsertEvent(cadenceHeight uint64, blockId flow.Identif
 		return err
 	}
 
-	//TODO: make chain specific
-	if string(event.Type) == "A.e467b9dd11fa00df.EVM.TransactionExecuted" {
-		fmt.Println("EVM.TransactionExecuted", event)
-		decodedEvent, err := ccf.Decode(nil, event.Payload)
-		if err != nil {
-			fmt.Println("decode error", err)
-		}
-		eventValue, isEvent := decodedEvent.(cadence.Event)
-		if !isEvent {
-			panic("not event")
-		}
-		fields := eventValue.FieldsMappedByName()
-		fmt.Println("fields", fields)
-		evmHeight := uint64(fields["blockHeight"].(cadence.UInt64))
-		hashArray := fields["hash"].(cadence.Array).Values
-		evmTxHash := [32]byte{}
-		for i, v := range hashArray {
-			evmTxHash[i] = uint8(v.(cadence.UInt8))
-		}
-		fmt.Println("evmHeight", evmHeight, "evmTxHash", evmTxHash)
-		err = s.evmDb.Set(makePrefix(codeEVMTransaction, evmTxHash), b(cadenceHeight), pebble.Sync)
-		if err != nil {
-			fmt.Println("save error", err)
-		}
-	}
-
-	if string(event.Type) == "A.e467b9dd11fa00df.EVM.BlockExecuted" {
-		fmt.Println("EVM.BlockExecuted", event)
-
-		decodedEvent, err := ccf.Decode(nil, event.Payload)
-		if err != nil {
-			fmt.Println("decode error", err)
-		}
-
-		eventValue, isEvent := decodedEvent.(cadence.Event)
-		if !isEvent {
-			panic("not event")
-		}
-		block, err := models.DecodeBlockEvent(eventValue)
-		if err != nil {
-			panic("decode block error")
-		}
-		evmHeight := block.Height
-		evmBlockHash, err := block.Hash()
-		if err != nil {
-			panic("block hash error")
-		}
-
-		fmt.Println("evmHeight", evmHeight, "evmBlockHash", evmBlockHash)
-		err = s.evmDb.Set(makePrefix(codeEVMBlockByHeight, evmHeight), b(cadenceHeight), pebble.Sync)
-		if err != nil {
-			fmt.Println("save error", err)
-		}
-		err = s.evmDb.Set(makePrefix(codeEVMBlock, evmBlockHash), b(cadenceHeight), pebble.Sync)
-		if err != nil {
-			fmt.Println("save error", err)
-		}
-	}
-
 	return nil
 }
 
