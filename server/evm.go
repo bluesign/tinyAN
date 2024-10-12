@@ -46,6 +46,9 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 	block := evmBlock.Block
 	h, err := block.Hash()
 	fmt.Println(err)
+	if block.TransactionHashes == nil {
+		block.TransactionHashes = []common.Hash{}
+	}
 
 	blockResponse := &api.Block{
 		Hash:             h,
