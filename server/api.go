@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/onflow/go-ethereum/rpc"
 	"net"
 	"net/http"
 
@@ -24,6 +25,12 @@ func NewAPIServer(storage *storage.ProtocolStorage) *APIServer {
 		storage: storage,
 	}
 
+	rpcServer := rpc.NewServer()
+	rpcServer.RegisterName("eth", &APINamespace{
+		storage: storage,
+	})
+
+	router.HandleFunc("/", rpcServer.ServeHTTP)
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
 	router.HandleFunc("/api/ownerOfUuid", r.OwnerOfUuid)
