@@ -1644,8 +1644,11 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 				fmt.Println("save error", err)
 			}
 		}
-		evmBlockHash, _ := evmEvents.Block().Hash()
-
+		evmBlockHash, err := evmEvents.Block().Hash()
+		if err != nil {
+			fmt.Println("error decoding evm block hash")
+			panic(err)
+		}
 		//insert evm block
 		fmt.Println("evmHeight", evmEvents.Block().Height, "evmBlockHash", evmBlockHash)
 		err = s.evmDb.Set(makePrefix(codeEVMBlockByHeight, evmEvents.Block().Height), b(evmEvents.CadenceHeight()), pebble.Sync)
