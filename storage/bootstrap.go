@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/cockroachdb/pebble"
-	//"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-go/ledger/complete/mtrie/flattener"
 	"github.com/onflow/flow-go/ledger/complete/mtrie/node"
 	"io"
@@ -13,7 +12,7 @@ import (
 	"sync"
 )
 
-func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, part int) {
+func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, part int, s *ProtocolStorage) {
 	getNode := func(nodeIndex uint64) (*node.Node, error) {
 		return nil, nil
 	}
@@ -41,14 +40,12 @@ func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, 
 	interim := make([]byte, 51)
 	sc := make([]byte, 1024)
 	i := 0
-	//codec := zbor.NewCodec()
 
+	height = 0 // todo: as we dont know spork height on checkpoint state this is faster
 	batch := ledger.NewBatch()
 	for {
-		i = i + 1
 		interim, err = bufReader.Peek(51)
 		if err != nil {
-			log.Println(err)
 			break
 		}
 		if interim[0] != 0 {
@@ -57,27 +54,19 @@ func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, 
 		}
 		storableNode, err := flattener.ReadNode(bufReader, sc, getNode)
 		if err != nil {
-			log.Println(err)
-			return
+			log.Fatal(err)
 		}
 
 		payload := storableNode.Payload()
-		payloadDecoded := payload.Value()
 		key, _ := payload.Key()
 
 		k := makePrefix(0xf0, key.CanonicalForm(), uint64(0xFFFFFFFFFFFFFFFF-height))
-		/*v, err := codec.Encode(payload)
-		if err != nil {
-			log.Println(err)
-			return
-		}*/
+		s.IndexCheckpoint(height, payload)
+		batch.Set(k, payload.Value(), pebble.Sync)
 
-		batch.Set(k, payloadDecoded, pebble.Sync)
-		if i%100 == 0 {
-			//break
-		}
-		if i%2_000_000 == 0 {
-			fmt.Println(".",part, i/1000_000)
+		i = i + 1
+		if i%1_000_000 == 0 {
+			fmt.Println(".", part, i/1000_000)
 			batch.Commit(pebble.Sync)
 			batch.Close()
 			batch = ledger.NewBatch()
@@ -85,18 +74,18 @@ func importCheckpointSlabs(ledger *pebble.DB, spork string, sporkHeight uint64, 
 
 	}
 	batch.Commit(pebble.Sync)
-	log.Println("Finished checkpointDb :", spork, part)
+	log.Println("Finished checkpointDb :", spork, part, i)
 
 }
 
-func importWorker(ledger *pebble.DB, spork string, sporkHeight uint64, ch chan int, wg *sync.WaitGroup) {
+func importWorker(ledger *pebble.DB, spork string, sporkHeight uint64, ch chan int, wg *sync.WaitGroup, s *ProtocolStorage) {
 	for {
 		select {
 		case part, ok := <-ch:
 			if !ok {
 				break
 			}
-			importCheckpointSlabs(ledger, spork, sporkHeight, part)
+			importCheckpointSlabs(ledger, spork, sporkHeight, part, s)
 			wg.Done()
 		}
 	}
