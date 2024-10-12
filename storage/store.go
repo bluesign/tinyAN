@@ -16,6 +16,7 @@ import (
 	"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-evm-gateway/models"
 	sdk "github.com/onflow/flow-go-sdk"
+	"github.com/vmihailenco/msgpack/v4"
 	"reflect"
 	"strings"
 	"sync"
@@ -1606,6 +1607,9 @@ func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*models.CadenceEve
 	return evmEvents, nil
 }
 
+type EVMBlock struct {
+}
+
 func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
 
 	blockEvents := sdk.BlockEvents{
@@ -1679,6 +1683,7 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 
 	//index EVM blocks
 	evmEvents, err := models.NewCadenceEvents(blockEvents)
+
 	if err != nil {
 		fmt.Println("error decoding evm events")
 		panic(err)
@@ -1710,7 +1715,9 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 	}
 
 	fmt.Println(evmEvents)
-	data, err := s.codec.Encode(*evmEvents)
+	//data, err := s.codec.Encode(*evmEvents)
+	data, err := msgpack.Marshal(evmEvents)
+
 	fmt.Println(data, err)
 	if err != nil {
 		panic("can't serialize evm events")
