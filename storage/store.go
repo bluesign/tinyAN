@@ -1608,9 +1608,9 @@ func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*models.CadenceEve
 }
 
 type EVMBlock struct {
-	block        []byte
-	transactions [][]byte
-	receipts     [][]byte
+	Block        []byte
+	Transactions [][]byte
+	Receipts     [][]byte
 }
 
 func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
@@ -1738,11 +1738,10 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		receiptBytes[i] = b
 	}
 	block := &EVMBlock{
-		block:        blockBytes,
-		transactions: transactionBytes,
-		receipts:     receiptBytes,
+		Block:        blockBytes,
+		Transactions: transactionBytes,
+		Receipts:     receiptBytes,
 	}
-	fmt.Println(block)
 	data, err := s.codec.Encode(block)
 
 	fmt.Println(data, len(data), err)
