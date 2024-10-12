@@ -166,7 +166,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Fatalf("could not create execution data client: %v", err)
 			}
-			subExec, err := execClient.SubscribeExecutionData(ctx, flow.ZeroID, height)
+			subExec, err := execClient.SubscribeExecutionData(ctxExecution, flow.ZeroID, height)
 
 			if err != nil {
 				log.Fatalf("could not subscribe to execution data: %v", err)
@@ -224,7 +224,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 				if err != nil {
 					log.Fatalf("could not block follower client: %v", err)
 				}
-				subBlock, err := blockFollower.SubscribeBlockData(ctx, headerHeight)
+				subBlock, err := blockFollower.SubscribeBlockData(ctxBlocks, headerHeight)
 
 				if err != nil {
 					log.Fatalf("could not subscribe to block data: %v", err)
