@@ -1742,7 +1742,7 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		transactions: transactionBytes,
 		receipts:     receiptBytes,
 	}
-
+	fmt.Println(block)
 	data, err := s.codec.Encode(block)
 
 	fmt.Println(data, err)
