@@ -1720,7 +1720,6 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 
 	fmt.Println(evmEvents)
 	transactionBytes := make([][]byte, len(evmEvents.Transactions()))
-	receiptBytes := make([][]byte, len(evmEvents.Receipts()))
 
 	for i, tx := range evmEvents.Transactions() {
 		b, err := tx.MarshalBinary()
