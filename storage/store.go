@@ -1597,7 +1597,8 @@ func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*models.CadenceEve
 		return nil, err
 	}
 	defer closer.Close()
-	evmEvents := new(models.CadenceEvents)
+	fmt.Println(data)
+	evmEvents := &models.CadenceEvents{}
 	err = s.codec.Decode(data, evmEvents)
 	if err != nil {
 		return nil, err
