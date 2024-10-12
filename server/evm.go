@@ -32,6 +32,8 @@ type APINamespace struct {
 
 func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber, full bool) (*api.Block, error) {
 	cadenceEvents, err := a.storage.GetEvmBlockByHeight(uint64(number))
+	fmt.Println(cadenceEvents)
+	fmt.Println(err)
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("panic occurred:", err)
