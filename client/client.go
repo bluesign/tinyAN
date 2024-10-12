@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/onflow/flow/protobuf/go/flow/entities"
 	"io"
 	"log"
 
@@ -150,7 +151,9 @@ func (c *ExecutionDataClient) SubscribeExecutionData(
 		return nil, fmt.Errorf("cannot specify both start block ID and start height")
 	}
 
-	req := executiondata.SubscribeExecutionDataRequest{}
+	req := executiondata.SubscribeExecutionDataRequest{
+		EventEncodingVersion: entities.EventEncodingVersion_CCF_V0,
+	}
 	if startBlockID != flow.ZeroID {
 		req.StartBlockId = startBlockID[:]
 	}

@@ -1624,6 +1624,7 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 
 			eventValue, _ := decodedEvent.(cadence.Event)
 			fmt.Println(eventValue.String())
+
 			blockEvents.Events = append(blockEvents.Events, sdk.Event{
 				TransactionID: sdk.Identifier(event.TransactionID),
 				EventIndex:    int(event.EventIndex),
