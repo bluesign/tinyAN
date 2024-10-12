@@ -60,7 +60,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 		TransactionsRoot: block.TransactionHashRoot,
 		Transactions:     block.TransactionHashes,
 		Uncles:           []common.Hash{},
-		GasLimit:         hexutil.Uint64(blockGasLimit),
+		GasLimit:         hexutil.Uint64(120_000_000),
 		Nonce:            types.BlockNonce{0x1},
 		Timestamp:        hexutil.Uint64(block.Timestamp),
 		BaseFeePerGas:    hexutil.Big(*big.NewInt(0)),
