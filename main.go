@@ -244,7 +244,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					}
 
 					if headerHeight != response.Header.Height {
-						log.Fatal("invalid height")
+						log.Fatal("invalid height", headerHeight, response.Header.Height)
 					}
 
 					fmt.Println("Block Height: ", response.Header.Height)
