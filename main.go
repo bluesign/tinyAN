@@ -104,7 +104,8 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 	log.Println("Start tinyAN")
 
-	ctx := context.Background()
+	ctxExecution := context.Background()
+	ctxBlocks := context.Background()
 
 	store, err := storage.NewProtocolStorage(conf.Bootstrap)
 	if err != nil {
@@ -173,7 +174,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 			for {
 				select {
-				case <-ctx.Done():
+				case <-ctxExecution.Done():
 					return
 				case response, ok := <-subExec.Channel():
 					if subExec.Err() != nil {
@@ -231,7 +232,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 				for {
 					select {
-					case <-ctx.Done():
+					case <-ctxBlocks.Done():
 						return
 					case response, ok := <-subBlock.Channel():
 						if subBlock.Err() != nil {
