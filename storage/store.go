@@ -1639,48 +1639,6 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 			}
 		}
 
-		//index EVM blocks
-		evmEvents, err := models.NewCadenceEvents(blockEvents)
-		if err != nil {
-			fmt.Println("error decoding evm events")
-			panic(err)
-		}
-
-		//insert evm transactions
-		for _, transaction := range evmEvents.Transactions() {
-			fmt.Println("EVM TX: evmHeight", evmEvents.Block().Height, "evmTxHash", transaction.Hash())
-			err = s.evmDb.Set(makePrefix(codeEVMTransaction, transaction.Hash()), b(evmEvents.CadenceHeight()), pebble.Sync)
-			if err != nil {
-				fmt.Println("save error", err)
-			}
-		}
-		fmt.Println(evmEvents)
-		evmBlockHash, err := evmEvents.Block().Hash()
-		if err != nil {
-			fmt.Println("error decoding evm block hash")
-			panic(err)
-		}
-		//insert evm block
-		fmt.Println("evmHeight", evmEvents.Block().Height, "evmBlockHash", evmBlockHash)
-		err = s.evmDb.Set(makePrefix(codeEVMBlockByHeight, evmEvents.Block().Height), b(evmEvents.CadenceHeight()), pebble.Sync)
-		if err != nil {
-			fmt.Println("save error", err)
-		}
-
-		err = s.evmDb.Set(makePrefix(codeEVMBlock, evmBlockHash), b(evmEvents.Block().Height), pebble.Sync)
-		if err != nil {
-			fmt.Println("save error", err)
-		}
-
-		data, err := s.codec.Encode(evmEvents)
-		if err != nil {
-			panic("can't serialize evm events")
-		}
-		err = s.evmRawDb.Set(makePrefix(codeEVMBlockRaw, evmEvents.Block().Height), data, pebble.Sync)
-		if err != nil {
-			fmt.Println("save error", err)
-		}
-
 		for _, transactionResult := range chunk.TransactionResults {
 			err := s.InsertTransactionResult(executionData.BlockID, chunk.Collection.ID(), transactionResult)
 			if err != nil {
@@ -1703,7 +1661,51 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 
 	}
 
-	err := s.Set(makePrefix(codeBlock, executionData.BlockID), b(height))
+	//index EVM blocks
+	evmEvents, err := models.NewCadenceEvents(blockEvents)
+	if err != nil {
+		fmt.Println("error decoding evm events")
+		panic(err)
+	}
+
+	//insert evm transactions
+	for _, transaction := range evmEvents.Transactions() {
+		fmt.Println("EVM TX: evmHeight", evmEvents.Block().Height, "evmTxHash", transaction.Hash())
+		err = s.evmDb.Set(makePrefix(codeEVMTransaction, transaction.Hash()), b(evmEvents.CadenceHeight()), pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
+		}
+	}
+	fmt.Println("evmEvents", evmEvents)
+	evmBlockHash, err := evmEvents.Block().Hash()
+	if err != nil {
+		fmt.Println("error decoding evm block hash")
+		panic(err)
+	}
+	//insert evm block
+	fmt.Println("evmHeight", evmEvents.Block().Height, "evmBlockHash", evmBlockHash)
+	err = s.evmDb.Set(makePrefix(codeEVMBlockByHeight, evmEvents.Block().Height), b(evmEvents.CadenceHeight()), pebble.Sync)
+	if err != nil {
+		fmt.Println("save error", err)
+	}
+
+	err = s.evmDb.Set(makePrefix(codeEVMBlock, evmBlockHash), b(evmEvents.Block().Height), pebble.Sync)
+	if err != nil {
+		fmt.Println("save error", err)
+	}
+
+	data, err := s.codec.Encode(evmEvents)
+	if err != nil {
+		panic("can't serialize evm events")
+	}
+	err = s.evmRawDb.Set(makePrefix(codeEVMBlockRaw, evmEvents.Block().Height), data, pebble.Sync)
+	if err != nil {
+		fmt.Println("save error", err)
+	}
+
+	//update height
+
+	err = s.Set(makePrefix(codeBlock, executionData.BlockID), b(height))
 	if err != nil {
 		return err
 	}
