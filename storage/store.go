@@ -10,6 +10,7 @@ import (
 	"github.com/onflow/atree"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/encoding/ccf"
+	jsoncdc "github.com/onflow/cadence/encoding/json"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-archive/codec/zbor"
@@ -1612,11 +1613,14 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		}
 
 		for _, event := range chunk.Events {
+
 			decodedEvent, err := ccf.Decode(nil, event.Payload)
 			if err != nil {
-				fmt.Println(err)
+				decodedEvent, err = jsoncdc.Decode(nil, event.Payload)
+				if err != nil {
+					panic("cant decode event")
+				}
 			}
-			fmt.Println(decodedEvent)
 
 			eventValue, _ := decodedEvent.(cadence.Event)
 			fmt.Println(eventValue.String())
