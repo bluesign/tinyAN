@@ -1737,7 +1737,7 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 
 	data, err := s.codec.Encode(block)
 
-	fmt.Println(data, len(data), err)
+	fmt.Println(len(data), err)
 	if err != nil {
 		panic("can't serialize evm events")
 	}
