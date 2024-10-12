@@ -1613,6 +1613,10 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 
 		for _, event := range chunk.Events {
 			decodedEvent, err := ccf.Decode(nil, event.Payload)
+			fmt.Println(decodedEvent)
+			if err != nil {
+				fmt.Println(err)
+			}
 			eventValue, _ := decodedEvent.(cadence.Event)
 			fmt.Println(eventValue.String())
 			blockEvents.Events = append(blockEvents.Events, sdk.Event{
