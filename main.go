@@ -248,12 +248,10 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					}
 
 					fmt.Println("Block Height: ", response.Header.Height)
-					store.NewBatch()
 					err = store.SaveBlockHeader(response.Header)
 					if err != nil {
 						log.Fatalf("failed to process block header: %v", err)
 					}
-					store.CommitBatch()
 					if err != nil {
 						log.Fatalf("failed to process block data: %v", err)
 					}
