@@ -180,14 +180,11 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					case <-ctxExecution.Done():
 						return
 					case response, ok := <-subExec.Channel():
-						if subExec.Err() != nil {
+						if subExec.Err() != nil || !ok {
 							fmt.Println("Reconnecting to ExecutionData")
+							time.Sleep(5 * time.Second)
 							reconnect = true
-						}
-						if !ok {
-							fmt.Println("Reconnecting to ExecutionData")
-							time.Sleep(10 * time.Second)
-							reconnect = true
+							break
 						}
 
 						if height == 0 {
@@ -243,15 +240,11 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					case <-ctxBlocks.Done():
 						return
 					case response, ok := <-subBlock.Channel():
-						if subBlock.Err() != nil {
+						if subBlock.Err() != nil || !ok {
 							fmt.Println("Reconnecting to BlockFollower")
+							time.Sleep(5 * time.Second)
 							reconnect = true
-						}
-						if !ok {
-							//TODO: handle me
-							fmt.Println("Reconnecting to BlockFollower")
-							time.Sleep(10 * time.Second)
-							reconnect = true
+							break
 						}
 
 						if headerHeight == 0 {
