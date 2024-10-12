@@ -48,7 +48,10 @@ func (c *BlockFollower) SubscribeBlockData(
 	opts ...grpc.CallOption,
 ) (*Subscription[BlockDataResponse], error) {
 
-	req := access.SubscribeBlockHeadersFromStartHeightRequest{}
+	req := access.SubscribeBlockHeadersFromStartHeightRequest{
+		StartBlockHeight: 0,
+		BlockStatus:      entities.BlockStatus_BLOCK_SEALED,
+	}
 
 	if startHeight > 0 {
 		req.StartBlockHeight = startHeight
