@@ -3,13 +3,13 @@ package storage
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/onflow/flow-go/model/flow"
+	gethCommon "github.com/onflow/go-ethereum/common"
 )
 
 func b(v interface{}) []byte {
 	switch i := v.(type) {
-	case common.Hash:
+	case gethCommon.Hash:
 		return i[:]
 	case uint8:
 		return []byte{i}
