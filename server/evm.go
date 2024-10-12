@@ -12,6 +12,7 @@ import (
 	"github.com/onflow/go-ethereum/core/types"
 	"github.com/onflow/go-ethereum/rlp"
 	"github.com/onflow/go-ethereum/rpc"
+	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -31,6 +32,12 @@ type APINamespace struct {
 
 func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber, full bool) (*api.Block, error) {
 	cadenceEvents, err := a.storage.GetEvmBlockByHeight(uint64(number))
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+		}
+	}()
+
 	if err != nil {
 		return nil, err
 	}
