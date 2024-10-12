@@ -12,12 +12,14 @@ require (
 	github.com/onflow/atree v0.8.0-rc.6
 	github.com/onflow/cadence v1.0.0-preview.52
 	github.com/onflow/flow-archive v0.30.3-testing
+	github.com/onflow/flow-evm-gateway v0.36.4
 	github.com/onflow/flow-go v0.38.0-preview.0.0.20240925161820-4668c5d997b1
+	github.com/onflow/flow-go-sdk v1.0.0-preview.56
 	github.com/onflow/flow/protobuf/go/flow v0.4.7
 	github.com/psiemens/sconfig v0.1.0
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.8.0
-	go.opentelemetry.io/otel v1.24.0
+	go.opentelemetry.io/otel/trace v1.24.0
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
 )
@@ -134,7 +136,6 @@ require (
 	github.com/onflow/flow-core-contracts/lib/go/templates v1.3.1 // indirect
 	github.com/onflow/flow-ft/lib/go/contracts v1.0.0 // indirect
 	github.com/onflow/flow-ft/lib/go/templates v1.0.0 // indirect
-	github.com/onflow/flow-go-sdk v1.0.0-preview.55 // indirect
 	github.com/onflow/flow-nft/lib/go/contracts v1.2.1 // indirect
 	github.com/onflow/flow-nft/lib/go/templates v1.2.0 // indirect
 	github.com/onflow/go-ethereum v1.14.7 // indirect
@@ -178,11 +179,11 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.47.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.47.0 // indirect
+	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.21.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.24.0 // indirect
-	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

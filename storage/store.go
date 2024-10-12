@@ -5,17 +5,21 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"reflect"
-	"strings"
-	"sync"
-	"unsafe"
-
 	"github.com/cockroachdb/pebble"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/onflow/atree"
+	"github.com/onflow/cadence"
+	"github.com/onflow/cadence/encoding/ccf"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-archive/codec/zbor"
+	"github.com/onflow/flow-evm-gateway/models"
+	sdk "github.com/onflow/flow-go-sdk"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
+	"unsafe"
 	//"github.com/onflow/flow-go/cmd/util/ledger/util/registers"
 	"github.com/onflow/flow-go/fvm/storage/snapshot"
 	"github.com/onflow/flow-go/ledger"
@@ -39,6 +43,13 @@ var (
 
 	codeCollectionAtBlock       byte = 0x9
 	codeTransactionAtCollection byte = 0xa
+	codeBlockHeader             byte = 0xb
+	codeLastBlockHeaderHeight   byte = 0xc
+
+	codeEVMTransaction   byte = 0xd
+	codeEVMBlock         byte = 0xe
+	codeEVMBlockByHeight byte = 0xf
+	codeEVMBlockRaw      byte = 0x10
 
 	codeLedgerPayload byte = 0xf0
 
@@ -65,22 +76,35 @@ type ProtocolStorage struct {
 	checkpointDb *pebble.DB
 	ledgerDb     *pebble.DB
 	indexDb      *pebble.DB
-	codec        *zbor.Codec
-	ledgerBatch  *pebble.Batch
-	batch        *pebble.Batch
+
+	evmDb    *pebble.DB
+	evmRawDb *pebble.DB
+	blocksDb *pebble.DB
+
+	codec       *zbor.Codec
+	ledgerBatch *pebble.Batch
+	batch       *pebble.Batch
 }
 
 func (p *ProtocolStorage) GetDB(code byte) *pebble.DB {
-	if code == 'i' {
+
+	switch code {
+	case 'i':
 		return p.indexDb
-	}
-	if code == 'l' {
+	case 'l':
 		return p.ledgerDb
-	}
-	if code == 'c' {
+	case 'c':
 		return p.checkpointDb
+	case 'e':
+		return p.evmDb
+	case 'r':
+		return p.evmRawDb
+	case 'b':
+		return p.blocksDb
+	default:
+		return nil
 	}
-	return nil
+
 }
 
 func NewProtocolStorage(bootstrap bool) (*ProtocolStorage, error) {
@@ -124,11 +148,29 @@ func NewProtocolStorage(bootstrap bool) (*ProtocolStorage, error) {
 		return nil, err
 	}
 
+	evmDb, err := pebble.Open("tinyEVM", &pebble.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	evmRawDb, err := pebble.Open("tinyEVMRaw", &pebble.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	blocksDb, err := pebble.Open("tinyBlocks", &pebble.Options{})
+	if err != nil {
+		return nil, err
+	}
+
 	return &ProtocolStorage{
 		protocolDb:   protocolDb,
 		checkpointDb: checkpointDb,
 		ledgerDb:     ledgerDb,
 		indexDb:      indexDb,
+		evmDb:        evmDb,
+		evmRawDb:     evmRawDb,
+		blocksDb:     blocksDb,
 		codec:        zbor.NewCodec(),
 	}, nil
 
@@ -1142,6 +1184,7 @@ func (s *ProtocolStorage) Set(key []byte, value []byte) error {
 
 func (s *ProtocolStorage) Get(key []byte) ([]byte, error) {
 	value, closer, err := s.protocolDb.Get(key)
+
 	if err != nil {
 		return nil, err
 	}
@@ -1187,7 +1230,7 @@ func (s *ProtocolStorage) InsertCollection(blockId flow.Identifier, index uint32
 	return nil
 }
 
-func (s *ProtocolStorage) InsertEvent(blockId flow.Identifier, collectionId flow.Identifier, event flow.Event) error {
+func (s *ProtocolStorage) InsertEvent(cadenceHeight uint64, blockId flow.Identifier, collectionId flow.Identifier, event flow.Event) error {
 	eventEncoded, err := s.codec.Encode(event)
 	if err != nil {
 		return err
@@ -1196,6 +1239,65 @@ func (s *ProtocolStorage) InsertEvent(blockId flow.Identifier, collectionId flow
 	err = s.Set(makePrefix(codeEvent, blockId, collectionId, event.TransactionID, event.EventIndex, reverse(string(event.Type))), eventEncoded)
 	if err != nil {
 		return err
+	}
+
+	//TODO: make chain specific
+	if string(event.Type) == "A.e467b9dd11fa00df.EVM.TransactionExecuted" {
+		fmt.Println("EVM.TransactionExecuted", event)
+		decodedEvent, err := ccf.Decode(nil, event.Payload)
+		if err != nil {
+			fmt.Println("decode error", err)
+		}
+		eventValue, isEvent := decodedEvent.(cadence.Event)
+		if !isEvent {
+			panic("not event")
+		}
+		fields := eventValue.FieldsMappedByName()
+		fmt.Println("fields", fields)
+		evmHeight := uint64(fields["blockHeight"].(cadence.UInt64))
+		hashArray := fields["hash"].(cadence.Array).Values
+		evmTxHash := [32]byte{}
+		for i, v := range hashArray {
+			evmTxHash[i] = uint8(v.(cadence.UInt8))
+		}
+		fmt.Println("evmHeight", evmHeight, "evmTxHash", evmTxHash)
+		err = s.evmDb.Set(makePrefix(codeEVMTransaction, evmTxHash), b(cadenceHeight), pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
+		}
+	}
+
+	if string(event.Type) == "A.e467b9dd11fa00df.EVM.BlockExecuted" {
+		fmt.Println("EVM.BlockExecuted", event)
+
+		decodedEvent, err := ccf.Decode(nil, event.Payload)
+		if err != nil {
+			fmt.Println("decode error", err)
+		}
+
+		eventValue, isEvent := decodedEvent.(cadence.Event)
+		if !isEvent {
+			panic("not event")
+		}
+		block, err := models.DecodeBlockEvent(eventValue)
+		if err != nil {
+			panic("decode block error")
+		}
+		evmHeight := block.Height
+		evmBlockHash, err := block.Hash()
+		if err != nil {
+			panic("block hash error")
+		}
+
+		fmt.Println("evmHeight", evmHeight, "evmBlockHash", evmBlockHash)
+		err = s.evmDb.Set(makePrefix(codeEVMBlockByHeight, evmHeight), b(cadenceHeight), pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
+		}
+		err = s.evmDb.Set(makePrefix(codeEVMBlock, evmBlockHash), b(cadenceHeight), pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
+		}
 	}
 
 	return nil
@@ -1216,6 +1318,14 @@ func (s *ProtocolStorage) InsertTransactionResult(blockId flow.Identifier, colle
 
 func (s *ProtocolStorage) LastHeight() uint64 {
 	height, err := s.Get(makePrefix(codeLastHeight))
+	if err != nil {
+		return 0
+	}
+	return binary.BigEndian.Uint64(height)
+}
+
+func (s *ProtocolStorage) LastBlockHeaderHeight() uint64 {
+	height, err := s.Get(makePrefix(codeLastBlockHeaderHeight))
 	if err != nil {
 		return 0
 	}
@@ -1497,7 +1607,54 @@ func (s *ProtocolStorage) CommitBatch() {
 	s.ledgerBatch.Commit(pebble.Sync)
 }
 
+func (s *ProtocolStorage) SaveBlockHeader(header *flow.Header) error {
+	data, err := header.MarshalCBOR()
+	if err != nil {
+		return err
+	}
+	err = s.blocksDb.Set(makePrefix(codeBlockHeader, header.Height), data, pebble.Sync)
+	if err != nil {
+		return err
+	}
+	err = s.blocksDb.Set(makePrefix(codeLastBlockHeaderHeight), b(header.Height), pebble.Sync)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ProtocolStorage) GetBlockHeader(blockId flow.Identifier) (*flow.Header, error) {
+	height := s.BlockHeight(blockId)
+	return s.GetBlockHeaderByHeight(height)
+}
+
+func (s *ProtocolStorage) GetBlockHeaderByHeight(height uint64) (*flow.Header, error) {
+	if height == 0 {
+		return nil, fmt.Errorf("block not found")
+	}
+
+	data, closer, err := s.blocksDb.Get(makePrefix(codeBlockHeader, height))
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+	header := new(flow.Header)
+	err = header.UnmarshalCBOR(data)
+	if err != nil {
+		return nil, err
+	}
+	return header, nil
+
+}
+
 func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
+
+	blockEvents := sdk.BlockEvents{
+		BlockID:        sdk.Identifier(executionData.BlockID),
+		Height:         height,
+		BlockTimestamp: time.Now(), //executionData.BlockTimestamp,
+		Events:         []sdk.Event{},
+	}
 
 	for index, chunk := range executionData.ChunkExecutionDatas {
 
@@ -1514,10 +1671,59 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		}
 
 		for _, event := range chunk.Events {
-			err := s.InsertEvent(executionData.BlockID, chunk.Collection.ID(), event)
+			decodedEvent, err := ccf.Decode(nil, event.Payload)
+			eventValue, _ := decodedEvent.(cadence.Event)
+
+			blockEvents.Events = append(blockEvents.Events, sdk.Event{
+				TransactionID: sdk.Identifier(event.TransactionID),
+				EventIndex:    int(event.EventIndex),
+				Type:          string(event.Type),
+				Payload:       event.Payload,
+				Value:         eventValue,
+			})
+
+			err = s.InsertEvent(height, executionData.BlockID, chunk.Collection.ID(), event)
 			if err != nil {
 				return err
 			}
+		}
+
+		//index EVM blocks
+		evmEvents, err := models.NewCadenceEvents(blockEvents)
+		if err != nil {
+			fmt.Println("error decoding evm events")
+			panic(err)
+		}
+
+		//insert evm transactions
+		for _, transaction := range evmEvents.Transactions() {
+			fmt.Println("EVM TX: evmHeight", evmEvents.Block().Height, "evmTxHash", transaction.Hash())
+			err = s.evmDb.Set(makePrefix(codeEVMTransaction, transaction.Hash()), b(evmEvents.CadenceHeight()), pebble.Sync)
+			if err != nil {
+				fmt.Println("save error", err)
+			}
+		}
+		evmBlockHash, _ := evmEvents.Block().Hash()
+
+		//insert evm block
+		fmt.Println("evmHeight", evmEvents.Block().Height, "evmBlockHash", evmBlockHash)
+		err = s.evmDb.Set(makePrefix(codeEVMBlockByHeight, evmEvents.Block().Height), b(evmEvents.CadenceHeight()), pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
+		}
+
+		err = s.evmDb.Set(makePrefix(codeEVMBlock, evmBlockHash), b(evmEvents.Block().Height), pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
+		}
+
+		data, err := s.codec.Encode(evmEvents)
+		if err != nil {
+			panic("can't serialize evm events")
+		}
+		err = s.evmRawDb.Set(makePrefix(codeEVMBlockRaw, evmEvents.Block().Height), data, pebble.Sync)
+		if err != nil {
+			fmt.Println("save error", err)
 		}
 
 		for _, transactionResult := range chunk.TransactionResults {

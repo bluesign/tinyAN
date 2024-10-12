@@ -9,10 +9,86 @@ import (
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module/executiondatasync/execution_data"
+	"github.com/onflow/flow/protobuf/go/flow/access"
 	executiondata "github.com/onflow/flow/protobuf/go/flow/executiondata"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+type BlockFollower struct {
+	client access.AccessAPIClient
+	chain  flow.Chain
+}
+
+type BlockDataResponse struct {
+	Header *flow.Header
+}
+
+func NewBlockFollower(address string, chain flow.Chain, opts ...grpc.DialOption) (*BlockFollower, error) {
+	if len(opts) == 0 {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
+	conn, err := grpc.Dial(address, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BlockFollower{
+		client: access.NewAccessAPIClient(conn),
+		chain:  chain,
+	}, nil
+}
+
+func (c *BlockFollower) SubscribeBlockData(
+	ctx context.Context,
+	startHeight uint64,
+	opts ...grpc.CallOption,
+) (*Subscription[BlockDataResponse], error) {
+
+	req := access.SubscribeBlockHeadersFromStartHeightRequest{}
+
+	if startHeight > 0 {
+		req.StartBlockHeight = startHeight
+	}
+
+	stream, err := c.client.SubscribeBlockHeadersFromStartHeight(ctx, &req, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	sub := NewSubscription[BlockDataResponse]()
+	go func() {
+		defer close(sub.ch)
+
+		for {
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				sub.err = fmt.Errorf("error receiving execution data: %w", err)
+				return
+			}
+
+			blockHeader, err := convert.MessageToBlockHeader(resp.GetHeader())
+			if err != nil {
+				log.Printf("error converting block header data:\n%v", resp.GetHeader())
+				sub.err = fmt.Errorf("error converting block header data: %w", err)
+				return
+			}
+
+			log.Printf("received block header data for block %d %x", resp.Header.Height, resp.Header.Id)
+
+			sub.ch <- BlockDataResponse{
+				Header: blockHeader,
+			}
+		}
+	}()
+
+	return sub, nil
+}
 
 type ExecutionDataClient struct {
 	client executiondata.ExecutionDataAPIClient

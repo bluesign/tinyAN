@@ -112,6 +112,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	}
 
 	height := store.LastHeight()
+	headerHeight := store.LastBlockHeaderHeight()
 
 	if conf.Bootstrap {
 		store.Bootstrap(sporkName, sporkHeight)
@@ -127,6 +128,16 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		} else {
 			log.Println("Starting from SporkHeight")
 			height = sporkHeight + 1
+		}
+	}
+
+	if headerHeight == 0 {
+		if sporkHeight == 0 {
+			log.Println("Following blocks with current height")
+			headerHeight = 0
+		} else {
+			log.Println("Starting blocks from SporkHeight")
+			headerHeight = sporkHeight + 1
 		}
 	}
 
@@ -154,47 +165,105 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatalf("could not create execution data client: %v", err)
 		}
-		//TODO: remove me
-		//height = 88650854
-		sub, err := execClient.SubscribeExecutionData(ctx, flow.ZeroID, height)
+		subExec, err := execClient.SubscribeExecutionData(ctx, flow.ZeroID, height)
 
 		if err != nil {
 			log.Fatalf("could not subscribe to execution data: %v", err)
 		}
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case response, ok := <-sub.Channel():
-				if sub.Err() != nil {
-					log.Fatalf("error in subscription: %v", sub.Err())
-				}
-				if !ok {
-					//TODO: handle me
-					log.Fatalf("subscription closed")
-				}
+		go func() {
 
-				if height == 0 {
-					height = response.Height
-				}
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case response, ok := <-subExec.Channel():
+					if subExec.Err() != nil {
+						log.Fatalf("error in subscription: %v", subExec.Err())
+					}
+					if !ok {
+						//TODO: handle me
+						log.Fatalf("subscription closed")
+					}
 
-				if height != response.Height {
-					log.Fatal("invalid height")
-				}
+					if height == 0 {
+						height = response.Height
+					}
 
-				store.NewBatch()
-				err := store.ProcessExecutionData(response.Height, response.ExecutionData)
-				store.IndexLedger(response.Height, response.ExecutionData)
-				store.CommitBatch()
+					if height != response.Height {
+						log.Fatal("invalid height")
+					}
 
-				//panic("done")
-				if err != nil {
-					log.Fatalf("failed to process execution data: %v", err)
+					store.NewBatch()
+					err := store.ProcessExecutionData(response.Height, response.ExecutionData)
+					store.IndexLedger(response.Height, response.ExecutionData)
+					store.CommitBatch()
+
+					//panic("done")
+					if err != nil {
+						log.Fatalf("failed to process execution data: %v", err)
+					}
+					height = height + 1
 				}
-				height = height + 1
 			}
+		}()
+
+		blockFollower, err := client.NewBlockFollower(
+			accessURL,
+			chain,
+			grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(1024*1024*100),
+				grpc.UseCompressor(gzip.Name)),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+
+		if err != nil {
+			log.Fatalf("could not block follower client: %v", err)
 		}
+		subBlock, err := blockFollower.SubscribeBlockData(ctx, height)
+
+		if err != nil {
+			log.Fatalf("could not subscribe to block data: %v", err)
+		}
+
+		go func() {
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case response, ok := <-subBlock.Channel():
+					if subExec.Err() != nil {
+						log.Fatalf("error in subscription: %v", subBlock.Err())
+					}
+					if !ok {
+						//TODO: handle me
+						log.Fatalf("subscription closed")
+					}
+
+					if headerHeight == 0 {
+						headerHeight = response.Header.Height
+					}
+
+					if headerHeight != response.Header.Height {
+						log.Fatal("invalid height")
+					}
+
+					fmt.Println("Block Height: ", response.Header.Height)
+					store.NewBatch()
+					err = store.SaveBlockHeader(response.Header)
+					if err != nil {
+						log.Fatalf("failed to process block header: %v", err)
+					}
+					store.CommitBatch()
+					if err != nil {
+						log.Fatalf("failed to process block data: %v", err)
+					}
+					height = height + 1
+				}
+			}
+		}()
+
 	}
 
 	for {
