@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/gorilla/mux"
 	"github.com/onflow/flow-evm-gateway/api"
@@ -35,8 +36,11 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 	}
 
 	block := cadenceEvents.Block()
+	fmt.Println("=========")
+	fmt.Println(block)
 	blockGasLimit := uint64(0)
-	h, _ := block.Hash()
+	h, err := block.Hash()
+	fmt.Println(err)
 
 	blockResponse := &api.Block{
 		Hash:             h,
@@ -54,13 +58,14 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 		Miner:            evmTypes.CoinbaseAddress.ToCommon(),
 		Sha3Uncles:       types.EmptyUncleHash,
 	}
+	fmt.Println(blockResponse)
 
 	blockBytes, err := block.ToBytes()
 	if err != nil {
 		return nil, err
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
-
+	fmt.Println(blockSize)
 	transactions := cadenceEvents.Transactions()
 
 	if len(transactions) > 0 {
