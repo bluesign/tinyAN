@@ -6,6 +6,7 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/gorilla/mux"
 	"github.com/onflow/flow-evm-gateway/api"
+	"github.com/onflow/flow-evm-gateway/models"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -31,8 +32,8 @@ type APINamespace struct {
 }
 
 func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber, full bool) (*api.Block, error) {
-	cadenceEvents, err := a.storage.GetEvmBlockByHeight(uint64(number))
-	fmt.Println(cadenceEvents)
+	evmBlock, err := a.storage.GetEvmBlockByHeight(uint64(number))
+	fmt.Println(evmBlock)
 	fmt.Println(err)
 	defer func() {
 		if err := recover(); err != nil {
@@ -44,7 +45,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 		return nil, err
 	}
 
-	block := cadenceEvents.Block()
+	block := evmBlock.Block
 	fmt.Println("=========")
 	fmt.Println(block)
 	blockGasLimit := uint64(0)
@@ -75,13 +76,17 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 	fmt.Println(blockSize)
-	transactions := cadenceEvents.Transactions()
+	transactions := evmBlock.Transactions
 
 	if len(transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
-		for i, tx := range transactions {
-			txReceipt := cadenceEvents.Receipts()[i]
+		for i, txBytes := range transactions {
+			tx, err := models.UnmarshalTransaction(txBytes)
+			if err != nil {
+				panic(err)
+			}
+			txReceipt := evmBlock.Receipts[i]
 			totalGasUsed += hexutil.Uint64(txReceipt.GasUsed)
 			logs = append(logs, txReceipt.Logs...)
 			blockSize += tx.Size()

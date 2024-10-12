@@ -16,7 +16,6 @@ import (
 	"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-evm-gateway/models"
 	sdk "github.com/onflow/flow-go-sdk"
-	"github.com/onflow/go-ethereum/rlp"
 	"reflect"
 	"strings"
 	"sync"
@@ -1592,25 +1591,27 @@ func (s *ProtocolStorage) GetBlockHeaderByHeight(height uint64) (*flow.Header, e
 
 }
 
-func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*models.CadenceEvents, error) {
+func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*EVMBlock, error) {
 	data, closer, err := s.evmRawDb.Get(makePrefix(codeEVMBlockRaw, height))
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 	fmt.Println(data)
-	evmEvents := &models.CadenceEvents{}
-	err = s.codec.Decode(data, evmEvents)
+
+	block := &EVMBlock{}
+	err = s.codec.Decode(data, block)
 	if err != nil {
 		return nil, err
 	}
-	return evmEvents, nil
+
+	return block, nil
 }
 
 type EVMBlock struct {
-	Block        []byte
+	Block        *models.Block
 	Transactions [][]byte
-	Receipts     [][]byte
+	Receipts     []*models.Receipt
 }
 
 func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
@@ -1718,7 +1719,6 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 	}
 
 	fmt.Println(evmEvents)
-	blockBytes, err := evmEvents.Block().ToBytes()
 	transactionBytes := make([][]byte, len(evmEvents.Transactions()))
 	receiptBytes := make([][]byte, len(evmEvents.Receipts()))
 
@@ -1730,18 +1730,12 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		transactionBytes[i] = b
 	}
 
-	for i, r := range evmEvents.Receipts() {
-		b, err := rlp.EncodeToBytes(r)
-		if err != nil {
-			panic(err)
-		}
-		receiptBytes[i] = b
-	}
 	block := &EVMBlock{
-		Block:        blockBytes,
+		Block:        evmEvents.Block(),
 		Transactions: transactionBytes,
-		Receipts:     receiptBytes,
+		Receipts:     evmEvents.Receipts(),
 	}
+
 	data, err := s.codec.Encode(block)
 
 	fmt.Println(data, len(data), err)
