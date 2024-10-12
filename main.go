@@ -155,54 +155,64 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 	if conf.Follow {
 		go func() {
-			execClient, err := client.NewExecutionDataClient(
-				accessURL,
-				chain,
-				grpc.WithDefaultCallOptions(
-					grpc.MaxCallRecvMsgSize(1024*1024*100),
-					grpc.UseCompressor(gzip.Name)),
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-			)
-			if err != nil {
-				log.Fatalf("could not create execution data client: %v", err)
-			}
-			subExec, err := execClient.SubscribeExecutionData(ctxExecution, flow.ZeroID, height)
-
-			if err != nil {
-				log.Fatalf("could not subscribe to execution data: %v", err)
-			}
-
 			for {
-				select {
-				case <-ctxExecution.Done():
-					return
-				case response, ok := <-subExec.Channel():
-					if subExec.Err() != nil {
-						log.Fatalf("error in subscription: %v", subExec.Err())
-					}
-					if !ok {
-						//TODO: handle me
-						log.Fatalf("subscription subexec closed")
-					}
+				reconnect := false
 
-					if height == 0 {
-						height = response.Height
-					}
+				execClient, err := client.NewExecutionDataClient(
+					accessURL,
+					chain,
+					grpc.WithDefaultCallOptions(
+						grpc.MaxCallRecvMsgSize(1024*1024*100),
+						grpc.UseCompressor(gzip.Name)),
+					grpc.WithTransportCredentials(insecure.NewCredentials()),
+				)
+				if err != nil {
+					log.Fatalf("could not create execution data client: %v", err)
+				}
+				subExec, err := execClient.SubscribeExecutionData(ctxExecution, flow.ZeroID, height)
 
-					if height != response.Height {
-						log.Fatal("invalid height")
-					}
+				if err != nil {
+					log.Fatalf("could not subscribe to execution data: %v", err)
+				}
 
-					store.NewBatch()
-					err := store.ProcessExecutionData(response.Height, response.ExecutionData)
-					store.IndexLedger(response.Height, response.ExecutionData)
-					store.CommitBatch()
+				for {
+					select {
+					case <-ctxExecution.Done():
+						return
+					case response, ok := <-subExec.Channel():
+						if subExec.Err() != nil {
+							fmt.Println("Reconnecting to ExecutionData")
+							time.Sleep(10 * time.Second)
+							reconnect = true
 
-					//panic("done")
-					if err != nil {
-						log.Fatalf("failed to process execution data: %v", err)
+						}
+						if !ok {
+							//TODO: handle me
+							log.Fatalf("subscription subexec closed")
+						}
+
+						if height == 0 {
+							height = response.Height
+						}
+
+						if height != response.Height {
+							log.Fatal("invalid height")
+						}
+
+						store.NewBatch()
+						err := store.ProcessExecutionData(response.Height, response.ExecutionData)
+						store.IndexLedger(response.Height, response.ExecutionData)
+						store.CommitBatch()
+
+						//panic("done")
+						if err != nil {
+							log.Fatalf("failed to process execution data: %v", err)
+						}
+						height = height + 1
 					}
-					height = height + 1
+					if reconnect {
+						break
+					}
 				}
 			}
 		}()
@@ -218,7 +228,6 @@ func StartExecute(cmd *cobra.Command, args []string) {
 						grpc.MaxCallRecvMsgSize(1024*1024*100),
 						grpc.UseCompressor(gzip.Name)),
 					grpc.WithTransportCredentials(insecure.NewCredentials()),
-					grpc.WithIdleTimeout(10*time.Second),
 				)
 
 				if err != nil {
