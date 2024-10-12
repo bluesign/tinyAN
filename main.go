@@ -153,25 +153,23 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	go apiServer.Start()
 
 	if conf.Follow {
-
-		execClient, err := client.NewExecutionDataClient(
-			accessURL,
-			chain,
-			grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(1024*1024*100),
-				grpc.UseCompressor(gzip.Name)),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
-		if err != nil {
-			log.Fatalf("could not create execution data client: %v", err)
-		}
-		subExec, err := execClient.SubscribeExecutionData(ctx, flow.ZeroID, height)
-
-		if err != nil {
-			log.Fatalf("could not subscribe to execution data: %v", err)
-		}
-
 		go func() {
+			execClient, err := client.NewExecutionDataClient(
+				accessURL,
+				chain,
+				grpc.WithDefaultCallOptions(
+					grpc.MaxCallRecvMsgSize(1024*1024*100),
+					grpc.UseCompressor(gzip.Name)),
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+			)
+			if err != nil {
+				log.Fatalf("could not create execution data client: %v", err)
+			}
+			subExec, err := execClient.SubscribeExecutionData(ctx, flow.ZeroID, height)
+
+			if err != nil {
+				log.Fatalf("could not subscribe to execution data: %v", err)
+			}
 
 			for {
 				select {
@@ -208,32 +206,32 @@ func StartExecute(cmd *cobra.Command, args []string) {
 			}
 		}()
 
-		blockFollower, err := client.NewBlockFollower(
-			accessURL,
-			chain,
-			grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(1024*1024*100),
-				grpc.UseCompressor(gzip.Name)),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
-
-		if err != nil {
-			log.Fatalf("could not block follower client: %v", err)
-		}
-		subBlock, err := blockFollower.SubscribeBlockData(ctx, height)
-
-		if err != nil {
-			log.Fatalf("could not subscribe to block data: %v", err)
-		}
-
 		go func() {
+
+			blockFollower, err := client.NewBlockFollower(
+				accessURL,
+				chain,
+				grpc.WithDefaultCallOptions(
+					grpc.MaxCallRecvMsgSize(1024*1024*100),
+					grpc.UseCompressor(gzip.Name)),
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+			)
+
+			if err != nil {
+				log.Fatalf("could not block follower client: %v", err)
+			}
+			subBlock, err := blockFollower.SubscribeBlockData(ctx, height)
+
+			if err != nil {
+				log.Fatalf("could not subscribe to block data: %v", err)
+			}
 
 			for {
 				select {
 				case <-ctx.Done():
 					return
 				case response, ok := <-subBlock.Channel():
-					if subExec.Err() != nil {
+					if subBlock.Err() != nil {
 						log.Fatalf("error in subscription: %v", subBlock.Err())
 					}
 					if !ok {
