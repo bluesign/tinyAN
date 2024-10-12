@@ -220,7 +220,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Fatalf("could not block follower client: %v", err)
 			}
-			subBlock, err := blockFollower.SubscribeBlockData(ctx, height)
+			subBlock, err := blockFollower.SubscribeBlockData(ctx, headerHeight)
 
 			if err != nil {
 				log.Fatalf("could not subscribe to block data: %v", err)
