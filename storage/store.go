@@ -16,7 +16,7 @@ import (
 	"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-evm-gateway/models"
 	sdk "github.com/onflow/flow-go-sdk"
-	"github.com/vmihailenco/msgpack/v4"
+	"github.com/onflow/go-ethereum/rlp"
 	"reflect"
 	"strings"
 	"sync"
@@ -1608,6 +1608,9 @@ func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*models.CadenceEve
 }
 
 type EVMBlock struct {
+	block        []byte
+	transactions [][]byte
+	receipts     [][]byte
 }
 
 func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
@@ -1715,8 +1718,32 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 	}
 
 	fmt.Println(evmEvents)
-	//data, err := s.codec.Encode(*evmEvents)
-	data, err := msgpack.Marshal(evmEvents)
+	blockBytes, err := evmEvents.Block().ToBytes()
+	transactionBytes := make([][]byte, len(evmEvents.Transactions()))
+	receiptBytes := make([][]byte, len(evmEvents.Receipts()))
+
+	for i, tx := range evmEvents.Transactions() {
+		b, err := tx.MarshalBinary()
+		if err != nil {
+			panic(err)
+		}
+		transactionBytes[i] = b
+	}
+
+	for i, r := range evmEvents.Receipts() {
+		b, err := rlp.EncodeToBytes(r)
+		if err != nil {
+			panic(err)
+		}
+		receiptBytes[i] = b
+	}
+	block := EVMBlock{
+		block:        blockBytes,
+		transactions: transactionBytes,
+		receipts:     receiptBytes,
+	}
+
+	data, err := s.codec.Encode(block)
 
 	fmt.Println(data, err)
 	if err != nil {
