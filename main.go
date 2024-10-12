@@ -182,13 +182,12 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					case response, ok := <-subExec.Channel():
 						if subExec.Err() != nil {
 							fmt.Println("Reconnecting to ExecutionData")
-							time.Sleep(10 * time.Second)
 							reconnect = true
-
 						}
 						if !ok {
-							//TODO: handle me
-							log.Fatalf("subscription subexec closed")
+							fmt.Println("Reconnecting to ExecutionData")
+							time.Sleep(10 * time.Second)
+							reconnect = true
 						}
 
 						if height == 0 {
@@ -245,7 +244,8 @@ func StartExecute(cmd *cobra.Command, args []string) {
 						return
 					case response, ok := <-subBlock.Channel():
 						if subBlock.Err() != nil {
-							log.Fatalf("error in subscription: %v", subBlock.Err())
+							fmt.Println("Reconnecting to BlockFollower")
+							reconnect = true
 						}
 						if !ok {
 							//TODO: handle me
