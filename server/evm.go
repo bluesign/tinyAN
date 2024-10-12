@@ -63,21 +63,20 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, number rpc.BlockNum
 		Miner:            evmTypes.CoinbaseAddress.ToCommon(),
 		Sha3Uncles:       types.EmptyUncleHash,
 	}
-	fmt.Println(blockResponse)
 
 	blockBytes, err := block.ToBytes()
 	if err != nil {
 		return nil, err
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
-	fmt.Println(blockSize)
-	transactions := evmBlock.Transactions
+	transactions := make([]models.Transaction, len(evmBlock.Transactions))
 
-	if len(transactions) > 0 {
+	if len(evmBlock.Transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
-		for i, txBytes := range transactions {
+		for i, txBytes := range evmBlock.Transactions {
 			tx, err := models.UnmarshalTransaction(txBytes)
+			transactions = append(transactions, tx)
 			if err != nil {
 				panic(err)
 			}
