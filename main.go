@@ -215,6 +215,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 					grpc.MaxCallRecvMsgSize(1024*1024*100),
 					grpc.UseCompressor(gzip.Name)),
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithIdleTimeout(10*time.Second),
 			)
 
 			if err != nil {
