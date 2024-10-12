@@ -49,11 +49,11 @@ func (c *BlockFollower) SubscribeBlockData(
 ) (*Subscription[BlockDataResponse], error) {
 
 	req := access.SubscribeBlockHeadersFromStartHeightRequest{
-		StartBlockHeight: startHeight - 1,
+		StartBlockHeight: startHeight,
 		BlockStatus:      entities.BlockStatus_BLOCK_SEALED,
 	}
 
-	fmt.Println("starting from ", startHeight-1)
+	fmt.Println("starting from ", startHeight)
 
 	stream, err := c.client.SubscribeBlockHeadersFromStartHeight(ctx, &req, opts...)
 	if err != nil {
