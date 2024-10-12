@@ -208,56 +208,65 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 		go func() {
 
-			blockFollower, err := client.NewBlockFollower(
-				accessURL,
-				chain,
-				grpc.WithDefaultCallOptions(
-					grpc.MaxCallRecvMsgSize(1024*1024*100),
-					grpc.UseCompressor(gzip.Name)),
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithIdleTimeout(10*time.Second),
-			)
-
-			if err != nil {
-				log.Fatalf("could not block follower client: %v", err)
-			}
-			subBlock, err := blockFollower.SubscribeBlockData(ctx, headerHeight)
-
-			if err != nil {
-				log.Fatalf("could not subscribe to block data: %v", err)
-			}
-
 			for {
-				select {
-				case <-ctx.Done():
-					return
-				case response, ok := <-subBlock.Channel():
-					if subBlock.Err() != nil {
-						log.Fatalf("error in subscription: %v", subBlock.Err())
-					}
-					if !ok {
-						//TODO: handle me
-						log.Fatalf("subscription blocks closed")
-					}
+				reconnect := false
+				blockFollower, err := client.NewBlockFollower(
+					accessURL,
+					chain,
+					grpc.WithDefaultCallOptions(
+						grpc.MaxCallRecvMsgSize(1024*1024*100),
+						grpc.UseCompressor(gzip.Name)),
+					grpc.WithTransportCredentials(insecure.NewCredentials()),
+					grpc.WithIdleTimeout(10*time.Second),
+				)
 
-					if headerHeight == 0 {
-						headerHeight = response.Header.Height
-					}
-
-					if headerHeight != response.Header.Height {
-						log.Fatal("invalid height", headerHeight, response.Header.Height)
-					}
-
-					fmt.Println("Block Height: ", response.Header.Height)
-					err = store.SaveBlockHeader(response.Header)
-					if err != nil {
-						log.Fatalf("failed to process block header: %v", err)
-					}
-					if err != nil {
-						log.Fatalf("failed to process block data: %v", err)
-					}
-					headerHeight = headerHeight + 1
+				if err != nil {
+					log.Fatalf("could not block follower client: %v", err)
 				}
+				subBlock, err := blockFollower.SubscribeBlockData(ctx, headerHeight)
+
+				if err != nil {
+					log.Fatalf("could not subscribe to block data: %v", err)
+				}
+
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case response, ok := <-subBlock.Channel():
+						if subBlock.Err() != nil {
+							log.Fatalf("error in subscription: %v", subBlock.Err())
+						}
+						if !ok {
+							//TODO: handle me
+							fmt.Println("Reconnecting to BlockFollower")
+							time.Sleep(10 * time.Second)
+							reconnect = true
+						}
+
+						if headerHeight == 0 {
+							headerHeight = response.Header.Height
+						}
+
+						if headerHeight != response.Header.Height {
+							log.Fatal("invalid height", headerHeight, response.Header.Height)
+						}
+
+						fmt.Println("Block Height: ", response.Header.Height)
+						err = store.SaveBlockHeader(response.Header)
+						if err != nil {
+							log.Fatalf("failed to process block header: %v", err)
+						}
+						if err != nil {
+							log.Fatalf("failed to process block data: %v", err)
+						}
+						headerHeight = headerHeight + 1
+					}
+					if reconnect {
+						break
+					}
+				}
+
 			}
 		}()
 
