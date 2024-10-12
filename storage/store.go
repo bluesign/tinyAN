@@ -1267,11 +1267,13 @@ func (s *ProtocolStorage) LastHeight() uint64 {
 }
 
 func (s *ProtocolStorage) LastBlockHeaderHeight() uint64 {
-	height, err := s.Get(makePrefix(codeLastBlockHeaderHeight))
+	height, closer, err := s.blocksDb.Get(makePrefix(codeLastBlockHeaderHeight))
 	if err != nil {
 		return 0
 	}
-	return binary.BigEndian.Uint64(height)
+	v := binary.BigEndian.Uint64(height)
+	_ = closer.Close()
+	return v
 }
 
 func (s *ProtocolStorage) BlockId(height uint64) flow.Identifier {
