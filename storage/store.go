@@ -1737,7 +1737,7 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		}
 		receiptBytes[i] = b
 	}
-	block := EVMBlock{
+	block := &EVMBlock{
 		block:        blockBytes,
 		transactions: transactionBytes,
 		receipts:     receiptBytes,
