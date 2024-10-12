@@ -253,7 +253,6 @@ func StartExecute(cmd *cobra.Command, args []string) {
 							log.Fatal("invalid height", headerHeight, response.Header.Height)
 						}
 
-						fmt.Println("Block Height: ", response.Header.Height)
 						err = store.SaveBlockHeader(response.Header)
 						if err != nil {
 							log.Fatalf("failed to process block header: %v", err)

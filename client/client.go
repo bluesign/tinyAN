@@ -81,7 +81,9 @@ func (c *BlockFollower) SubscribeBlockData(
 				return
 			}
 
-			log.Printf("received block header data for block %d %x", resp.Header.Height, resp.Header.Id)
+			if resp.GetHeader().Height%1000 == 0 {
+				log.Printf("received block header data for block %d %x", resp.Header.Height, resp.Header.Id)
+			}
 
 			sub.ch <- BlockDataResponse{
 				Header: blockHeader,
