@@ -53,6 +53,8 @@ func (c *BlockFollower) SubscribeBlockData(
 		BlockStatus:      entities.BlockStatus_BLOCK_SEALED,
 	}
 
+	fmt.Println("starting from ", startHeight)
+
 	stream, err := c.client.SubscribeBlockHeadersFromStartHeight(ctx, &req, opts...)
 	if err != nil {
 		return nil, err
