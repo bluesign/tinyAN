@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
-	"github.com/gorilla/mux"
 	"github.com/onflow/flow-evm-gateway/api"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
@@ -18,8 +17,6 @@ import (
 	"github.com/onflow/go-ethereum/rlp"
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
-	"net"
-	"net/http"
 	"strings"
 )
 
@@ -29,14 +26,6 @@ var (
 
 const maxFeeHistoryBlockCount = 1024
 const blockGasLimit uint64 = 120_000_000
-
-type EVMServer struct {
-	router     *mux.Router
-	httpServer *http.Server
-	rpcServer  *rpc.Server
-	listener   net.Listener
-	storage    *storage.ProtocolStorage
-}
 
 type APINamespace struct {
 	storage *storage.ProtocolStorage
