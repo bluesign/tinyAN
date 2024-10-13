@@ -346,7 +346,6 @@ func (s *IndexStorage) IndexLedger(height uint64, executionData *execution_data.
 
 	batch := s.NewBatch()
 	blockResources := make(map[uint64]*indexer.Resource)
-	fmt.Println("=== block ===")
 	for _, chunk := range executionData.ChunkExecutionDatas {
 
 		for _, payload := range chunk.TrieUpdate.Payloads {
