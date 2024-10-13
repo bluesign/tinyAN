@@ -28,7 +28,7 @@ const maxFeeHistoryBlockCount = 1024
 const blockGasLimit uint64 = 120_000_000
 
 type APINamespace struct {
-	storage *storage.ProtocolStorage
+	storage *storage.HeightBasedStorage
 }
 
 func handleError[T any](err error) (T, error) {

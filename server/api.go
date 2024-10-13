@@ -15,10 +15,10 @@ type APIServer struct {
 	router     *mux.Router
 	httpServer *http.Server
 	listener   net.Listener
-	storage    *storage.ProtocolStorage
+	storage    *storage.HeightBasedStorage
 }
 
-func NewAPIServer(storage *storage.ProtocolStorage) *APIServer {
+func NewAPIServer(storage *storage.HeightBasedStorage) *APIServer {
 	router := mux.NewRouter().StrictSlash(true)
 	r := &APIServer{
 		router:  router,
@@ -109,7 +109,7 @@ func (m APIServer) OwnerOfUuid(w http.ResponseWriter, r *http.Request) {
 	var uuid uint64 = stringToUint64(uuidString)
 
 	fmt.Println("uuid:", uuid)
-	result := m.storage.OwnerOfUuid(uuid, height)
+	result := m.storage.StorageForHeight(height).Index().OwnerOfUuid(uuid, height)
 	if result == "not found" {
 		w.WriteHeader(http.StatusNotFound)
 

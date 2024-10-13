@@ -115,7 +115,7 @@ type TransactionContainer struct {
 var _ environment.Blocks = (*Blocks)(nil)
 
 type Blocks struct {
-	storage *storage.ProtocolStorage
+	storage *storage.HeightBasedStorage
 }
 
 // ByHeightFrom implements the fvm/env/blocks interface
@@ -159,7 +159,7 @@ func (b *Blocks) ByHeightFrom(height uint64, header *flow.Header) (*flow.Header,
 	return h, nil
 }
 
-func NewBlocks(storage *storage.ProtocolStorage) *Blocks {
+func NewBlocks(storage *storage.HeightBasedStorage) *Blocks {
 	return &Blocks{
 		storage: storage,
 	}
@@ -283,7 +283,7 @@ func (e *ScriptExecutor) GetAccount(ctx context.Context, address []byte, blockHe
 	)
 }
 
-func NewHandler(chainID flow.ChainID, store *storage.ProtocolStorage, client access.AccessAPIClient, options ...HandlerOption) *Handler {
+func NewHandler(chainID flow.ChainID, store *storage.HeightBasedStorage, options ...HandlerOption) *Handler {
 
 	blocks := NewBlocks(store)
 

@@ -20,13 +20,12 @@ type GRPCServer struct {
 	listener   net.Listener
 }
 
-func NewGRPCServer(chainID flow.ChainID, client *grpc.ClientConn, store *storage.ProtocolStorage, host string, port int) *GRPCServer {
+func NewGRPCServer(chainID flow.ChainID, store *storage.HeightBasedStorage, host string, port int) *GRPCServer {
 	grpcServer := grpc.NewServer()
 
 	logger := &zerolog.Logger{}
-	accessClient := access.NewAccessAPIClient(client)
 
-	access.RegisterAccessAPIServer(grpcServer, NewHandler(chainID, store, accessClient))
+	access.RegisterAccessAPIServer(grpcServer, NewHandler(chainID, store))
 
 	return &GRPCServer{
 		logger:     logger,
