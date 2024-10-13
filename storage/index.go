@@ -111,7 +111,7 @@ func (s *IndexStorage) CommitIndex(batch *pebble.Batch, height uint64, blockReso
 
 		//Move
 		if r.Fields["address"].HasUpdated {
-			fmt.Println("MOVE:\t", r.Fields["address"].OldValue, r.Fields["address"].NewValue, r.Uuid, r.TypeName, height, id, balance)
+			//fmt.Println("MOVE:\t", r.Fields["address"].OldValue, r.Fields["address"].NewValue, r.Uuid, r.TypeName, height, id, balance)
 			s.SetIndex(batch, codeAction_delete, r.Fields["address"].OldValue.(string), r.Uuid, r.TypeName, height, id, balance)
 
 			s.SetIndex(batch, codeAction_new, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
@@ -129,13 +129,13 @@ func (s *IndexStorage) CommitIndex(batch *pebble.Batch, height uint64, blockReso
 
 		if len(updatedFields) > 0 {
 			if verbose {
-				fmt.Println("UPDATE:\t", r.Fields["address"].NewValue, updatedFields, r.Uuid, r.TypeName, height, id, balance)
+				//fmt.Println("UPDATE:\t", r.Fields["address"].NewValue, updatedFields, r.Uuid, r.TypeName, height, id, balance)
 			}
 			s.SetIndex(batch, codeAction_update, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
 			s.SetMaps(batch, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
 		} else {
 			if verbose {
-				fmt.Println("NEW:\t", r.Fields["address"].NewValue, updatedFields, r.Uuid, r.TypeName, height, id, balance)
+				//fmt.Println("NEW:\t", r.Fields["address"].NewValue, updatedFields, r.Uuid, r.TypeName, height, id, balance)
 			}
 			s.SetIndex(batch, codeAction_new, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
 			s.SetMaps(batch, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
@@ -348,7 +348,6 @@ func (s *IndexStorage) IndexLedger(height uint64, executionData *execution_data.
 	blockResources := make(map[uint64]*indexer.Resource)
 	fmt.Println("=== block ===")
 	for _, chunk := range executionData.ChunkExecutionDatas {
-		fmt.Println("=== # chunk ===")
 
 		for _, payload := range chunk.TrieUpdate.Payloads {
 			if payload == nil {
