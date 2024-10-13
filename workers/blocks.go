@@ -60,15 +60,15 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 				}
 
 				if height == 0 {
-					height = response.Block.Header.Height
+					height = response.Header.Height
 				}
 
-				if height != response.Block.Header.Height {
-					log.Fatal("invalid height", height, response.Block.Header.Height)
+				if height != response.Header.Height {
+					log.Fatal("invalid height", height, response.Header.Height)
 				}
 
 				batch := store.Protocol().NewBatch()
-				err = store.Protocol().SaveBlock(batch, response.Block)
+				err = store.Protocol().SaveBlock(batch, response.Header)
 				batch.Commit(pebble.Sync)
 
 				if err != nil {

@@ -259,9 +259,9 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 	return result
 }
 
-func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, block *flow.Block) error {
-	id := block.ID()
-	height := block.Header.Height
+func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, header *flow.Header) error {
+	id := header.ID()
+	height := header.Height
 
 	if err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeBlockHeightByID, id),
@@ -272,7 +272,7 @@ func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, block *flow.Block) erro
 
 	if err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeBlockByHeight, height),
-		block,
+		header,
 	); err != nil {
 		return err
 	}
@@ -293,14 +293,14 @@ func (s *ProtocolStorage) LastHeight() uint64 {
 	return s.LastProcessedHeight()
 }
 
-func (s *ProtocolStorage) GetLatestBlock() (*flow.Block, error) {
+func (s *ProtocolStorage) GetLatestBlock() (*flow.Header, error) {
 	height := s.LastHeight()
 	return s.GetBlockByHeight(height)
 }
 
-func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Block, error) {
+func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Header, error) {
 	dbKey := makePrefix(codeBlockByHeight, b(height))
-	var block flow.Block
+	var block flow.Header
 	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &block)
 	if err != nil {
 		return nil, err
@@ -308,7 +308,7 @@ func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Block, error) {
 	return &block, nil
 }
 
-func (s *ProtocolStorage) GetBlockById(id flow.Identifier) (*flow.Block, error) {
+func (s *ProtocolStorage) GetBlockById(id flow.Identifier) (*flow.Header, error) {
 	height, err := s.GetBlockHeightByID(id)
 	if err != nil {
 		return nil, err

@@ -23,7 +23,7 @@ type BlockFollower struct {
 }
 
 type BlockDataResponse struct {
-	Block *flow.Block
+	Header *flow.Header
 }
 
 func NewBlockFollower(address string, chain flow.Chain, opts ...grpc.DialOption) (*BlockFollower, error) {
@@ -48,14 +48,12 @@ func (c *BlockFollower) SubscribeBlockData(
 	opts ...grpc.CallOption,
 ) (*Subscription[BlockDataResponse], error) {
 
-	req := access.SubscribeBlocksFromStartHeightRequest{
+	req := access.SubscribeBlockHeadersFromStartHeightRequest{
 		StartBlockHeight: startHeight,
 		BlockStatus:      entities.BlockStatus_BLOCK_SEALED,
 	}
 
-	fmt.Println("starting from ", startHeight)
-
-	stream, err := c.client.SubscribeBlocksFromStartHeight(ctx, &req, opts...)
+	stream, err := c.client.SubscribeBlockHeadersFromStartHeight(ctx, &req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +72,16 @@ func (c *BlockFollower) SubscribeBlockData(
 				return
 			}
 
-			fmt.Println("received block", resp.GetBlock())
-			block, err := convert.MessageToBlock(resp.GetBlock())
+			fmt.Println("received block", resp.GetHeader())
+			header, err := convert.MessageToBlockHeader(resp.GetHeader())
 			if err != nil {
-				log.Printf("error converting block data:\n%v", resp.GetBlock())
+				log.Printf("error converting block data:\n%v", resp.GetHeader())
 				sub.err = fmt.Errorf("error converting block data: %w", err)
 				return
 			}
 
 			sub.ch <- BlockDataResponse{
-				Block: block,
+				Header: header,
 			}
 		}
 	}()

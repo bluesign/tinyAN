@@ -74,11 +74,11 @@ func (a *AccessAdapter) GetLatestBlockHeader(_ context.Context, _ bool) (*flowgo
 		return nil, flowgo.BlockStatusUnknown, convertError(err, codes.Internal)
 	}
 	a.logger.Debug().Fields(map[string]any{
-		"blockHeight": block.Header.Height,
-		"blockID":     block.Header.ID().String(),
+		"blockHeight": block.Height,
+		"blockID":     block.ID().String(),
 	}).Msg("🎁  GetLatestBlockHeader called")
 
-	return block.Header, flowgo.BlockStatusSealed, nil
+	return block, flowgo.BlockStatusSealed, nil
 }
 
 func (a *AccessAdapter) GetBlockHeaderByHeight(_ context.Context, height uint64) (*flowgo.Header, flowgo.BlockStatus, error) {
@@ -87,11 +87,11 @@ func (a *AccessAdapter) GetBlockHeaderByHeight(_ context.Context, height uint64)
 		return nil, flowgo.BlockStatusUnknown, convertError(err, codes.Internal)
 	}
 	a.logger.Debug().Fields(map[string]any{
-		"blockHeight": block.Header.Height,
-		"blockID":     block.Header.ID().String(),
+		"blockHeight": block.Height,
+		"blockID":     block.ID().String(),
 	}).Msg("🎁  GetBlockHeaderByHeight called")
 
-	return block.Header, flowgo.BlockStatusSealed, nil
+	return block, flowgo.BlockStatusSealed, nil
 }
 
 func (a *AccessAdapter) GetBlockHeaderByID(_ context.Context, id flowgo.Identifier) (*flowgo.Header, flowgo.BlockStatus, error) {
@@ -102,52 +102,66 @@ func (a *AccessAdapter) GetBlockHeaderByID(_ context.Context, id flowgo.Identifi
 	}
 
 	a.logger.Debug().Fields(map[string]any{
-		"blockHeight": block.Header.Height,
-		"blockID":     block.Header.ID().String(),
+		"blockHeight": block.Height,
+		"blockID":     block.ID().String(),
 	}).Msg("🎁  GetBlockHeaderByID called")
 
-	return block.Header, flowgo.BlockStatusSealed, nil
+	return block, flowgo.BlockStatusSealed, nil
 }
 
 func (a *AccessAdapter) GetLatestBlock(_ context.Context, _ bool) (*flowgo.Block, flowgo.BlockStatus, error) {
-	block, err := a.store.GetLatestBlock()
+	header, err := a.store.GetLatestBlock()
 	if err != nil {
 		return nil, flowgo.BlockStatusUnknown, convertError(err, codes.Internal)
 	}
 
 	a.logger.Debug().Fields(map[string]any{
-		"blockHeight": block.Header.Height,
-		"blockID":     block.Header.ID().String(),
+		"blockHeight": header.Height,
+		"blockID":     header.ID().String(),
 	}).Msg("🎁  GetLatestBlock called")
 
+	//TODO: fill rest
+	block := &flowgo.Block{
+		Header:  header,
+		Payload: &flowgo.Payload{},
+	}
 	return block, flowgo.BlockStatusSealed, nil
 }
 
 func (a *AccessAdapter) GetBlockByHeight(_ context.Context, height uint64) (*flowgo.Block, flowgo.BlockStatus, error) {
-	block, err := a.store.GetBlockByHeight(height)
+	header, err := a.store.GetBlockByHeight(height)
 	if err != nil {
 		return nil, flowgo.BlockStatusUnknown, convertError(err, codes.Internal)
 	}
 
 	a.logger.Debug().Fields(map[string]any{
-		"blockHeight": block.Header.Height,
-		"blockID":     block.Header.ID().String(),
+		"blockHeight": header.Height,
+		"blockID":     header.ID().String(),
 	}).Msg("🎁  getBlockByHeight called")
 
+	//TODO: fill rest
+	block := &flowgo.Block{
+		Header:  header,
+		Payload: &flowgo.Payload{},
+	}
 	return block, flowgo.BlockStatusSealed, nil
 }
 
 func (a *AccessAdapter) GetBlockByID(_ context.Context, id flowgo.Identifier) (*flowgo.Block, flowgo.BlockStatus, error) {
-	block, err := a.store.GetBlockById(id)
+	header, err := a.store.GetBlockById(id)
 	if err != nil {
 		return nil, flowgo.BlockStatusUnknown, convertError(err, codes.Internal)
 	}
 
 	a.logger.Debug().Fields(map[string]any{
-		"blockHeight": block.Header.Height,
-		"blockID":     block.ID().String(),
+		"blockHeight": header.Height,
+		"blockID":     header.ID().String(),
 	}).Msg("🎁  GetBlockByID called")
-
+	//TODO: fill rest
+	block := &flowgo.Block{
+		Header:  header,
+		Payload: &flowgo.Payload{},
+	}
 	return block, flowgo.BlockStatusSealed, nil
 }
 
@@ -204,8 +218,8 @@ func (a *AccessAdapter) GetAccount(ctx context.Context, address flowgo.Address) 
 
 	account, err := a.executor.GetAccount(ctx,
 		address.Bytes(),
-		block.Header.Height,
-		a.store.LedgerSnapshot(block.Header.Height),
+		block.Height,
+		a.store.LedgerSnapshot(block.Height),
 	)
 
 	if err != nil {
@@ -271,10 +285,10 @@ func (a *AccessAdapter) ExecuteScriptAtLatestBlock(
 		return nil, err
 	}
 	a.logger.Debug().
-		Uint64("blockHeight", latestBlock.Header.Height).
+		Uint64("blockHeight", latestBlock.Height).
 		Msg("👤  ExecuteScriptAtLatestBlock called")
 
-	return a.executor.ExecuteScript(ctx, script, arguments, latestBlock.Header.Height, a.store.LedgerSnapshot(latestBlock.Header.Height))
+	return a.executor.ExecuteScript(ctx, script, arguments, latestBlock.Height, a.store.LedgerSnapshot(latestBlock.Height))
 }
 
 func (a *AccessAdapter) ExecuteScriptAtBlockHeight(
@@ -306,7 +320,7 @@ func (a *AccessAdapter) ExecuteScriptAtBlockID(
 		Stringer("blockID", blockID).
 		Msg("👤  ExecuteScriptAtBlockID called")
 
-	return a.executor.ExecuteScript(ctx, script, arguments, block.Header.Height, a.store.LedgerSnapshot(block.Header.Height))
+	return a.executor.ExecuteScript(ctx, script, arguments, block.Height, a.store.LedgerSnapshot(block.Height))
 }
 
 func (a *AccessAdapter) GetEventsForHeightRange(
@@ -328,11 +342,11 @@ func (a *AccessAdapter) GetEventsForHeightRange(
 		if err != nil {
 			continue
 		}
-		events := a.store.EventsByName(block.Header.Height, block.Header.ID(), eventType)
+		events := a.store.EventsByName(block.Height, block.ID(), eventType)
 		results = append(results, flowgo.BlockEvents{
-			BlockID:        block.Header.ID(),
-			BlockHeight:    block.Header.Height,
-			BlockTimestamp: block.Header.Timestamp,
+			BlockID:        block.ID(),
+			BlockHeight:    block.Height,
+			BlockTimestamp: block.Timestamp,
 			Events:         events,
 		})
 	}
@@ -365,11 +379,11 @@ func (a *AccessAdapter) GetEventsForBlockIDs(
 		if err != nil {
 			continue
 		}
-		events := a.store.EventsByName(block.Header.Height, block.Header.ID(), eventType)
+		events := a.store.EventsByName(block.Height, block.ID(), eventType)
 		results = append(results, flowgo.BlockEvents{
-			BlockID:        block.Header.ID(),
-			BlockHeight:    block.Header.Height,
-			BlockTimestamp: block.Header.Timestamp,
+			BlockID:        block.ID(),
+			BlockHeight:    block.Height,
+			BlockTimestamp: block.Timestamp,
 			Events:         events,
 		})
 	}

@@ -40,12 +40,12 @@ func NewHeightBasedStorage(sporks []*SporkStorage) *HeightBasedStorage {
 func (s *HeightBasedStorage) Sporks() []*SporkStorage {
 	return s.sporks
 }
-func (s *HeightBasedStorage) GetBlockByHeight(height uint64) (*flow.Block, error) {
+func (s *HeightBasedStorage) GetBlockByHeight(height uint64) (*flow.Header, error) {
 	storage := s.StorageForHeight(height)
 	return storage.Protocol().GetBlockByHeight(height)
 }
 
-func (s *HeightBasedStorage) GetLatestBlock() (*flow.Block, error) {
+func (s *HeightBasedStorage) GetLatestBlock() (*flow.Header, error) {
 	storage := s.Latest()
 	return storage.Protocol().GetBlockByHeight(storage.LastBlocksHeight())
 }
@@ -69,10 +69,10 @@ func (s *HeightBasedStorage) ByHeightFrom(height uint64, header *flow.Header) (*
 	if err != nil {
 		return nil, err
 	}
-	return block.Header, nil
+	return block, nil
 }
 
-func (s *HeightBasedStorage) GetBlockById(id flow.Identifier) (*flow.Block, error) {
+func (s *HeightBasedStorage) GetBlockById(id flow.Identifier) (*flow.Header, error) {
 	for _, storage := range s.sporks {
 		block, err := storage.Protocol().GetBlockById(id)
 		if err == nil {
