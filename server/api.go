@@ -144,7 +144,7 @@ func (m APIServer) ResourceByType(w http.ResponseWriter, r *http.Request) {
 		height = stringToUint64(heightString)
 	}
 
-	result := m.storage.OwnersByType(t, height)
+	result := m.storage.Latest().Index().OwnersByType(t, height)
 	res := make([]api_result, 0)
 
 	for _, resource := range result {
@@ -187,7 +187,7 @@ func (m APIServer) AddressBalanceHistory(w http.ResponseWriter, r *http.Request)
 		height = stringToUint64(heightString)
 	}
 
-	result := m.storage.BalanceHistoryByAddress(address, t, height)
+	result := m.storage.Latest().Index().BalanceHistoryByAddress(address, t, height)
 	response := results{}
 	response.Results = make([]api_result, 0)
 	for _, v := range result {

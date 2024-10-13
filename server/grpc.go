@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/onflow/flow-go/engine/access/subscription"
 	"net"
 
 	"github.com/bluesign/tinyAN/storage"
@@ -10,22 +11,40 @@ import (
 	"github.com/onflow/flow/protobuf/go/flow/access"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+
+	goAccess "github.com/onflow/flow-go/access"
+	mockModule "github.com/onflow/flow-go/module/mock"
 )
 
 type GRPCServer struct {
-	logger     *zerolog.Logger
+	logger     zerolog.Logger
 	host       string
 	port       int
 	grpcServer *grpc.Server
 	listener   net.Listener
 }
+type mockHeaderCache struct {
+}
 
+func (mockHeaderCache) Get() *flow.Header {
+	return &flow.Header{}
+}
 func NewGRPCServer(chainID flow.ChainID, store *storage.HeightBasedStorage, host string, port int) *GRPCServer {
 	grpcServer := grpc.NewServer()
 
-	logger := &zerolog.Logger{}
+	me := new(mockModule.Local)
+	me.On("NodeID").Return(flow.ZeroID)
 
-	access.RegisterAccessAPIServer(grpcServer, NewHandler(chainID, store))
+	logger := zerolog.Logger{}
+	adapter := &AccessAdapter{
+		logger: logger,
+		store:  store,
+	}
+
+	access.RegisterAccessAPIServer(grpcServer,
+		goAccess.NewHandler(adapter,
+			flow.Mainnet.Chain(), mockHeaderCache{}, me, subscription.DefaultMaxGlobalStreams,
+		))
 
 	return &GRPCServer{
 		logger:     logger,

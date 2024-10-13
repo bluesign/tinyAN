@@ -18,6 +18,10 @@ var (
 	codeCollectionAtBlock byte = 0x12
 
 	codeEvent byte = 0x21
+
+	codeBlockHeightByID byte = 0x31
+	codeBlockByHeight   byte = 0x32
+	codeLastHeight      byte = 0x33
 )
 
 type ProtocolStorage struct {
@@ -100,6 +104,13 @@ func (s *ProtocolStorage) SaveTransaction(blockId flow.Identifier, collectionId 
 	}
 
 	return nil
+}
+
+func (s *ProtocolStorage) GetCollectionById(id flow.Identifier) (*flow.Collection, error) {
+	var collection flow.Collection
+	panic("TODO")
+	err := s.codec.UnmarshalAndGet(s.protocolDB, makePrefix(codeCollection, id), &collection)
+	return &collection, err
 }
 
 func (s *ProtocolStorage) SaveCollection(blockId flow.Identifier, index uint32, collection *flow.Collection) error {
@@ -193,7 +204,7 @@ func (s *ProtocolStorage) TransactionResult(blockId flow.Identifier, collectionI
 	return result, err
 }
 
-func (s *ProtocolStorage) TransactionResultById(blocks *BlocksStorage, transactionId flow.Identifier) (flow.Identifier, uint64, flow.Identifier, flow.LightTransactionResult, error) {
+func (s *ProtocolStorage) TransactionResultById(transactionId flow.Identifier) (flow.Identifier, uint64, flow.Identifier, flow.LightTransactionResult, error) {
 	var location []byte
 	err := s.codec.UnmarshalAndGet(s.protocolDB, makePrefix(codeLatestTransaction, transactionId), &location)
 	if err != nil {
@@ -204,7 +215,7 @@ func (s *ProtocolStorage) TransactionResultById(blocks *BlocksStorage, transacti
 	collectionId, _ := flow.ByteSliceToId(location[33:])
 
 	result, err := s.TransactionResult(blockId, collectionId, transactionId)
-	height, _ := blocks.GetBlockHeightByID(blockId)
+	height, _ := s.GetBlockHeightByID(blockId)
 
 	return blockId, height, collectionId, result, err
 }
@@ -252,4 +263,61 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 		result = append(result, event)
 	}
 	return result
+}
+
+func (s *ProtocolStorage) SaveBlock(block *flow.Block) error {
+	id := block.ID()
+	height := block.Header.Height
+
+	if err := s.codec.MarshalAndSet(s.batch,
+		makePrefix(codeBlockHeightByID, id),
+		b(height),
+	); err != nil {
+		return err
+	}
+
+	if err := s.codec.MarshalAndSet(s.batch,
+		makePrefix(codeBlockByHeight, height),
+		block,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ProtocolStorage) GetBlockHeightByID(id flow.Identifier) (uint64, error) {
+	dbKey := makePrefix(codeBlockHeightByID, b(id))
+	var height uint64
+	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &height)
+	if err != nil {
+		return 0, err
+	}
+	return height, nil
+}
+
+func (s *ProtocolStorage) LastHeight() uint64 {
+	return s.LastProcessedHeight()
+}
+
+func (s *ProtocolStorage) GetLatestBlock() (*flow.Block, error) {
+	height := s.LastHeight()
+	return s.GetBlockByHeight(height)
+}
+
+func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Block, error) {
+	dbKey := makePrefix(codeBlockByHeight, b(height))
+	var block flow.Block
+	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &block)
+	if err != nil {
+		return nil, err
+	}
+	return &block, nil
+}
+
+func (s *ProtocolStorage) GetBlockById(id flow.Identifier) (*flow.Block, error) {
+	height, err := s.GetBlockHeightByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetBlockByHeight(height)
 }

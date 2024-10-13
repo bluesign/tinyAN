@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/rs/zerolog"
 	"log"
 	"time"
 
@@ -18,7 +19,6 @@ func main() {
 }
 
 type Config struct {
-	Port int `default:"9000" flag:"port,p" info:"port to run RPC server"`
 }
 
 var conf Config
@@ -52,8 +52,8 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 	store := storage.NewHeightBasedStorage(
 		[]*storage.SporkStorage{
-			storage.NewSporkStorage("mainnet26", "access.mainnet.nodes.onflow.org:9000", 88226267),
-			storage.NewSporkStorage("mainnet25", "access-001.mainnet25.nodes.onflow.org:9000", 85981135),
+			storage.NewSporkStorage("mainnet-26", "access.mainnet.nodes.onflow.org:9000", 88226267),
+			storage.NewSporkStorage("mainnet-25", "access-001.mainnet25.nodes.onflow.org:9000", 85981135),
 		},
 	)
 
@@ -62,6 +62,12 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	grpcServer := server.NewGRPCServer(chain.ChainID(), store, "0.0.0.0", 9001)
 	go grpcServer.Start()
 	defer grpcServer.Stop()
+
+	access := server.NewAccessAdapter(zerolog.Logger{}, store)
+
+	restServer, _ := server.NewRestServer(zerolog.Logger{}, flow.Mainnet.Chain(), access, "0.0.0.0", 8080, false)
+	go restServer.Start()
+	defer restServer.Stop()
 
 	apiServer := server.NewAPIServer(store)
 	go apiServer.Start()

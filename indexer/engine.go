@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"fmt"
-	"github.com/bluesign/tinyAN/storage"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/onflow/atree"
 	"github.com/onflow/cadence/runtime/common"
@@ -70,11 +69,6 @@ func (r *Resource) SetField(name string, value any) {
 	field := r.Fields[name]
 	field.NewValue = value
 	field.HasUpdated = (field.NewValue != field.OldValue) && (field.OldValue != nil)
-}
-
-type IndexEngine struct {
-	indexDb  *storage.IndexStorage
-	ledgerDb *storage.LedgerStorage
 }
 
 func checkCompositeKeys(address string, v *atree.MapDataSlab) map[string]any {

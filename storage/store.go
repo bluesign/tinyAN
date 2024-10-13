@@ -1,15 +1,23 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/encoding/ccf"
 	jsoncdc "github.com/onflow/cadence/encoding/json"
 	sdk "github.com/onflow/flow-go-sdk"
+	"github.com/onflow/flow-go/access"
+	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module/executiondatasync/execution_data"
+	flowStorage "github.com/onflow/flow-go/storage"
 	"github.com/rs/zerolog"
 	"sync"
 	"time"
 )
+
+type FVMStorageSnapshot interface {
+	Get(id flow.RegisterID) ([]byte, error)
+}
 
 var keyProgress []byte = []byte("lastHeight")
 
@@ -26,6 +34,104 @@ func NewHeightBasedStorage(sporks []*SporkStorage) *HeightBasedStorage {
 	return &HeightBasedStorage{
 		sporks: sporks,
 	}
+}
+
+func (s *HeightBasedStorage) GetBlockByHeight(height uint64) (*flow.Block, error) {
+	storage := s.StorageForHeight(height)
+	return storage.Protocol().GetBlockByHeight(height)
+}
+
+func (s *HeightBasedStorage) GetLatestBlock() (*flow.Block, error) {
+	storage := s.Latest()
+	return storage.Protocol().GetBlockByHeight(storage.LastBlocksHeight())
+}
+
+func (s *HeightBasedStorage) LedgerSnapshot(height uint64) FVMStorageSnapshot {
+	storage := s.StorageForHeight(height)
+	return storage.ledger.StorageSnapshot(height)
+}
+
+func (s *HeightBasedStorage) ByHeightFrom(height uint64, header *flow.Header) (*flow.Header, error) {
+	if header.Height == height {
+		return header, nil
+	}
+
+	if header.Height > height {
+		return nil, flowStorage.ErrNotFound
+	}
+
+	storage := s.StorageForHeight(height)
+	block, err := storage.Protocol().GetBlockByHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	return block.Header, nil
+}
+
+func (s *HeightBasedStorage) GetBlockById(id flow.Identifier) (*flow.Block, error) {
+	for _, storage := range s.sporks {
+		block, err := storage.Protocol().GetBlockById(id)
+		if err == nil {
+			return block, nil
+		}
+	}
+	return nil, fmt.Errorf("block not found")
+}
+
+func (s *HeightBasedStorage) GetCollectionByID(collectionID flow.Identifier) (*flow.Collection, error) {
+	for _, storage := range s.sporks {
+		collection, err := storage.Protocol().GetCollectionById(collectionID)
+		if err == nil {
+			return collection, nil
+		}
+	}
+	return nil, fmt.Errorf("collection not found")
+}
+
+func (s *HeightBasedStorage) GetTransactionById(transactionID flow.Identifier) (*flow.TransactionBody, error) {
+	for _, storage := range s.sporks {
+		transaction, err := storage.Protocol().TransactionById(transactionID)
+		if err == nil {
+			return &transaction, nil
+		}
+	}
+	return nil, fmt.Errorf("transaction not found")
+}
+
+func (s *HeightBasedStorage) EventsByName(height uint64, id flow.Identifier, name string) []flow.Event {
+	storage := s.StorageForHeight(height)
+	return storage.Protocol().EventsByName(id, name)
+}
+
+func (s *HeightBasedStorage) GetTransactionResult(transactionID flow.Identifier) (*access.TransactionResult, error) {
+	for _, storage := range s.sporks {
+		blockId, height, collectionId, result, err := storage.Protocol().TransactionResultById(transactionID)
+		if err == nil {
+			errorMessage := ""
+			statusCode := uint(0)
+			if result.Failed {
+				statusCode = 1
+				errorMessage = "Transaction failed"
+			}
+			events := storage.Protocol().Events(blockId, collectionId, transactionID)
+			for _, event := range events {
+				events = append(events, event)
+			}
+			result := &access.TransactionResult{
+				Status:        flow.TransactionStatusSealed,
+				StatusCode:    statusCode,
+				Events:        events,
+				ErrorMessage:  errorMessage,
+				BlockID:       blockId,
+				TransactionID: result.TransactionID,
+				CollectionID:  collectionId,
+				BlockHeight:   height,
+			}
+
+			return result, nil
+		}
+	}
+	return nil, fmt.Errorf("transaction result not found")
 }
 
 func (s *HeightBasedStorage) Sync() {
@@ -55,7 +161,6 @@ type SporkStorage struct {
 	accessURL   string
 	protocol    *ProtocolStorage
 	ledger      *LedgerStorage
-	blocks      *BlocksStorage
 	index       *IndexStorage
 	evm         *EVMStorage
 
@@ -65,7 +170,6 @@ type SporkStorage struct {
 func NewSporkStorage(spork string, accessURL string, startHeight uint64) *SporkStorage {
 	protocol, _ := NewProtocolStorage(spork, startHeight)
 	ledger, _ := NewLedgerStorage(spork, startHeight)
-	blocks, _ := NewBlocksStorage(spork, startHeight)
 	index, _ := NewIndexStorage(spork, startHeight, ledger)
 	evm, _ := NewEVMStorage(spork, startHeight)
 
@@ -75,10 +179,8 @@ func NewSporkStorage(spork string, accessURL string, startHeight uint64) *SporkS
 		accessURL:   accessURL,
 		protocol:    protocol,
 		ledger:      ledger,
-		blocks:      blocks,
 		index:       index,
 		evm:         evm,
-		progress:    []ProgressTracker{protocol, ledger, blocks, index, evm},
 	}
 }
 
@@ -92,10 +194,6 @@ func (s *SporkStorage) Name() string {
 
 func (s *SporkStorage) Ledger() *LedgerStorage {
 	return s.ledger
-}
-
-func (s *SporkStorage) Blocks() *BlocksStorage {
-	return s.blocks
 }
 
 func (s *SporkStorage) Index() *IndexStorage {
@@ -113,7 +211,6 @@ func (s *SporkStorage) Protocol() *ProtocolStorage {
 func (s *SporkStorage) Close() {
 	s.protocol.Close()
 	s.ledger.Close()
-	s.blocks.Close()
 	s.index.Close()
 	s.evm.Close()
 }
@@ -123,7 +220,7 @@ func (s *SporkStorage) StartHeight() uint64 {
 }
 
 func (s *SporkStorage) LastBlocksHeight() uint64 {
-	return s.blocks.LastHeight()
+	return s.protocol.LastHeight()
 }
 
 func (s *SporkStorage) Bootstrap() {
