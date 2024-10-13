@@ -6,6 +6,7 @@ import (
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/encoding/ccf"
 	jsoncdc "github.com/onflow/cadence/encoding/json"
+	"github.com/onflow/flow-evm-gateway/models"
 	sdk "github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/model/flow"
@@ -348,6 +349,15 @@ func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, 
 		ledger_batch.Commit(pebble.Sync)
 
 	}
+
+	evmBatch := s.evm.NewBatch()
+	cadenceEvents, err := models.NewCadenceEvents(blockEvents)
+	if err != nil {
+		panic(err)
+	}
+	s.evm.SaveBlock(batch, cadenceEvents)
+	evmBatch.Commit(pebble.Sync)
+
 	s.protocol.SaveProgress(batch, height)
 	return nil
 }

@@ -162,6 +162,11 @@ func (s *EVMStorage) SaveBlock(batch *pebble.Batch, evmEvents *models.CadenceEve
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error saving evm block")
 	}
+	err = s.SaveProgress(batch, evmEvents.Block().Height)
+
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error saving evm progress")
+	}
 
 	return nil
 }
