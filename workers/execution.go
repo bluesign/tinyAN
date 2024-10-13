@@ -24,7 +24,8 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 		height = store.StartHeight()
 	}
 
-	if store.EndHeight() > 0 && height == store.EndHeight() {
+	endHeight := store.EndHeight()
+	if endHeight > 0 && height == store.EndHeight() {
 		return
 	}
 
@@ -79,6 +80,9 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 						log.Fatalf("failed to process execution data: %v", err)
 					}
 					height = height + 1
+					if endHeight > 0 && height >= endHeight {
+						return
+					}
 				}
 				if reconnect {
 					break

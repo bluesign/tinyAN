@@ -21,12 +21,13 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 	if height == 0 {
 		height = store.StartHeight()
 	}
-
-	if store.EndHeight() > 0 && height == store.EndHeight() {
+	endHeight := store.EndHeight()
+	if endHeight > 0 && height == store.EndHeight() {
 		return
 	}
 
 	for {
+
 		reconnect := false
 		blockFollower, err := client.NewBlockFollower(
 			store.AccessURL(),
@@ -77,6 +78,9 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 					log.Fatalf("failed to process block data: %v", err)
 				}
 				height = height + 1
+				if endHeight > 0 && height >= endHeight {
+					return
+				}
 			}
 			if reconnect {
 				break
