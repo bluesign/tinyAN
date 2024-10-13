@@ -81,7 +81,7 @@ func (s *ProtocolStorage) SaveTransaction(batch *pebble.Batch, blockId flow.Iden
 	}
 
 	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeTransactionAtCollection, collectionId, transaction),
+		makePrefix(codeTransactionAtCollection, collectionId, transactionId),
 		[]byte{},
 	)
 
