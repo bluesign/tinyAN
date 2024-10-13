@@ -29,11 +29,10 @@ type IndexStorage struct {
 	ledger      *LedgerStorage
 	indexDb     *pebble.DB
 	codec       *Codec
-	batch       *pebble.Batch
 }
 
 func NewIndexStorage(spork string, startHeight uint64, ledger *LedgerStorage) (*IndexStorage, error) {
-	indexDb := MustOpenPebbleDB(fmt.Sprintf("db/tinyIndex_%s", spork))
+	indexDb := MustOpenPebbleDB(fmt.Sprintf("db/Index_%s", spork))
 
 	return &IndexStorage{
 		startHeight: startHeight,
@@ -48,12 +47,7 @@ func (s *IndexStorage) StartHeight() uint64 {
 }
 
 func (s *IndexStorage) NewBatch() *pebble.Batch {
-	s.batch = s.indexDb.NewBatch()
-	return s.batch
-}
-
-func (s *IndexStorage) CommitBatch() error {
-	return s.batch.Commit(pebble.Sync)
+	return s.indexDb.NewBatch()
 }
 
 func (s *IndexStorage) Close() {
@@ -63,43 +57,43 @@ func (s *IndexStorage) Close() {
 	}
 }
 
-func (s *IndexStorage) IndexCheckpoint(payload *ledger.Payload, height uint64) error {
+func (s *IndexStorage) IndexCheckpoint(batch *pebble.Batch, payload *ledger.Payload, height uint64) error {
 	blockResources := make(map[uint64]*indexer.Resource)
 	s.IndexPayload(blockResources, payload, height, true)
-	s.CommitIndex(height, blockResources, false)
+	s.CommitIndex(batch, height, blockResources, false)
 	return nil
 }
 
-func (s *IndexStorage) SetIndex(action byte, address string, uuid uint64, cadenceType string, height uint64, id uint64, balance uint64) error {
+func (s *IndexStorage) SetIndex(batch *pebble.Batch, action byte, address string, uuid uint64, cadenceType string, height uint64, id uint64, balance uint64) error {
 
 	addressBytes := flow.HexToAddress(address).Bytes()
 
 	recHeight := uint64(0xFFFFFFFFFFFFFFFF - height)
 	key := makePrefix(codeAction_index, []byte(addressBytes), recHeight, []byte(cadenceType), uuid)
 	value := makePrefix(action, id, balance)
-	s.indexDb.Set(key, value, pebble.Sync)
+	batch.Set(key, value, pebble.Sync)
 
 	key = makePrefix(codeAction_index_reverse, []byte(cadenceType), []byte(addressBytes), recHeight, uuid)
 	value = makePrefix(action, id, balance)
-	s.indexDb.Set(key, value, pebble.Sync)
+	batch.Set(key, value, pebble.Sync)
 	return nil
 }
 
-func (s *IndexStorage) SetMaps(address string, uuid uint64, cadenceType string, height uint64) error {
+func (s *IndexStorage) SetMaps(batch *pebble.Batch, address string, uuid uint64, cadenceType string, height uint64) error {
 	addressBytes := flow.HexToAddress(address).Bytes()
 
 	recHeight := uint64(0xFFFFFFFFFFFFFFFF - height)
 	key := makePrefix(codeAction_location_by_uuid, uuid, recHeight)
 	value := makePrefix(0x1, []byte(addressBytes))
-	s.indexDb.Set(key, value, pebble.Sync)
+	batch.Set(key, value, pebble.Sync)
 
 	key = makePrefix(codeAction_location_by_type, []byte(cadenceType), recHeight, uuid)
-	s.indexDb.Set(key, value, pebble.Sync)
+	batch.Set(key, value, pebble.Sync)
 
 	return nil
 }
 
-func (s *IndexStorage) CommitIndex(height uint64, blockResources map[uint64]*indexer.Resource, verbose bool) {
+func (s *IndexStorage) CommitIndex(batch *pebble.Batch, height uint64, blockResources map[uint64]*indexer.Resource, verbose bool) {
 	//index chunk resources
 	for _, r := range blockResources {
 		var id uint64 = 0
@@ -118,10 +112,10 @@ func (s *IndexStorage) CommitIndex(height uint64, blockResources map[uint64]*ind
 		//Move
 		if r.Fields["address"].HasUpdated {
 			fmt.Println("MOVE:\t", r.Fields["address"].OldValue, r.Fields["address"].NewValue, r.Uuid, r.TypeName, height, id, balance)
-			s.SetIndex(codeAction_delete, r.Fields["address"].OldValue.(string), r.Uuid, r.TypeName, height, id, balance)
+			s.SetIndex(batch, codeAction_delete, r.Fields["address"].OldValue.(string), r.Uuid, r.TypeName, height, id, balance)
 
-			s.SetIndex(codeAction_new, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
-			s.SetMaps(r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
+			s.SetIndex(batch, codeAction_new, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
+			s.SetMaps(batch, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
 		}
 
 		//Update
@@ -137,14 +131,14 @@ func (s *IndexStorage) CommitIndex(height uint64, blockResources map[uint64]*ind
 			if verbose {
 				fmt.Println("UPDATE:\t", r.Fields["address"].NewValue, updatedFields, r.Uuid, r.TypeName, height, id, balance)
 			}
-			s.SetIndex(codeAction_update, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
-			s.SetMaps(r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
+			s.SetIndex(batch, codeAction_update, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
+			s.SetMaps(batch, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
 		} else {
 			if verbose {
 				fmt.Println("NEW:\t", r.Fields["address"].NewValue, updatedFields, r.Uuid, r.TypeName, height, id, balance)
 			}
-			s.SetIndex(codeAction_new, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
-			s.SetMaps(r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
+			s.SetIndex(batch, codeAction_new, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height, id, balance)
+			s.SetMaps(batch, r.Fields["address"].NewValue.(string), r.Uuid, r.TypeName, height)
 		}
 
 	}
@@ -350,6 +344,7 @@ func (s *IndexStorage) IndexPayload(chunkResources map[uint64]*indexer.Resource,
 
 func (s *IndexStorage) IndexLedger(height uint64, executionData *execution_data.BlockExecutionData) error {
 
+	batch := s.NewBatch()
 	blockResources := make(map[uint64]*indexer.Resource)
 	fmt.Println("=== block ===")
 	for _, chunk := range executionData.ChunkExecutionDatas {
@@ -367,7 +362,7 @@ func (s *IndexStorage) IndexLedger(height uint64, executionData *execution_data.
 		}
 	}
 
-	s.CommitIndex(height, blockResources, true)
-
+	s.CommitIndex(batch, height, blockResources, true)
+	batch.Commit(pebble.Sync)
 	return nil
 }

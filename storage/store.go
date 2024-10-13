@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/cockroachdb/pebble"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/encoding/ccf"
 	jsoncdc "github.com/onflow/cadence/encoding/json"
@@ -227,7 +228,7 @@ func (s *SporkStorage) Bootstrap() {
 	var wg sync.WaitGroup
 	ch := make(chan int)
 
-	for w := 1; w <= 4; w++ {
+	for w := 1; w <= 8; w++ {
 		go s.ledger.importWorker(s.index, s.name, s.startHeight, ch, &wg)
 	}
 
@@ -296,18 +297,20 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 			}
 		}
 
+		batch := s.ledger.NewBatch()
 		for _, payload := range chunk.TrieUpdate.Payloads {
 			if payload == nil {
 				continue
 			}
 
-			err = s.ledger.SavePayload(payload, height)
+			err = s.ledger.SavePayload(batch, payload, height)
 			if err != nil {
 				s.logger.Log().Err(err).Msg("error saving payload")
 				return err
 			}
 
 		}
+		batch.Commit(pebble.Sync)
 
 	}
 	return nil

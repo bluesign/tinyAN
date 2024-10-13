@@ -23,12 +23,11 @@ type LedgerStorage struct {
 	ledgerDb     *pebble.DB
 	checkpointDb *pebble.DB
 	codec        *Codec
-	batch        *pebble.Batch
 }
 
 func NewLedgerStorage(spork string, startHeight uint64) (*LedgerStorage, error) {
-	checkpointDb := MustOpenPebbleDB(fmt.Sprintf("db/tinyCheckpoint_%s", spork))
-	ledgerDb := MustOpenPebbleDB(fmt.Sprintf("db/tinLedger_%s", spork))
+	checkpointDb := MustOpenPebbleDB(fmt.Sprintf("db/Checkpoint_%s", spork))
+	ledgerDb := MustOpenPebbleDB(fmt.Sprintf("db/Ledger_%s", spork))
 
 	return &LedgerStorage{
 		startHeight:  startHeight,
@@ -39,8 +38,8 @@ func NewLedgerStorage(spork string, startHeight uint64) (*LedgerStorage, error) 
 	}, nil
 }
 
-func (s *LedgerStorage) SaveProgress(height uint64) error {
-	return s.codec.MarshalAndSet(s.batch, b(keyProgress), height)
+func (s *LedgerStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
+	return s.codec.MarshalAndSet(batch, b(keyProgress), height)
 }
 
 func (s *LedgerStorage) LastProcessedHeight() uint64 {
@@ -57,12 +56,11 @@ func (s *LedgerStorage) StartHeight() uint64 {
 }
 
 func (s *LedgerStorage) NewBatch() *pebble.Batch {
-	s.batch = s.ledgerDb.NewBatch()
-	return s.batch
+	return s.ledgerDb.NewBatch()
 }
 
-func (s *LedgerStorage) CommitBatch() error {
-	return s.batch.Commit(pebble.Sync)
+func (s *LedgerStorage) NewCheckpointBatch() *pebble.Batch {
+	return s.checkpointDb.NewBatch()
 }
 
 func (s *LedgerStorage) Close() {
@@ -74,13 +72,13 @@ func (s *LedgerStorage) Close() {
 	}
 }
 
-func (s *LedgerStorage) SavePayload(payload *ledger.Payload, height uint64) error {
+func (s *LedgerStorage) SavePayload(batch *pebble.Batch, payload *ledger.Payload, height uint64) error {
 	key, err := payload.Key()
 	if err != nil {
 		return fmt.Errorf("error getting payload key: %w", err)
 	}
 
-	if err := s.codec.MarshalAndSet(s.batch,
+	if err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeLedgerPayload, key.CanonicalForm(), uint64(0xFFFFFFFFFFFFFFFF-height)),
 		payload.Value(),
 	); err != nil {

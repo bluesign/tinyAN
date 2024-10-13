@@ -3,11 +3,13 @@ package storage
 import (
 	"bufio"
 	"fmt"
-	"github.com/onflow/flow-go/ledger/complete/mtrie/flattener"
-	"github.com/onflow/flow-go/ledger/complete/mtrie/node"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/cockroachdb/pebble"
+	"github.com/onflow/flow-go/ledger/complete/mtrie/flattener"
+	"github.com/onflow/flow-go/ledger/complete/mtrie/node"
 )
 
 func importCheckpointSlabs(ledger *LedgerStorage, index *IndexStorage, spork string, sporkHeight uint64, part int) {
@@ -39,8 +41,9 @@ func importCheckpointSlabs(ledger *LedgerStorage, index *IndexStorage, spork str
 	sc := make([]byte, 1024)
 	i := 0
 
-	height = 0 // todo: as we dont know spork height on checkpoint state this is faster
-	ledger.NewBatch()
+	height = sporkHeight
+	batch := ledger.NewCheckpointBatch()
+	indexBatch := index.NewBatch()
 	for {
 		interim, err = bufReader.Peek(51)
 		if err != nil {
@@ -57,20 +60,24 @@ func importCheckpointSlabs(ledger *LedgerStorage, index *IndexStorage, spork str
 
 		payload := storableNode.Payload()
 
-		index.IndexCheckpoint(payload, height)
-		err = ledger.SavePayload(payload, height)
+		index.IndexCheckpoint(indexBatch, payload, height)
+		err = ledger.SavePayload(batch, payload, height)
 		if err != nil {
 			panic(err)
 		}
 		i = i + 1
 		if i%1_000_000 == 0 {
-			fmt.Println(".", part, i/1000_000)
-			ledger.CommitBatch()
-			ledger.NewBatch()
+			log.Print("CheckpointDb :", spork, part, i/1_000_000, height)
+			batch.Commit(pebble.NoSync)
+			batch = ledger.NewCheckpointBatch()
+
+			indexBatch.Commit(pebble.NoSync)
+			indexBatch = index.NewBatch()
 		}
 
 	}
-	ledger.CommitBatch()
+	batch.Commit(pebble.Sync)
+	indexBatch.Commit(pebble.Sync)
 	log.Println("Finished checkpointDb :", spork, part, i)
 
 }

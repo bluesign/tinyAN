@@ -72,10 +72,11 @@ func (c *Codec) Marshal(value interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not encode value: %w", err)
 	}
-
-	var compressed []byte
-	compressed = c.compressor.EncodeAll(data, nil)
-	return compressed, nil
+	return data, nil
+	/*
+		var compressed []byte
+		compressed = c.compressor.EncodeAll(data, nil)
+		return compressed, nil*/
 }
 
 // Decode parses CBOR-encoded data into the given value.
@@ -93,11 +94,11 @@ func (c *Codec) Decompress(compressed []byte) ([]byte, error) {
 // Unmarshal decompresses the given bytes and decodes the resulting CBOR-encoded data into
 // the given value.
 func (c *Codec) Unmarshal(compressed []byte, value interface{}) error {
-	data, err := c.decompressor.DecodeAll(compressed, nil)
+	/*data, err := c.decompressor.DecodeAll(compressed, nil)
 	if err != nil {
 		return fmt.Errorf("could not decompress value: %w", err)
-	}
-	err = c.Decode(data, value)
+	}*/
+	err := c.Decode(compressed, value)
 	if err != nil {
 		return fmt.Errorf("could not decode value: %w", err)
 	}

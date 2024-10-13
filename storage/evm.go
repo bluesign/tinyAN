@@ -36,7 +36,7 @@ type EVMBlock struct {
 }
 
 func NewEVMStorage(spork string, startHeight uint64) (*EVMStorage, error) {
-	evmDb := MustOpenPebbleDB(fmt.Sprintf("db/tinyEVM_%s", spork))
+	evmDb := MustOpenPebbleDB(fmt.Sprintf("db/EVM_%s", spork))
 
 	return &EVMStorage{
 		startHeight: startHeight,
