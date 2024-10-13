@@ -3,7 +3,13 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/onflow/flow-go/engine/access/rest/routes"
+	"github.com/onflow/flow-go/model/flow"
+	"github.com/onflow/flow-go/module"
+	"github.com/onflow/flow-go/module/metrics"
 	"github.com/onflow/go-ethereum/rpc"
+	"github.com/rs/cors"
+	"github.com/rs/zerolog"
 	"net"
 	"net/http"
 
@@ -18,8 +24,11 @@ type APIServer struct {
 	storage    *storage.HeightBasedStorage
 }
 
-func NewAPIServer(storage *storage.HeightBasedStorage) *APIServer {
-	router := mux.NewRouter().StrictSlash(true)
+func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chain, storage *storage.HeightBasedStorage) *APIServer {
+	var restCollector module.RestMetrics = metrics.NewNoopCollector()
+	builder := routes.NewRouterBuilder(logger, restCollector).AddRestRoutes(adapter, chain)
+	router := builder.Build()
+
 	r := &APIServer{
 		router:  router,
 		storage: storage,
@@ -35,9 +44,19 @@ func NewAPIServer(storage *storage.HeightBasedStorage) *APIServer {
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
 	router.HandleFunc("/api/ownerOfUuid", r.OwnerOfUuid)
 
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedHeaders: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodOptions,
+			http.MethodHead},
+	})
+
 	r.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:80"),
-		Handler: router,
+		Handler: c.Handler(router),
 	}
 
 	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 80))

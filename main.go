@@ -71,17 +71,14 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	//bootstrap
 	store.Sync()
 
-	grpcServer := server.NewGRPCServer(chain.ChainID(), store, "0.0.0.0", 9001)
+	access := server.NewAccessAdapter(zerolog.Logger{}, store)
+
+	//start grpc server
+	grpcServer := server.NewGRPCServer(chain.ChainID(), access, "0.0.0.0", 9001)
 	go grpcServer.Start()
 	defer grpcServer.Stop()
 
-	access := server.NewAccessAdapter(zerolog.Logger{}, store)
-
-	restServer, _ := server.NewRestServer(zerolog.Logger{}, chain, access, "0.0.0.0", 8080, false)
-	go restServer.Start()
-	defer restServer.Stop()
-
-	apiServer := server.NewAPIServer(store)
+	apiServer := server.NewAPIServer(zerolog.Logger{}, access, chain, store)
 	go apiServer.Start()
 
 	for _, s := range store.Sporks() {
