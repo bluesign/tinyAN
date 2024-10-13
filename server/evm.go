@@ -107,27 +107,29 @@ func encodeTxFromArgs(args api.TransactionArgs) ([]byte, error) {
 	return enc, nil
 }
 
-func (a *APINamespace) blockNumberToHeight(blockNumber rpc.BlockNumber) uint64 {
+func (a *APINamespace) blockNumberToHeight(blockNumber rpc.BlockNumber) (uint64, error) {
 	if blockNumber < 0 {
-		return a.storage.LastEVMBlockHeight()
+		return a.storage.LastEVMBlockHeight(), nil
 	}
-	return uint64(blockNumber)
+	return uint64(blockNumber), nil
 }
 
-func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumberOrHash) uint64 {
+func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumberOrHash) (uint64, error) {
 	blockNumber, ok := blockNumberOrHash.Number()
 	if ok {
 		return a.blockNumberToHeight(blockNumber)
 	}
 	blockHash, ok := blockNumberOrHash.Hash()
-	if ok {
-		height, err := a.storage.GetEVMHeightFromHash(blockHash)
-		if err != nil {
-			return 0
-		}
-		return height
+	if !ok {
+		return 0, errs.ErrMissingBlock
 	}
-	return 0
+
+	height, err := a.storage.GetEVMHeightFromHash(blockHash)
+	if err != nil {
+		return 0, errs.ErrMissingBlock
+	}
+
+	return height, nil
 }
 
 // GetBlockByNumber returns the requested canonical block.
@@ -138,8 +140,8 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 //   - When fullTx is true all transactions in the block are returned, otherwise
 //     only the transaction hash is returned.
 func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber, full bool) (*api.Block, error) {
-	height := a.blockNumberToHeight(blockNumber)
-	if height == 0 {
+	height, err := a.blockNumberToHeight(blockNumber)
+	if err != nil {
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
 
@@ -219,6 +221,7 @@ func (a *APINamespace) SendRawTransaction(
 	return common.Hash{}, errs.ErrIndexOnlyMode
 }
 
+/*
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
@@ -227,15 +230,15 @@ func (a *APINamespace) GetBalance(
 	address common.Address,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (*hexutil.Big, error) {
-	height := a.blockNumberOrHashToHeight(blockNumberOrHash)
-	if height == 0 {
+	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
+	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrEntityNotFound)
 	}
 
 	balance := big.NewInt(0)
 
 	return (*hexutil.Big)(balance), nil
-}
+}*/
 
 // GetTransactionByHash returns the transaction for the given hash
 func (a *APINamespace) GetTransactionByHash(
@@ -298,8 +301,8 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 	index hexutil.Uint,
 ) (*api.Transaction, error) {
 
-	height := a.blockNumberToHeight(blockNumber)
-	if height == 0 {
+	height, err := a.blockNumberToHeight(blockNumber)
+	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
@@ -370,8 +373,8 @@ func (a *APINamespace) GetBlockReceipts(
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) ([]map[string]interface{}, error) {
 
-	height := a.blockNumberOrHashToHeight(blockNumberOrHash)
-	if height == 0 {
+	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
+	if err != nil {
 		return handleError[[]map[string]interface{}](errs.ErrEntityNotFound)
 	}
 	evmBlock, err := a.storage.GetEvmBlockByHeight(height)
@@ -425,8 +428,8 @@ func (a *APINamespace) GetBlockTransactionCountByNumber(
 	blockNumber rpc.BlockNumber,
 ) (*hexutil.Uint, error) {
 
-	height := a.blockNumberToHeight(blockNumber)
-	if height == 0 {
+	height, err := a.blockNumberToHeight(blockNumber)
+	if err != nil {
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
 

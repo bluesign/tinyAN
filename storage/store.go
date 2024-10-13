@@ -1617,7 +1617,6 @@ func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*EVMBlock, error) 
 		return nil, err
 	}
 	defer closer.Close()
-	fmt.Println(data)
 
 	block := &EVMBlock{}
 	err = s.codec.Decode(data, block)
