@@ -38,6 +38,22 @@ func NewLedgerStorage(spork string, startHeight uint64) (*LedgerStorage, error) 
 	}, nil
 }
 
+func (s *LedgerStorage) MarkBootstrapComplete() {
+	s.checkpointDb.Set(b("bootstrap"), b("done"), pebble.Sync)
+}
+
+func (s *LedgerStorage) IsBootstrapComplete() bool {
+	v, closer, err := s.checkpointDb.Get(b("bootstrap"))
+	if err != nil {
+		return false
+	}
+	defer closer.Close()
+	if string(v) == "done" {
+		return true
+	}
+	return false
+}
+
 func (s *LedgerStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
 	return s.codec.MarshalAndSet(batch, b(keyProgress), height)
 }

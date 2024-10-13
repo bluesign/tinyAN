@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bluesign/tinyAN/workers"
 	"github.com/rs/zerolog"
 	"log"
 	"time"
@@ -57,6 +58,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		},
 	)
 
+	//bootstrap
 	store.Sync()
 
 	grpcServer := server.NewGRPCServer(chain.ChainID(), store, "0.0.0.0", 9001)
@@ -65,12 +67,17 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 	access := server.NewAccessAdapter(zerolog.Logger{}, store)
 
-	restServer, _ := server.NewRestServer(zerolog.Logger{}, flow.Mainnet.Chain(), access, "0.0.0.0", 8080, false)
+	restServer, _ := server.NewRestServer(zerolog.Logger{}, chain, access, "0.0.0.0", 8080, false)
 	go restServer.Start()
 	defer restServer.Stop()
 
 	apiServer := server.NewAPIServer(store)
 	go apiServer.Start()
+
+	for _, s := range store.Sporks() {
+		go workers.UpdateExecution(s, chain)
+		go workers.UpdateBlocks(s, chain)
+	}
 
 	for {
 		time.Sleep(time.Second)

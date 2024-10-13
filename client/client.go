@@ -23,7 +23,7 @@ type BlockFollower struct {
 }
 
 type BlockDataResponse struct {
-	Header *flow.Header
+	Block *flow.Block
 }
 
 func NewBlockFollower(address string, chain flow.Chain, opts ...grpc.DialOption) (*BlockFollower, error) {
@@ -48,14 +48,14 @@ func (c *BlockFollower) SubscribeBlockData(
 	opts ...grpc.CallOption,
 ) (*Subscription[BlockDataResponse], error) {
 
-	req := access.SubscribeBlockHeadersFromStartHeightRequest{
+	req := access.SubscribeBlocksFromStartHeightRequest{
 		StartBlockHeight: startHeight,
 		BlockStatus:      entities.BlockStatus_BLOCK_SEALED,
 	}
 
 	fmt.Println("starting from ", startHeight)
 
-	stream, err := c.client.SubscribeBlockHeadersFromStartHeight(ctx, &req, opts...)
+	stream, err := c.client.SubscribeBlocksFromStartHeight(ctx, &req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,19 +74,15 @@ func (c *BlockFollower) SubscribeBlockData(
 				return
 			}
 
-			blockHeader, err := convert.MessageToBlockHeader(resp.GetHeader())
+			block, err := convert.MessageToBlock(resp.GetBlock())
 			if err != nil {
-				log.Printf("error converting block header data:\n%v", resp.GetHeader())
-				sub.err = fmt.Errorf("error converting block header data: %w", err)
+				log.Printf("error converting block data:\n%v", resp.GetBlock())
+				sub.err = fmt.Errorf("error converting block data: %w", err)
 				return
 			}
 
-			if resp.GetHeader().Height%1000 == 0 {
-				log.Printf("received block header data for block %d %x", resp.Header.Height, resp.Header.Id)
-			}
-
 			sub.ch <- BlockDataResponse{
-				Header: blockHeader,
+				Block: block,
 			}
 		}
 	}()

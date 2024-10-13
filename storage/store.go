@@ -37,6 +37,9 @@ func NewHeightBasedStorage(sporks []*SporkStorage) *HeightBasedStorage {
 	}
 }
 
+func (s *HeightBasedStorage) Sporks() []*SporkStorage {
+	return s.sporks
+}
 func (s *HeightBasedStorage) GetBlockByHeight(height uint64) (*flow.Block, error) {
 	storage := s.StorageForHeight(height)
 	return storage.Protocol().GetBlockByHeight(height)
@@ -137,6 +140,8 @@ func (s *HeightBasedStorage) GetTransactionResult(transactionID flow.Identifier)
 
 func (s *HeightBasedStorage) Sync() {
 	for _, spork := range s.sporks {
+		//TODO: remove me
+		spork.ledger.MarkBootstrapComplete()
 		spork.Bootstrap()
 	}
 }
@@ -225,6 +230,11 @@ func (s *SporkStorage) LastBlocksHeight() uint64 {
 }
 
 func (s *SporkStorage) Bootstrap() {
+
+	if s.ledger.IsBootstrapComplete() {
+		return
+	}
+
 	var wg sync.WaitGroup
 	ch := make(chan int)
 
@@ -239,9 +249,12 @@ func (s *SporkStorage) Bootstrap() {
 
 	wg.Wait()
 	close(ch)
+
+	s.ledger.MarkBootstrapComplete()
+	s.logger.Log().Msg("bootstrap complete")
 }
 
-func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
+func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, executionData *execution_data.BlockExecutionData) error {
 
 	blockEvents := sdk.BlockEvents{
 		BlockID:        sdk.Identifier(executionData.BlockID),
@@ -252,13 +265,13 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 
 	for index, chunk := range executionData.ChunkExecutionDatas {
 
-		err := s.protocol.SaveCollection(executionData.BlockID, uint32(index), chunk.Collection)
+		err := s.protocol.SaveCollection(batch, executionData.BlockID, uint32(index), chunk.Collection)
 		if err != nil {
 			return err
 		}
 
 		for _, transaction := range chunk.Collection.Transactions {
-			err := s.protocol.SaveTransaction(executionData.BlockID, chunk.Collection.ID(), transaction)
+			err := s.protocol.SaveTransaction(batch, executionData.BlockID, chunk.Collection.ID(), transaction)
 			if err != nil {
 				return err
 			}
@@ -284,20 +297,20 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 				Value:         eventValue,
 			})
 
-			err = s.protocol.SaveEvent(height, executionData.BlockID, chunk.Collection.ID(), event)
+			err = s.protocol.SaveEvent(batch, height, executionData.BlockID, chunk.Collection.ID(), event)
 			if err != nil {
 				return err
 			}
 		}
 
 		for _, transactionResult := range chunk.TransactionResults {
-			err := s.protocol.SaveTransactionResult(executionData.BlockID, chunk.Collection.ID(), transactionResult)
+			err := s.protocol.SaveTransactionResult(batch, executionData.BlockID, chunk.Collection.ID(), transactionResult)
 			if err != nil {
 				return err
 			}
 		}
 
-		batch := s.ledger.NewBatch()
+		ledger_batch := s.ledger.NewBatch()
 		for _, payload := range chunk.TrieUpdate.Payloads {
 			if payload == nil {
 				continue
@@ -310,8 +323,10 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 			}
 
 		}
-		batch.Commit(pebble.Sync)
+		s.ledger.SaveProgress(ledger_batch, height)
+		ledger_batch.Commit(pebble.Sync)
 
 	}
+	s.protocol.SaveProgress(batch, height)
 	return nil
 }

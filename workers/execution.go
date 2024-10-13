@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bluesign/tinyAN/client"
 	"github.com/bluesign/tinyAN/storage"
+	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-go/model/flow"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,7 +18,7 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 
 	// Update blocks
 	ctxExecution := context.Background()
-	height := store.Ledger().LastProcessedHeight()
+	height := store.Protocol().LastProcessedHeight()
 	if height == 0 {
 		height = store.StartHeight()
 	}
@@ -63,10 +64,10 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 						log.Fatal("invalid height")
 					}
 
-					store.Ledger().NewBatch()
-					err := store.ProcessExecutionData(response.Height, response.ExecutionData)
+					batch := store.Ledger().NewBatch()
+					err := store.ProcessExecutionData(batch, response.Height, response.ExecutionData)
 					store.Index().IndexLedger(response.Height, response.ExecutionData)
-					store.Ledger().CommitBatch()
+					batch.Commit(pebble.Sync)
 
 					//panic("done")
 					if err != nil {

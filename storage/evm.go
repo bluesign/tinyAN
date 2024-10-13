@@ -26,7 +26,6 @@ type EVMStorage struct {
 	startHeight uint64
 	evmDB       *pebble.DB
 	codec       *Codec
-	batch       *pebble.Batch
 }
 
 type EVMBlock struct {
@@ -45,8 +44,8 @@ func NewEVMStorage(spork string, startHeight uint64) (*EVMStorage, error) {
 	}, nil
 }
 
-func (s *EVMStorage) SaveProgress(height uint64) error {
-	return s.codec.MarshalAndSet(s.batch, b(keyProgress), height)
+func (s *EVMStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
+	return s.codec.MarshalAndSet(batch, b(keyProgress), height)
 }
 
 func (s *EVMStorage) LastProcessedHeight() uint64 {
@@ -63,12 +62,7 @@ func (s *EVMStorage) StartHeight() uint64 {
 }
 
 func (s *EVMStorage) NewBatch() *pebble.Batch {
-	s.batch = s.evmDB.NewBatch()
-	return s.batch
-}
-
-func (s *EVMStorage) CommitBatch() error {
-	return s.batch.Commit(pebble.Sync)
+	return s.evmDB.NewBatch()
 }
 
 func (s *EVMStorage) Close() {
@@ -88,17 +82,17 @@ func (s *EVMStorage) LastHeight() uint64 {
 	return v
 }
 
-func (s *EVMStorage) SaveLastHeight(height uint64) error {
-	return s.codec.MarshalAndSet(s.batch,
+func (s *EVMStorage) SaveLastHeight(batch *pebble.Batch, height uint64) error {
+	return s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMLastHeight),
 		b(height),
 	)
 }
 
-func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
+func (s *EVMStorage) SaveBlock(batch *pebble.Batch, evmEvents *models.CadenceEvents) error {
 
 	for _, transaction := range evmEvents.Transactions() {
-		err := s.codec.MarshalAndSet(s.batch,
+		err := s.codec.MarshalAndSet(batch,
 			makePrefix(codeEVMTransactionIDToCadenceHeight, transaction.Hash()),
 			evmEvents.CadenceHeight(),
 		)
@@ -114,7 +108,7 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 	}
 
 	//insert evm block
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMBlockIDToCadenceHeight, evmBlockHash),
 		evmEvents.CadenceHeight(),
 	)
@@ -122,7 +116,7 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 		s.logger.Log().Err(err).Msg("error saving evm block id to cadence height")
 	}
 
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMBlockIDToEVMHeight, evmBlockHash),
 		evmEvents.Block().Height,
 	)
@@ -130,7 +124,7 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 		s.logger.Log().Err(err).Msg("error saving evm block id to evm height")
 	}
 
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMHeightByCadenceHeight, evmEvents.CadenceHeight()),
 		evmEvents.Block().Height,
 	)
@@ -138,7 +132,7 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 		s.logger.Log().Err(err).Msg("error saving evm height by cadence height")
 	}
 
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMCadenceHeightByEVMHeight, evmEvents.Block().Height),
 		evmEvents.CadenceHeight(),
 	)
@@ -161,7 +155,7 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 		}
 	}
 
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMBlock, evmEvents.Block().Height),
 		block,
 	)

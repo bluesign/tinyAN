@@ -29,7 +29,6 @@ type ProtocolStorage struct {
 	startHeight uint64
 	protocolDB  *pebble.DB
 	codec       *Codec
-	batch       *pebble.Batch
 }
 
 func NewProtocolStorage(spork string, startHeight uint64) (*ProtocolStorage, error) {
@@ -46,8 +45,8 @@ func (s *ProtocolStorage) StartHeight() uint64 {
 	return s.startHeight
 }
 
-func (s *ProtocolStorage) SaveProgress(height uint64) error {
-	return s.codec.MarshalAndSet(s.batch, b(keyProgress), height)
+func (s *ProtocolStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
+	return s.codec.MarshalAndSet(batch, b(keyProgress), height)
 }
 
 func (s *ProtocolStorage) LastProcessedHeight() uint64 {
@@ -60,12 +59,7 @@ func (s *ProtocolStorage) LastProcessedHeight() uint64 {
 }
 
 func (s *ProtocolStorage) NewBatch() *pebble.Batch {
-	s.batch = s.protocolDB.NewBatch()
-	return s.batch
-}
-
-func (s *ProtocolStorage) CommitBatch() error {
-	return s.batch.Commit(pebble.Sync)
+	return s.protocolDB.NewBatch()
 }
 
 func (s *ProtocolStorage) Close() {
@@ -75,10 +69,10 @@ func (s *ProtocolStorage) Close() {
 	}
 }
 
-func (s *ProtocolStorage) SaveTransaction(blockId flow.Identifier, collectionId flow.Identifier, transaction *flow.TransactionBody) error {
+func (s *ProtocolStorage) SaveTransaction(batch *pebble.Batch, blockId flow.Identifier, collectionId flow.Identifier, transaction *flow.TransactionBody) error {
 	transactionId := transaction.ID()
 
-	err := s.codec.MarshalAndSet(s.batch,
+	err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeTransaction, blockId, collectionId, transactionId),
 		transaction,
 	)
@@ -86,7 +80,7 @@ func (s *ProtocolStorage) SaveTransaction(blockId flow.Identifier, collectionId 
 		return err
 	}
 
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeTransactionAtCollection, collectionId, transaction),
 		[]byte{},
 	)
@@ -95,7 +89,7 @@ func (s *ProtocolStorage) SaveTransaction(blockId flow.Identifier, collectionId 
 		return err
 	}
 
-	err = s.codec.MarshalAndSet(s.batch,
+	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeLatestTransaction, transactionId),
 		makePrefix(codeBinary, blockId, collectionId),
 	)
@@ -113,28 +107,28 @@ func (s *ProtocolStorage) GetCollectionById(id flow.Identifier) (*flow.Collectio
 	return &collection, err
 }
 
-func (s *ProtocolStorage) SaveCollection(blockId flow.Identifier, index uint32, collection *flow.Collection) error {
-	err := s.codec.MarshalAndSet(s.batch,
+func (s *ProtocolStorage) SaveCollection(batch *pebble.Batch, blockId flow.Identifier, index uint32, collection *flow.Collection) error {
+	err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeCollection, collection.ID(), blockId),
 		[]byte{},
 	)
 	if err != nil {
 		return err
 	}
-	return s.codec.MarshalAndSet(s.batch,
+	return s.codec.MarshalAndSet(batch,
 		makePrefix(codeCollectionAtBlock, blockId, index, collection.ID()),
 		[]byte{},
 	)
 }
 
-func (s *ProtocolStorage) SaveEvent(cadenceHeight uint64, blockId flow.Identifier, collectionId flow.Identifier, event flow.Event) error {
-	return s.codec.MarshalAndSet(s.batch,
+func (s *ProtocolStorage) SaveEvent(batch *pebble.Batch, cadenceHeight uint64, blockId flow.Identifier, collectionId flow.Identifier, event flow.Event) error {
+	return s.codec.MarshalAndSet(batch,
 		makePrefix(codeEvent, blockId, collectionId, event.TransactionID, event.EventIndex, reverse(string(event.Type))),
 		event)
 }
 
-func (s *ProtocolStorage) SaveTransactionResult(blockId flow.Identifier, collectionId flow.Identifier, transactionResult flow.LightTransactionResult) error {
-	return s.codec.MarshalAndSet(s.batch,
+func (s *ProtocolStorage) SaveTransactionResult(batch *pebble.Batch, blockId flow.Identifier, collectionId flow.Identifier, transactionResult flow.LightTransactionResult) error {
+	return s.codec.MarshalAndSet(batch,
 		makePrefix(codeTransactionResult, blockId, collectionId, transactionResult.TransactionID),
 		transactionResult,
 	)
@@ -265,18 +259,18 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 	return result
 }
 
-func (s *ProtocolStorage) SaveBlock(block *flow.Block) error {
+func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, block *flow.Block) error {
 	id := block.ID()
 	height := block.Header.Height
 
-	if err := s.codec.MarshalAndSet(s.batch,
+	if err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeBlockHeightByID, id),
 		b(height),
 	); err != nil {
 		return err
 	}
 
-	if err := s.codec.MarshalAndSet(s.batch,
+	if err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeBlockByHeight, height),
 		block,
 	); err != nil {
