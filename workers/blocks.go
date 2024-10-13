@@ -22,6 +22,10 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 		height = store.StartHeight()
 	}
 
+	if store.EndHeight() > 0 && height == store.EndHeight() {
+		return
+	}
+
 	for {
 		reconnect := false
 		blockFollower, err := client.NewBlockFollower(

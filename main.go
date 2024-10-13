@@ -53,8 +53,18 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 	store := storage.NewHeightBasedStorage(
 		[]*storage.SporkStorage{
-			storage.NewSporkStorage("mainnet-26", "access.mainnet.nodes.onflow.org:9000", 88226267),
-			storage.NewSporkStorage("mainnet-25", "access-001.mainnet25.nodes.onflow.org:9000", 85981135),
+
+			storage.NewSporkStorage(
+				"mainnet-26",
+				"access.mainnet.nodes.onflow.org:9000",
+				88226267,
+				0),
+
+			storage.NewSporkStorage(
+				"mainnet-25",
+				"access-001.mainnet25.nodes.onflow.org:9000",
+				85981135,
+				88226267),
 		},
 	)
 

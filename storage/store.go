@@ -163,6 +163,7 @@ func (s *HeightBasedStorage) Latest() *SporkStorage {
 type SporkStorage struct {
 	logger      zerolog.Logger
 	startHeight uint64
+	endHeight   uint64
 	name        string
 	accessURL   string
 	protocol    *ProtocolStorage
@@ -173,7 +174,7 @@ type SporkStorage struct {
 	progress []ProgressTracker
 }
 
-func NewSporkStorage(spork string, accessURL string, startHeight uint64) *SporkStorage {
+func NewSporkStorage(spork string, accessURL string, startHeight uint64, endHeight uint64) *SporkStorage {
 	protocol, _ := NewProtocolStorage(spork, startHeight)
 	ledger, _ := NewLedgerStorage(spork, startHeight)
 	index, _ := NewIndexStorage(spork, startHeight, ledger)
@@ -181,6 +182,7 @@ func NewSporkStorage(spork string, accessURL string, startHeight uint64) *SporkS
 
 	return &SporkStorage{
 		startHeight: startHeight,
+		endHeight:   endHeight,
 		name:        spork,
 		accessURL:   accessURL,
 		protocol:    protocol,
@@ -223,6 +225,9 @@ func (s *SporkStorage) Close() {
 
 func (s *SporkStorage) StartHeight() uint64 {
 	return s.startHeight
+}
+func (s *SporkStorage) EndHeight() uint64 {
+	return s.endHeight
 }
 
 func (s *SporkStorage) LastBlocksHeight() uint64 {
