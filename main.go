@@ -78,7 +78,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	access := server.NewAccessAdapter(zerolog.Logger{}, store)
 
 	//start grpc server
-	grpcServer := server.NewGRPCServer(chain.ChainID(), access, "0.0.0.0", 9001)
+	grpcServer := server.NewGRPCServer(chain.ChainID(), access, "0.0.0.0", 9000)
 	go grpcServer.Start()
 	defer grpcServer.Stop()
 
