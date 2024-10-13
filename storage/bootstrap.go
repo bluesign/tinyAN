@@ -68,10 +68,10 @@ func importCheckpointSlabs(ledger *LedgerStorage, index *IndexStorage, spork str
 		i = i + 1
 		if i%1_000_000 == 0 {
 			log.Print("CheckpointDb :", spork, part, i/1_000_000, height)
-			batch.Commit(pebble.NoSync)
+			batch.Commit(pebble.Sync)
 			batch = ledger.NewCheckpointBatch()
 
-			indexBatch.Commit(pebble.NoSync)
+			indexBatch.Commit(pebble.Sync)
 			indexBatch = index.NewBatch()
 		}
 
