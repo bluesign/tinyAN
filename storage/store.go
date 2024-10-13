@@ -156,39 +156,51 @@ func (s *HeightBasedStorage) StorageForHeight(height uint64) *SporkStorage {
 	return storage
 }
 
+func (s *HeightBasedStorage) StorageForEVMHeight(height uint64) *SporkStorage {
+	var storage *SporkStorage
+	for _, spork := range s.sporks {
+		if spork.StartHeight() <= height {
+			storage = spork
+		}
+	}
+	return storage
+}
+
 func (s *HeightBasedStorage) Latest() *SporkStorage {
 	return s.sporks[0]
 }
 
 type SporkStorage struct {
-	logger      zerolog.Logger
-	startHeight uint64
-	endHeight   uint64
-	name        string
-	accessURL   string
-	protocol    *ProtocolStorage
-	ledger      *LedgerStorage
-	index       *IndexStorage
-	evm         *EVMStorage
+	logger         zerolog.Logger
+	startHeight    uint64
+	evmStartHeight uint64
+	endHeight      uint64
+	name           string
+	accessURL      string
+	protocol       *ProtocolStorage
+	ledger         *LedgerStorage
+	index          *IndexStorage
+	evm            *EVMStorage
 
 	progress []ProgressTracker
 }
 
-func NewSporkStorage(spork string, accessURL string, startHeight uint64, endHeight uint64) *SporkStorage {
+func NewSporkStorage(spork string, accessURL string, startHeight uint64, endHeight uint64, evmStartHeight uint64) *SporkStorage {
 	protocol, _ := NewProtocolStorage(spork, startHeight)
 	ledger, _ := NewLedgerStorage(spork, startHeight)
 	index, _ := NewIndexStorage(spork, startHeight, ledger)
 	evm, _ := NewEVMStorage(spork, startHeight)
 
 	return &SporkStorage{
-		startHeight: startHeight,
-		endHeight:   endHeight,
-		name:        spork,
-		accessURL:   accessURL,
-		protocol:    protocol,
-		ledger:      ledger,
-		index:       index,
-		evm:         evm,
+		startHeight:    startHeight,
+		evmStartHeight: evmStartHeight,
+		endHeight:      endHeight,
+		name:           spork,
+		accessURL:      accessURL,
+		protocol:       protocol,
+		ledger:         ledger,
+		index:          index,
+		evm:            evm,
 	}
 }
 
@@ -226,6 +238,10 @@ func (s *SporkStorage) Close() {
 func (s *SporkStorage) StartHeight() uint64 {
 	return s.startHeight
 }
+func (s *SporkStorage) EVMStartHeight() uint64 {
+	return s.evmStartHeight
+}
+
 func (s *SporkStorage) EndHeight() uint64 {
 	return s.endHeight
 }
