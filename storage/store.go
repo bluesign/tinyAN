@@ -16,6 +16,7 @@ import (
 	"github.com/onflow/flow-archive/codec/zbor"
 	"github.com/onflow/flow-evm-gateway/models"
 	sdk "github.com/onflow/flow-go-sdk"
+	gethCommon "github.com/onflow/go-ethereum/common"
 	"reflect"
 	"strings"
 	"sync"
@@ -47,10 +48,12 @@ var (
 	codeBlockHeader             byte = 0xb
 	codeLastBlockHeaderHeight   byte = 0xc
 
-	codeEVMTransaction   byte = 0xd
-	codeEVMBlock         byte = 0xe
-	codeEVMBlockByHeight byte = 0xf
-	codeEVMBlockRaw      byte = 0x10
+	codeEVMTransaction           byte = 0xd
+	codeEVMBlock                 byte = 0xe
+	codeEVMBlockByHeight         byte = 0xf
+	codeEVMBlockRaw              byte = 0x10
+	codeEVMLastBlockHeight       byte = 0x11
+	codeEVMHeightByCadenceHeight byte = 0x12
 
 	codeLedgerPayload byte = 0xf0
 
@@ -1591,6 +1594,23 @@ func (s *ProtocolStorage) GetBlockHeaderByHeight(height uint64) (*flow.Header, e
 
 }
 
+func (s *ProtocolStorage) LastEVMBlockHeight() uint64 {
+	height, err := s.Get(makePrefix(codeEVMLastBlockHeight))
+	if err != nil {
+		return 0
+	}
+	return binary.BigEndian.Uint64(height)
+}
+
+func (s *ProtocolStorage) GetEVMHeightFromHash(hash gethCommon.Hash) (uint64, error) {
+	height, closer, err := s.evmDb.Get(makePrefix(codeEVMBlock, hash))
+	if err != nil {
+		return 0, err
+	}
+	defer closer.Close()
+	return binary.BigEndian.Uint64(height), nil
+}
+
 func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*EVMBlock, error) {
 	data, closer, err := s.evmRawDb.Get(makePrefix(codeEVMBlockRaw, height))
 	if err != nil {
@@ -1606,6 +1626,33 @@ func (s *ProtocolStorage) GetEvmBlockByHeight(height uint64) (*EVMBlock, error) 
 	}
 
 	return block, nil
+}
+
+func (s *ProtocolStorage) GetEVMBlockHeightForTransaction(hash gethCommon.Hash) (uint64, error) {
+	height, closer, err := s.evmDb.Get(makePrefix(codeEVMTransaction, hash))
+	if err != nil {
+		return 0, err
+	}
+	defer closer.Close()
+	return binary.BigEndian.Uint64(height), nil
+}
+
+func (s *ProtocolStorage) GetEVMBlockByCadenceHeight(cadenceHeight uint64) (*EVMBlock, error) {
+	heightBytes, err := s.Get(makePrefix(codeEVMHeightByCadenceHeight, cadenceHeight))
+	if err != nil {
+		return nil, err
+	}
+	height := binary.BigEndian.Uint64(heightBytes)
+
+	return s.GetEvmBlockByHeight(height)
+}
+
+func (s *ProtocolStorage) GetCadenceHeightFromEVMHeight(height uint64) (uint64, error) {
+	heightBytes, err := s.Get(makePrefix(codeEVMBlockByHeight, height))
+	if err != nil {
+		return 0, err
+	}
+	return binary.BigEndian.Uint64(heightBytes), nil
 }
 
 type EVMBlock struct {
@@ -1718,6 +1765,11 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		fmt.Println("save error", err)
 	}
 
+	err = s.evmDb.Set(makePrefix(codeEVMHeightByCadenceHeight, evmEvents.CadenceHeight()), b(evmEvents.Block().Height), pebble.Sync)
+	if err != nil {
+		fmt.Println("save error", err)
+	}
+
 	fmt.Println(evmEvents)
 	transactionBytes := make([][]byte, len(evmEvents.Transactions()))
 
@@ -1746,7 +1798,11 @@ func (s *ProtocolStorage) ProcessExecutionData(height uint64, executionData *exe
 		fmt.Println("save error", err)
 	}
 
-	//update height
+	//update EVM height
+	err = s.evmDb.Set(makePrefix(codeEVMLastBlockHeight), b(evmEvents.Block().Height), pebble.Sync)
+	if err != nil {
+		return err
+	}
 
 	err = s.Set(makePrefix(codeBlock, executionData.BlockID), b(height))
 	if err != nil {
