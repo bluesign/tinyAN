@@ -78,7 +78,9 @@ func (c *BlockFollower) SubscribeBlockData(
 				sub.err = fmt.Errorf("error converting block data: %w", err)
 				return
 			}
-
+			if header.Height%1000 == 0 {
+				log.Printf("received block data for block %d", header.Height)
+			}
 			sub.ch <- BlockDataResponse{
 				Header: header,
 			}
@@ -184,7 +186,9 @@ func (c *ExecutionDataClient) SubscribeExecutionData(
 				return
 			}
 
-			log.Printf("received execution data for block %d %x with %d chunks", resp.BlockHeight, execData.BlockID, len(execData.ChunkExecutionDatas))
+			if resp.BlockHeight%1000 == 0 {
+				log.Printf("received execution data for block %d %x with %d chunks", resp.BlockHeight, execData.BlockID, len(execData.ChunkExecutionDatas))
+			}
 
 			sub.ch <- ExecutionDataResponse{
 				Height:        resp.BlockHeight,
