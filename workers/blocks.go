@@ -19,7 +19,7 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 	ctxBlocks := context.Background()
 	height := store.Ledger().LastProcessedHeight()
 	if height == 0 {
-		height = store.StartHeight()
+		height = store.StartHeight() + 1
 	}
 	endHeight := store.EndHeight()
 	if endHeight > 0 && height == store.EndHeight() {

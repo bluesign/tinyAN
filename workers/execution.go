@@ -21,7 +21,7 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 	height := store.Protocol().LastProcessedHeight()
 
 	if height == 0 {
-		height = store.StartHeight()
+		height = store.StartHeight() + 1
 	}
 
 	endHeight := store.EndHeight()
