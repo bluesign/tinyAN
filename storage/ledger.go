@@ -105,7 +105,6 @@ func (s *LedgerStorage) SavePayload(batch *pebble.Batch, payload *ledger.Payload
 	); err != nil {
 		s.logger.Log().Err(err).Msg("error saving payload")
 		return err
-
 	}
 
 	return nil

@@ -287,7 +287,7 @@ func (a *APINamespace) GetBalance(
 	fmt.Println("CadenceHeight", cadenceHeight)
 	fmt.Println("Snap", snap)
 
-	base, _ := flow.StringToAddress("e467b9dd11fa00df")
+	base, _ := flow.StringToAddress("d421a63faae318f9")
 	fmt.Println("Base", base)
 	bv, err := state.NewBaseView(&ViewOnlyLedger{
 		snapshot: snap,
