@@ -13,7 +13,6 @@ import (
 	"github.com/onflow/flow-go/fvm/evm/emulator/state"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/flow-go/fvm/storage/snapshot"
-	"github.com/onflow/flow-go/ledger/common/convert"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -231,28 +230,13 @@ type ViewOnlyLedger struct {
 }
 
 func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
-	fmt.Println("!!!!!!!!! GetValue called")
-	fmt.Println("Owner", hex.EncodeToString(owner))
-	fmt.Println("Key", flow.BytesToAddress(owner))
-	fmt.Println("Key", string(key))
 
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	fmt.Println("RegisterID", reg)
-
-	lkey := convert.RegisterIDToLedgerKey(reg)
-	for _, part := range lkey.KeyParts {
-		fmt.Println("KeyPart", part)
-	}
-	fmt.Println("Key", lkey)
-	fmt.Println("Key", hex.EncodeToString(lkey.CanonicalForm()))
-	fmt.Println("Key", string(lkey.CanonicalForm()))
-
 	vv, err := v.snapshot.Get(reg)
-	fmt.Println(err)
-	fmt.Println("Value", vv)
+
 	return vv, err
 }
 
@@ -303,7 +287,7 @@ func (a *APINamespace) GetBalance(
 	fmt.Println("CadenceHeight", cadenceHeight)
 	fmt.Println("Snap", snap)
 
-	base, _ := flow.StringToAddress("0xe467b9dd11fa00df")
+	base, _ := flow.StringToAddress("e467b9dd11fa00df")
 	fmt.Println("Base", base)
 	bv, err := state.NewBaseView(&ViewOnlyLedger{
 		snapshot: snap,

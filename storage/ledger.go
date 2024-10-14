@@ -10,6 +10,7 @@ import (
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -121,13 +122,25 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	var v []byte
 	var k []byte
 
+	debug := false
+	if strings.Contains(string(key.CanonicalForm()), "AccountsStorageIDKey") {
+		fmt.Println("Key", key.CanonicalForm())
+		debug = true
+	}
+
 	for _, db := range s.databases {
+		if debug {
+			fmt.Println("DB", db)
+		}
 		iter, _ := db.NewIter(options)
 
 		for iter.SeekGE(preFixHeight); iter.Valid(); iter.Next() {
 			k = iter.Key()
 			v = iter.Value()
 
+			if debug {
+				fmt.Println("Key", k)
+			}
 			if !bytes.HasPrefix(k, prefix) {
 				break
 			}
