@@ -43,6 +43,7 @@ func (s *HeightBasedStorage) Sporks() []*SporkStorage {
 }
 func (s *HeightBasedStorage) GetBlockByHeight(height uint64) (*flow.Header, error) {
 	storage := s.StorageForHeight(height)
+	fmt.Println("storage", storage.Name())
 	return storage.Protocol().GetBlockByHeight(height)
 }
 
