@@ -86,7 +86,9 @@ func (e *ScriptExecutor) Setup(blocks FVMBlocks, chainID string) error {
 }
 
 func (e *ScriptExecutor) ExecuteScript(ctx context.Context, script []byte, args [][]byte, blockHeight uint64, snapshot FVMStorageSnapshot) ([]byte, error) {
-	header, err := e.blocks.ByHeightFrom(blockHeight, &flow.Header{})
+	header, err := e.blocks.ByHeightFrom(blockHeight, &flow.Header{
+		Height: blockHeight + 1,
+	})
 
 	if err != nil {
 		return nil, err
