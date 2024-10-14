@@ -94,6 +94,16 @@ func (s *HeightBasedStorage) GetBlockById(id flow.Identifier) (*flow.Header, err
 	return nil, fmt.Errorf("block not found")
 }
 
+func (s *HeightBasedStorage) TransactionsAtCollection(id flow.Identifier) ([]flow.Identifier, error) {
+	for _, storage := range s.sporks {
+		transactions := storage.Protocol().TransactionsAtCollection(id)
+		if len(transactions) > 0 {
+			return transactions, nil
+		}
+	}
+	return []flow.Identifier{}, nil
+}
+
 func (s *HeightBasedStorage) GetCollectionByID(collectionID flow.Identifier) (*flow.Collection, error) {
 	for _, storage := range s.sporks {
 		collection, err := storage.Protocol().GetCollectionById(collectionID)

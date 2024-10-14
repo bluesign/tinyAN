@@ -202,7 +202,14 @@ func (a *AccessAdapter) GetBlockByID(_ context.Context, id flowgo.Identifier) (*
 }
 
 func (a *AccessAdapter) GetCollectionByID(_ context.Context, id flowgo.Identifier) (*flowgo.LightCollection, error) {
-	return nil, fmt.Errorf("not implemented")
+	transactionsAtCollection, err := a.store.TransactionsAtCollection(id)
+	if err != nil {
+		return nil, convertError(err, codes.Internal)
+	}
+	light := &flowgo.LightCollection{
+		Transactions: transactionsAtCollection,
+	}
+	return light, nil
 }
 
 func (a *AccessAdapter) GetFullCollectionByID(_ context.Context, id flowgo.Identifier) (*flowgo.Collection, error) {
