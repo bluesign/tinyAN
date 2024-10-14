@@ -10,6 +10,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/api"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
+	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	"github.com/onflow/flow-go/fvm/evm/emulator/state"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/flow-go/fvm/storage/snapshot"
@@ -18,6 +19,7 @@ import (
 	"github.com/onflow/go-ethereum/common/hexutil"
 	"github.com/onflow/go-ethereum/common/math"
 	"github.com/onflow/go-ethereum/core/types"
+	types2 "github.com/onflow/go-ethereum/core/types"
 	"github.com/onflow/go-ethereum/rlp"
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
@@ -98,6 +100,39 @@ func encodeTxFromArgs(args api.TransactionArgs) ([]byte, error) {
 	}
 
 	return enc, nil
+}
+
+func txFromArgs(args api.TransactionArgs) (*types2.Transaction, error) {
+	var data []byte
+	if args.Data != nil {
+		data = *args.Data
+	} else if args.Input != nil {
+		data = *args.Input
+	}
+
+	// provide a high enough gas for the tx to be able to execute,
+	// capped by the gas set in transaction args.
+	gasLimit := blockGasLimit
+	if args.Gas != nil {
+		gasLimit = uint64(*args.Gas)
+	}
+
+	value := big.NewInt(0)
+	if args.Value != nil {
+		value = args.Value.ToInt()
+	}
+
+	return types.NewTx(
+		&types.LegacyTx{
+			Nonce:    0,
+			To:       args.To,
+			Value:    value,
+			Gas:      gasLimit,
+			GasPrice: big.NewInt(0),
+			Data:     data,
+		},
+	), nil
+
 }
 
 func (a *APINamespace) blockNumberToHeight(blockNumber rpc.BlockNumber) (uint64, error) {
@@ -538,7 +573,6 @@ func (a *APINamespace) GetBlockTransactionCountByNumber(
 	return &count, nil
 }
 
-/*
 // Call executes the given transaction on the state for the given block number.
 // Additionally, the caller can specify a batch of contract for fields overriding.
 // Note, this function doesn't make and changes in the state/blockchain and is
@@ -555,20 +589,29 @@ func (a *APINamespace) Call(
 	if err != nil {
 		return handleError[hexutil.Bytes](err)
 	}
-
-	evmHeight := uint64(0)
-	// Default to "latest" block tag
 	if blockNumberOrHash == nil {
-		evmHeight = a.storage.LastEVMBlockHeight()
-	} else {
-		evmHeight = a.blockNumberOrHashToHeight(*blockNumberOrHash)
+		latest := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
+		blockNumberOrHash = &latest
 	}
-
-	if evmHeight == 0 {
+	height, err := a.blockNumberOrHashToHeight(*blockNumberOrHash)
+	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
 	}
 
-	tx, err := encodeTxFromArgs(args)
+	store := a.storage.StorageForEVMHeight(height)
+	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	snap := a.storage.LedgerSnapshot(cadenceHeight)
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
+		snapshot: snap,
+	}, base)
+
+	rbv, err := emulator.NewBlockView(evmTypes.NewDefaultBlockContext(height))
+
+	tx, err := txFromArgs(args)
 	if err != nil {
 		return handleError[hexutil.Bytes](err)
 	}
@@ -579,14 +622,14 @@ func (a *APINamespace) Call(
 		from = *args.From
 	}
 
-	res, err := a.evm.Call(ctx, tx, from, evmHeight)
+	result, err := rbv.DryRunTransaction(tx, from)
+
 	if err != nil {
 		return handleError[hexutil.Bytes](err)
 	}
 
-	return res, nil
+	return result.ReturnedData, nil
 }
-*/
 
 /*
 // GetLogs returns logs matching the given argument that are stored within the state.
