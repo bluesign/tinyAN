@@ -58,7 +58,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 			storage.NewSporkStorage(
 				"mainnet-26",
-				"access-001.mainnet26.nodes.onflow.org:9000",
+				"access-007.mainnet26.nodes.onflow.org:9000",
 				88226267,
 				0,
 				0,
@@ -90,7 +90,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	for i, s := range store.Sporks() {
 		fmt.Println("Starting worker for ", s.Name(), i)
 		go workers.UpdateExecution(s, chain)
-		//go workers.UpdateBlocks(s, chain)
+		go workers.UpdateBlocks(s, chain)
 	}
 
 	for {
