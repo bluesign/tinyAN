@@ -55,13 +55,15 @@ func (s *LedgerStorage) IsBootstrapComplete() bool {
 }
 
 func (s *LedgerStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
-	return s.codec.MarshalAndSet(batch, b(keyProgress), height)
+	return s.codec.MarshalAndSet(batch, keyProgress, height)
 }
 
 func (s *LedgerStorage) LastProcessedHeight() uint64 {
 	var height uint64
-	err := s.codec.UnmarshalAndGet(s.ledgerDb, b(keyProgress), height)
+	err := s.codec.UnmarshalAndGet(s.ledgerDb, keyProgress, &height)
+	fmt.Println("LastProcessedHeight", height)
 	if err != nil {
+		fmt.Println(err)
 		return 0
 	}
 	return height

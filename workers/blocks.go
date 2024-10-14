@@ -11,13 +11,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"log"
+	"strings"
 	"time"
 )
 
 func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 	// Update blocks
 	ctxBlocks := context.Background()
-	height := store.Ledger().LastProcessedHeight()
+	height := store.Protocol().LastProcessedHeight()
 	if height == 0 {
 		height = store.StartHeight() + 1
 	}
@@ -25,7 +26,7 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 	if endHeight > 0 && height == store.EndHeight() {
 		return
 	}
-
+	fmt.Println("Starting BlockFollower from height", height)
 	for {
 
 		reconnect := false
@@ -53,7 +54,10 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 				return
 			case response, ok := <-subBlock.Channel():
 				if subBlock.Err() != nil || !ok {
-
+					if strings.Contains(subBlock.Err().Error(), "Unimplemented") {
+						fmt.Println("BlockFollower endpoint not implemented, skipping")
+						return
+					}
 					fmt.Println("Reconnecting to BlockFollower", subBlock.Err())
 					time.Sleep(5 * time.Second)
 					reconnect = true

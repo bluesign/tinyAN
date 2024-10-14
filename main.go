@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/bluesign/tinyAN/workers"
-	"github.com/rs/zerolog"
+	"fmt"
 	"log"
 	"time"
+
+	"github.com/bluesign/tinyAN/workers"
+	"github.com/rs/zerolog"
 
 	"github.com/bluesign/tinyAN/server"
 	"github.com/bluesign/tinyAN/storage"
@@ -85,9 +87,13 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	apiServer := server.NewAPIServer(zerolog.Logger{}, access, chain, store)
 	go apiServer.Start()
 
-	for _, s := range store.Sporks() {
-		go workers.UpdateExecution(s, chain)
-		go workers.UpdateBlocks(s, chain)
+	for i, s := range store.Sporks() {
+		fmt.Println("Starting worker for ", s.Name(), i)
+		if i == 1 {
+			go workers.UpdateExecution(s, chain)
+			go workers.UpdateBlocks(s, chain)
+			break
+		}
 	}
 
 	for {

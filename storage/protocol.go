@@ -51,7 +51,7 @@ func (s *ProtocolStorage) SaveProgress(batch *pebble.Batch, height uint64) error
 
 func (s *ProtocolStorage) LastProcessedHeight() uint64 {
 	var height uint64
-	err := s.codec.UnmarshalAndGet(s.protocolDB, b(keyProgress), height)
+	err := s.codec.UnmarshalAndGet(s.protocolDB, b(keyProgress), &height)
 	if err != nil {
 		return 0
 	}
@@ -276,6 +276,9 @@ func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, header *flow.Header) er
 	); err != nil {
 		return err
 	}
+
+	s.SaveProgress(batch, height)
+
 	return nil
 }
 
