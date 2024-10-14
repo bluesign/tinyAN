@@ -6,10 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
+	"github.com/onflow/atree"
 	"github.com/onflow/flow-evm-gateway/api"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
+	"github.com/onflow/flow-go/fvm/evm/emulator/state"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
+	"github.com/onflow/flow-go/fvm/storage/snapshot"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -221,7 +224,35 @@ func (a *APINamespace) SendRawTransaction(
 	return common.Hash{}, errs.ErrIndexOnlyMode
 }
 
-/*
+type ViewOnlyLedger struct {
+	snapshot snapshot.StorageSnapshot
+}
+
+func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
+	return v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
+}
+
+func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
+	fmt.Println("!!!!!!!!! SetValue called")
+	return nil
+}
+
+func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
+	_, err = v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (v ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error) {
+	fmt.Println("!!!!!!!!! AllocateSlabIndex called")
+	return atree.SlabIndex{}, nil
+
+}
+
+var _ atree.Ledger = (*ViewOnlyLedger)(nil)
+
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
@@ -235,10 +266,23 @@ func (a *APINamespace) GetBalance(
 		return handleError[*hexutil.Big](errs.ErrEntityNotFound)
 	}
 
-	balance := big.NewInt(0)
+	store := a.storage.StorageForEVMHeight(height)
+	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	snap := store.Ledger().StorageSnapshot(cadenceHeight)
 
-	return (*hexutil.Big)(balance), nil
-}*/
+	base, _ := flow.StringToAddress("0xe467b9dd11fa00df")
+	bv, err := state.NewBaseView(&ViewOnlyLedger{
+		snapshot: snap,
+	}, base)
+	if err != nil {
+		return nil, err
+	}
+	bal, err := bv.GetBalance(address)
+	if err != nil {
+		return nil, err
+	}
+	return (*hexutil.Big)(bal.ToBig()), nil
+}
 
 // GetTransactionByHash returns the transaction for the given hash
 func (a *APINamespace) GetTransactionByHash(
