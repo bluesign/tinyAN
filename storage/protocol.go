@@ -269,7 +269,10 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 	return result
 }
 
-func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, header *flow.Header) error {
+func (s *ProtocolStorage) SaveBlock(header *flow.Header) error {
+	batch := s.protocolDB.NewBatch()
+	defer batch.Commit(pebble.Sync)
+
 	id := header.ID()
 	height := header.Height
 

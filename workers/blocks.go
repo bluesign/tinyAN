@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/bluesign/tinyAN/client"
 	"github.com/bluesign/tinyAN/storage"
-	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-go/model/flow"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -72,9 +71,7 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 					log.Fatal("invalid height", height, response.Header.Height)
 				}
 
-				batch := store.Protocol().NewBatch()
-				err = store.Protocol().SaveBlock(batch, response.Header)
-				batch.Commit(pebble.Sync)
+				err = store.Protocol().SaveBlock(response.Header)
 
 				if err != nil {
 					log.Fatalf("failed to process block header: %v", err)

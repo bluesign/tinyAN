@@ -345,6 +345,8 @@ func (s *IndexStorage) IndexPayload(chunkResources map[uint64]*indexer.Resource,
 func (s *IndexStorage) IndexLedger(height uint64, executionData *execution_data.BlockExecutionData) error {
 
 	batch := s.NewBatch()
+	defer batch.Commit(pebble.Sync)
+
 	blockResources := make(map[uint64]*indexer.Resource)
 	for _, chunk := range executionData.ChunkExecutionDatas {
 
@@ -361,6 +363,6 @@ func (s *IndexStorage) IndexLedger(height uint64, executionData *execution_data.
 	}
 
 	s.CommitIndex(batch, height, blockResources, true)
-	batch.Commit(pebble.Sync)
+
 	return nil
 }
