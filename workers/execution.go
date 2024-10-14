@@ -56,7 +56,7 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 					return
 				case response, ok := <-subExec.Channel():
 					if subExec.Err() != nil || !ok {
-						fmt.Println("Reconnecting to ExecutionData")
+						fmt.Println("Reconnecting to ExecutionData", subExec.Err())
 						time.Sleep(5 * time.Second)
 						reconnect = true
 						break
