@@ -376,17 +376,17 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 	}
 
 	cadenceEvents, err := models.NewCadenceEvents(blockEvents)
-	fmt.Println(cadenceEvents.Block())
 	if err != nil {
 		panic(err)
 	}
-	err = s.evm.SaveBlock(cadenceEvents)
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving evm block")
+	if cadenceEvents.Block() != nil {
+		err = s.evm.SaveBlock(cadenceEvents)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error saving evm block")
+		}
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error committing evm batch")
+		}
 	}
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error committing evm batch")
-	}
-
 	return nil
 }
