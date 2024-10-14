@@ -15,9 +15,6 @@ import (
 )
 
 func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
-	if true {
-		return
-	}
 
 	// Update blocks
 	ctxExecution := context.Background()
