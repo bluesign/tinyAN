@@ -138,6 +138,11 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	}
 
 	block := models.GenesisBlock(flow.Mainnet)
+	evmBlock := &storage.EVMBlock{
+		Block:        block,
+		Transactions: [][]byte{},
+		Receipts:     []*models.Receipt{},
+	}
 	if height > 0 {
 		evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 		if err != nil {
