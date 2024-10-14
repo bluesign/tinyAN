@@ -356,7 +356,7 @@ func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, 
 	if err != nil {
 		panic(err)
 	}
-	err = s.evm.SaveBlock(batch, cadenceEvents)
+	err = s.evm.SaveBlock(evmBatch, cadenceEvents)
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error saving evm block")
 	}
