@@ -992,7 +992,7 @@ func (a *APINamespace) Coinbase(ctx context.Context) (common.Address, error) {
 
 // GasPrice returns a suggestion for a gas price for legacy transactions.
 func (a *APINamespace) GasPrice(ctx context.Context) (*hexutil.Big, error) {
-	return (*hexutil.Big)(big.NewInt(0.0)), nil
+	return (*hexutil.Big)(big.NewInt(0)), nil
 }
 
 // GetUncleCountByBlockHash returns number of uncles in the block for the given block hash
