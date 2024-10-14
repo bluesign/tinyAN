@@ -286,7 +286,9 @@ func (s *SporkStorage) Bootstrap() {
 	s.logger.Log().Msg("bootstrap complete")
 }
 
-func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, executionData *execution_data.BlockExecutionData) error {
+func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execution_data.BlockExecutionData) error {
+	batch := s.protocol.NewBatch()
+	defer batch.Commit(pebble.Sync)
 
 	blockEvents := sdk.BlockEvents{
 		BlockID:        sdk.Identifier(executionData.BlockID),
