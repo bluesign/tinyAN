@@ -230,7 +230,14 @@ type ViewOnlyLedger struct {
 }
 
 func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
-	return v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
+	fmt.Println("!!!!!!!!! GetValue called")
+	fmt.Println("Owner", hex.EncodeToString(owner))
+	fmt.Println("Key", hex.EncodeToString(key))
+
+	vv, err := v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
+	fmt.Println(err)
+	fmt.Println("Value", vv)
+	return vv, err
 }
 
 func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
