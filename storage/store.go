@@ -352,7 +352,6 @@ func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, 
 
 	evmBatch := s.evm.NewBatch()
 	cadenceEvents, err := models.NewCadenceEvents(blockEvents)
-	fmt.Println("evm Block", cadenceEvents.Block().Height)
 	if err != nil {
 		panic(err)
 	}
