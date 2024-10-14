@@ -116,6 +116,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	prefix := makePrefix(codeLedgerPayload, key.CanonicalForm())
 	preFixHeight := makePrefix(codeLedgerPayload, key.CanonicalForm(), uint64(0xFFFFFFFFFFFFFFFF-height))
 
+	fmt.Println("Key", key.CanonicalForm())
 	options := &pebble.IterOptions{}
 	var v []byte
 	var k []byte
