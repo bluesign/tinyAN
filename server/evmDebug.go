@@ -2,9 +2,13 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/bluesign/tinyAN/storage"
+	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
+	"github.com/onflow/go-ethereum/common/hexutil"
+	"github.com/onflow/go-ethereum/crypto"
 	"os"
 
 	"github.com/goccy/go-json"
@@ -111,4 +115,71 @@ func (d *DebugAPI) traceBlock(
 	}
 
 	return results, nil
+}
+
+// NetAPI offers network related RPC methods
+type NetAPI struct {
+}
+
+// Listening returns an indication if the node is
+// listening for network connections.
+func (s *NetAPI) Listening() bool {
+	return true // always listening
+}
+
+// PeerCount returns the number of connected peers
+func (s *NetAPI) PeerCount() hexutil.Uint {
+	return 1
+}
+
+// Version returns the current ethereum protocol version.
+func (s *NetAPI) Version() string {
+	return fmt.Sprintf("%d", EVMMainnetChainID.Int64())
+}
+
+// Web3API offers helper utils
+type Web3API struct{}
+
+// ClientVersion returns the node name
+func (s *Web3API) ClientVersion() string {
+	return fmt.Sprintf("tinyAN@beta")
+}
+
+// Sha3 applies the ethereum sha3 implementation on the input.
+// It assumes the input is hex encoded.
+func (s *Web3API) Sha3(input hexutil.Bytes) hexutil.Bytes {
+	return crypto.Keccak256(input)
+}
+
+type TxPool struct{}
+
+type content struct {
+	Pending any
+	Queued  any
+}
+
+func emptyPool() content {
+	return content{
+		Pending: struct{}{},
+		Queued:  struct{}{},
+	}
+}
+
+func (s *TxPool) Content() content {
+	return emptyPool()
+}
+
+func (s *TxPool) ContentFrom(addr common.Address) content {
+	return emptyPool()
+}
+
+func (s *TxPool) Status() map[string]hexutil.Uint {
+	return map[string]hexutil.Uint{
+		"pending": hexutil.Uint(0),
+		"queued":  hexutil.Uint(0),
+	}
+}
+
+func (s *TxPool) Inspect() content {
+	return emptyPool()
 }

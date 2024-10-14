@@ -35,13 +35,11 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	}
 
 	rpcServer := rpc.NewServer()
-	rpcServer.RegisterName("eth", &APINamespace{
-		storage: storage,
-	})
-
-	rpcServer.RegisterName("eth", &DebugAPI{
-		storage: storage,
-	})
+	rpcServer.RegisterName("eth", &APINamespace{storage: storage})
+	rpcServer.RegisterName("debug", &DebugAPI{store: storage})
+	rpcServer.RegisterName("net", &NetAPI{})
+	rpcServer.RegisterName("web3", &Web3API{})
+	rpcServer.RegisterName("txpool", &TxPool{})
 
 	router.HandleFunc("/", rpcServer.ServeHTTP)
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
