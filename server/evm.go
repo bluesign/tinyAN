@@ -13,6 +13,7 @@ import (
 	"github.com/onflow/flow-go/fvm/evm/emulator/state"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/flow-go/fvm/storage/snapshot"
+	"github.com/onflow/flow-go/ledger/common/convert"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -235,7 +236,15 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	fmt.Println("Key", flow.BytesToAddress(owner))
 	fmt.Println("Key", string(key))
 
-	vv, err := v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
+	reg := flow.NewRegisterID(flow.BytesToAddress(owner), string(key))
+	fmt.Println("RegisterID", reg)
+
+	lkey := convert.RegisterIDToLedgerKey(reg)
+
+	fmt.Println("Key", hex.EncodeToString(lkey.CanonicalForm()))
+	fmt.Println("Key", lkey.CanonicalForm())
+
+	vv, err := v.snapshot.Get(reg)
 	fmt.Println(err)
 	fmt.Println("Value", vv)
 	return vv, err
@@ -280,7 +289,7 @@ func (a *APINamespace) GetBalance(
 
 	store := a.storage.StorageForEVMHeight(height)
 	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
-	snap := store.Ledger().StorageSnapshot(cadenceHeight)
+	snap := a.storage.LedgerSnapshot(cadenceHeight)
 
 	fmt.Println("Address", address)
 
