@@ -60,9 +60,6 @@ func (s *HeightBasedStorage) LedgerSnapshot(height uint64) FVMStorageSnapshot {
 
 func (s *HeightBasedStorage) ByHeightFrom(height uint64, header *flow.Header) (*flow.Header, error) {
 	fmt.Println("ByHeightFrom", height)
-	if header.Height == height {
-		return header, nil
-	}
 
 	if header.Height > height {
 		return nil, flowStorage.ErrNotFound

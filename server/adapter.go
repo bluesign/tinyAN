@@ -332,7 +332,7 @@ func (a *AccessAdapter) ExecuteScriptAtLatestBlock(
 		Uint64("blockHeight", latestBlock.Height).
 		Msg("👤  ExecuteScriptAtLatestBlock called")
 
-	return a.executor.ExecuteScript(ctx, script, arguments, latestBlock, a.store.LedgerSnapshot(latestBlock.Height))
+	return a.executor.ExecuteScript(ctx, script, arguments, latestBlock.Height, a.store.LedgerSnapshot(latestBlock.Height))
 }
 
 func (a *AccessAdapter) ExecuteScriptAtBlockHeight(
@@ -345,12 +345,7 @@ func (a *AccessAdapter) ExecuteScriptAtBlockHeight(
 		Uint64("blockHeight", blockHeight).
 		Msg("👤  ExecuteScriptAtBlockHeight called")
 
-	block, err := a.store.GetBlockByHeight(blockHeight)
-	if err != nil {
-		return nil, err
-	}
-
-	return a.executor.ExecuteScript(ctx, script, arguments, block, a.store.LedgerSnapshot(blockHeight))
+	return a.executor.ExecuteScript(ctx, script, arguments, blockHeight, a.store.LedgerSnapshot(blockHeight))
 }
 
 func (a *AccessAdapter) ExecuteScriptAtBlockID(
@@ -369,7 +364,7 @@ func (a *AccessAdapter) ExecuteScriptAtBlockID(
 		Stringer("blockID", blockID).
 		Msg("👤  ExecuteScriptAtBlockID called")
 
-	return a.executor.ExecuteScript(ctx, script, arguments, block, a.store.LedgerSnapshot(block.Height))
+	return a.executor.ExecuteScript(ctx, script, arguments, block.Height, a.store.LedgerSnapshot(block.Height))
 }
 
 func (a *AccessAdapter) GetEventsForHeightRange(
