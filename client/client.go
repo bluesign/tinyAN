@@ -175,7 +175,7 @@ func (c *ExecutionDataClient) SubscribeExecutionData(
 				return
 			}
 			if err != nil {
-				sub.err = fmt.Errorf("error receiving execution data: %w [%d]", err, startBlockID)
+				sub.err = fmt.Errorf("error receiving execution data: %w [%d]", err, startHeight)
 				return
 			}
 
