@@ -377,7 +377,8 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 
 	cadenceEvents, err := models.NewCadenceEvents(blockEvents)
 	if err != nil {
-		panic(err)
+		s.logger.Log().Err(err).Msg("error creating cadence events")
+		return nil
 	}
 	if cadenceEvents.Block() != nil {
 		err = s.evm.SaveBlock(cadenceEvents)
