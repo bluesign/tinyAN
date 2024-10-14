@@ -136,6 +136,14 @@ func txFromArgs(args api.TransactionArgs) (*types2.Transaction, error) {
 
 }
 
+// BlockNumber returns the block number of the chain head.
+func (a *APINamespace) BlockNumber(ctx context.Context) (hexutil.Uint64, error) {
+
+	latestBlockHeight := a.storage.Latest().EVM().LastProcessedHeight()
+
+	return hexutil.Uint64(latestBlockHeight), nil
+}
+
 func (a *APINamespace) blockNumberToHeight(blockNumber rpc.BlockNumber) (uint64, error) {
 	if blockNumber < 0 {
 		return a.storage.Latest().EVM().LastProcessedHeight(), nil
@@ -172,6 +180,7 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 //   - When fullTx is true all transactions in the block are returned, otherwise
 //     only the transaction hash is returned.
 func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber, full bool) (*api.Block, error) {
+
 	height, err := a.blockNumberToHeight(blockNumber)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrEntityNotFound)
