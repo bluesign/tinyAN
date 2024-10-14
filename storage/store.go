@@ -154,7 +154,7 @@ func (s *HeightBasedStorage) StorageForHeight(height uint64) *SporkStorage {
 			return spork
 		}
 	}
-	return nil
+	return s.sporks[len(s.sporks)-1]
 }
 
 func (s *HeightBasedStorage) StorageForEVMHeight(height uint64) *SporkStorage {
