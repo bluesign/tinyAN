@@ -275,9 +275,9 @@ func (s *SporkStorage) LastBlocksHeight() uint64 {
 
 func (s *SporkStorage) Bootstrap() {
 
-	if s.ledger.IsBootstrapComplete() {
+	/*if s.ledger.IsBootstrapComplete() {
 		return
-	}
+	}*/
 
 	var wg sync.WaitGroup
 	ch := make(chan int)
