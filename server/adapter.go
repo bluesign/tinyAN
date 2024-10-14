@@ -120,10 +120,19 @@ func (a *AccessAdapter) GetLatestBlock(_ context.Context, _ bool) (*flowgo.Block
 		"blockID":     header.ID().String(),
 	}).Msg("🎁  GetLatestBlock called")
 
-	//TODO: fill rest
+	collections, _ := a.store.CollectionsAtBlock(header.ID())
+	guarantees := make([]*flowgo.CollectionGuarantee, 0)
+	for _, collection := range collections {
+		guarantees = append(guarantees, &flowgo.CollectionGuarantee{
+			CollectionID: collection,
+			Signature:    nil,
+		})
+	}
 	block := &flowgo.Block{
-		Header:  header,
-		Payload: &flowgo.Payload{},
+		Header: header,
+		Payload: &flowgo.Payload{
+			Guarantees: guarantees,
+		},
 	}
 	return block, flowgo.BlockStatusSealed, nil
 }
@@ -139,10 +148,19 @@ func (a *AccessAdapter) GetBlockByHeight(_ context.Context, height uint64) (*flo
 		"blockID":     header.ID().String(),
 	}).Msg("🎁  getBlockByHeight called")
 
-	//TODO: fill rest
+	collections, _ := a.store.CollectionsAtBlock(header.ID())
+	guarantees := make([]*flowgo.CollectionGuarantee, 0)
+	for _, collection := range collections {
+		guarantees = append(guarantees, &flowgo.CollectionGuarantee{
+			CollectionID: collection,
+			Signature:    nil,
+		})
+	}
 	block := &flowgo.Block{
-		Header:  header,
-		Payload: &flowgo.Payload{},
+		Header: header,
+		Payload: &flowgo.Payload{
+			Guarantees: guarantees,
+		},
 	}
 	return block, flowgo.BlockStatusSealed, nil
 }
@@ -157,10 +175,20 @@ func (a *AccessAdapter) GetBlockByID(_ context.Context, id flowgo.Identifier) (*
 		"blockHeight": header.Height,
 		"blockID":     header.ID().String(),
 	}).Msg("🎁  GetBlockByID called")
-	//TODO: fill rest
+
+	collections, _ := a.store.CollectionsAtBlock(id)
+	guarantees := make([]*flowgo.CollectionGuarantee, 0)
+	for _, collection := range collections {
+		guarantees = append(guarantees, &flowgo.CollectionGuarantee{
+			CollectionID: collection,
+			Signature:    nil,
+		})
+	}
 	block := &flowgo.Block{
-		Header:  header,
-		Payload: &flowgo.Payload{},
+		Header: header,
+		Payload: &flowgo.Payload{
+			Guarantees: guarantees,
+		},
 	}
 	return block, flowgo.BlockStatusSealed, nil
 }

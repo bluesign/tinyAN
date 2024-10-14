@@ -74,6 +74,16 @@ func (s *HeightBasedStorage) ByHeightFrom(height uint64, header *flow.Header) (*
 	return block, nil
 }
 
+func (s *HeightBasedStorage) CollectionsAtBlock(id flow.Identifier) ([]flow.Identifier, error) {
+	for _, storage := range s.sporks {
+		collections := storage.Protocol().CollectionsAtBlock(id)
+		if len(collections) > 0 {
+			return collections, nil
+		}
+	}
+	return []flow.Identifier{}, nil
+}
+
 func (s *HeightBasedStorage) GetBlockById(id flow.Identifier) (*flow.Header, error) {
 	for _, storage := range s.sporks {
 		block, err := storage.Protocol().GetBlockById(id)
