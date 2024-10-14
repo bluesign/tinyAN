@@ -61,7 +61,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 				"access-007.mainnet26.nodes.onflow.org:9000",
 				88226267,
 				0,
-				0,
+				2221582,
 			),
 
 			storage.NewSporkStorage(

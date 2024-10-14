@@ -113,12 +113,14 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 		return 0, errs.ErrMissingBlock
 	}
 
-	height, err := a.storage.Latest().EVM().GetEVMHeightFromHash(blockHash)
-	if err != nil {
-		return 0, errs.ErrMissingBlock
+	for _, spork := range a.storage.Sporks() {
+		height, err := spork.EVM().GetEVMHeightFromHash(blockHash)
+		if err == nil {
+			return height, nil
+		}
 	}
+	return 0, errs.ErrMissingBlock
 
-	return height, nil
 }
 
 // GetBlockByNumber returns the requested canonical block.
@@ -134,7 +136,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
@@ -234,12 +236,21 @@ func (a *APINamespace) GetTransactionByHash(
 	ctx context.Context,
 	hash common.Hash,
 ) (*api.Transaction, error) {
-	height, err := a.storage.Latest().EVM().GetEVMBlockHeightForTransaction(hash)
-	if height == 0 {
+
+	targetHeight := uint64(0)
+	for _, spork := range a.storage.Sporks() {
+		height, err := spork.EVM().GetEVMBlockHeightForTransaction(hash)
+		if err == nil {
+			targetHeight = height
+			break
+		}
+	}
+
+	if targetHeight == 0 {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(targetHeight).EVM().GetEvmBlockByHeight(targetHeight)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
@@ -264,12 +275,20 @@ func (a *APINamespace) GetTransactionByBlockHashAndIndex(
 	blockHash common.Hash,
 	index hexutil.Uint,
 ) (*api.Transaction, error) {
-	height, err := a.storage.Latest().EVM().GetEVMHeightFromHash(blockHash)
+
+	var height uint64 = 0
+	var err error
+	for _, spork := range a.storage.Sporks() {
+		height, err = spork.EVM().GetEVMHeightFromHash(blockHash)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
@@ -295,7 +314,7 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
@@ -314,12 +333,20 @@ func (a *APINamespace) GetTransactionReceipt(
 	hash common.Hash,
 ) (map[string]interface{}, error) {
 
-	height, err := a.storage.Latest().EVM().GetEVMBlockHeightForTransaction(hash)
-	if height == 0 {
+	var height uint64 = 0
+	var err error
+	for _, spork := range a.storage.Sporks() {
+		height, err = spork.EVM().GetEVMBlockHeightForTransaction(hash)
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
 	}
@@ -349,8 +376,17 @@ func (a *APINamespace) GetBlockByHash(
 	hash common.Hash,
 	fullTx bool,
 ) (*api.Block, error) {
-	height, err := a.storage.Latest().EVM().GetEVMHeightFromHash(hash)
-	if err != nil || height == 0 {
+
+	var height uint64 = 0
+	var err error
+	for _, spork := range a.storage.Sporks() {
+		height, err = spork.EVM().GetEVMHeightFromHash(hash)
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
 	return a.GetBlockByNumber(ctx, rpc.BlockNumber(height), fullTx)
@@ -366,7 +402,7 @@ func (a *APINamespace) GetBlockReceipts(
 	if err != nil {
 		return handleError[[]map[string]interface{}](errs.ErrEntityNotFound)
 	}
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[[]map[string]interface{}](errs.ErrEntityNotFound)
 	}
@@ -396,12 +432,15 @@ func (a *APINamespace) GetBlockTransactionCountByHash(
 	blockHash common.Hash,
 ) (*hexutil.Uint, error) {
 
-	height, err := a.storage.Latest().EVM().GetEVMHeightFromHash(blockHash)
+	height, err := a.blockNumberOrHashToHeight(rpc.BlockNumberOrHash{
+		BlockHash: &blockHash,
+	})
+
 	if err != nil {
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
@@ -422,7 +461,7 @@ func (a *APINamespace) GetBlockTransactionCountByNumber(
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(height)
+	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 	if err != nil {
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
@@ -705,7 +744,7 @@ func (a *APINamespace) FeeHistory(
 		// is 20, then we need the blocks [16, 17, 18, 19, 20] in this
 		// specific order. The first block we fetch is 20 - 5 + 1 = 16.
 		blockHeight := lastBlockNumber - i + 1
-		evmBlock, err := a.storage.Latest().EVM().GetEvmBlockByHeight(blockHeight)
+		evmBlock, err := a.storage.StorageForEVMHeight(blockHeight).EVM().GetEvmBlockByHeight(blockHeight)
 		if err != nil {
 			continue
 		}
