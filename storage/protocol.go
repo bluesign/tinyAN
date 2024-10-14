@@ -117,6 +117,7 @@ func (s *ProtocolStorage) SaveCollection(batch *pebble.Batch, blockId flow.Ident
 		[]byte{},
 	)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	return s.codec.MarshalAndSet(batch,
