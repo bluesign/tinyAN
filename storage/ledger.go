@@ -107,7 +107,6 @@ func (s *LedgerStorage) SavePayload(batch *pebble.Batch, payload *ledger.Payload
 }
 
 func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) ledger.Value {
-	fmt.Println("GetRegister", register, height)
 	key := convert.RegisterIDToLedgerKey(register)
 
 	prefix := makePrefix(codeLedgerPayload, key.CanonicalForm())
@@ -150,6 +149,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			return nil
 		}
 	}
+	fmt.Println("GetRegister Failed", register, height)
 
 	return nil
 }
