@@ -139,6 +139,8 @@ func (s *ProtocolStorage) SaveTransactionResult(batch *pebble.Batch, blockId flo
 }
 
 func (s *ProtocolStorage) CollectionsAtBlock(blockId flow.Identifier) (result []flow.Identifier) {
+	fmt.Println("CollectionsAtBlock", blockId.String())
+
 	prefix := makePrefix(codeCollectionAtBlock, blockId)
 	options := &pebble.IterOptions{}
 	iter, _ := s.protocolDB.NewIter(options)
