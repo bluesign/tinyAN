@@ -151,6 +151,7 @@ func (s *ProtocolStorage) CollectionsAtBlock(blockId flow.Identifier) (result []
 		if !bytes.HasPrefix(iter.Key(), prefix) {
 			break
 		}
+		fmt.Println(iter.Key())
 		id, _ := flow.ByteSliceToId(iter.Key()[37:])
 		result = append(result, id)
 	}
