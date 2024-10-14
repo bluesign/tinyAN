@@ -152,8 +152,6 @@ func (s *HeightBasedStorage) GetTransactionResult(transactionID flow.Identifier)
 
 func (s *HeightBasedStorage) Sync() {
 	for _, spork := range s.sporks {
-		//TODO: remove me
-		spork.ledger.MarkBootstrapComplete()
 		spork.Bootstrap()
 	}
 }

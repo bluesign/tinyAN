@@ -122,12 +122,15 @@ func (a *AccessAdapter) GetLatestBlock(_ context.Context, _ bool) (*flowgo.Block
 
 	collections, _ := a.store.CollectionsAtBlock(header.ID())
 	guarantees := make([]*flowgo.CollectionGuarantee, 0)
-	for _, collection := range collections {
-		guarantees = append(guarantees, &flowgo.CollectionGuarantee{
-			CollectionID: collection,
-			Signature:    nil,
-		})
+	if len(collections) > 0 {
+		for _, collection := range collections[:len(collections)-1] {
+			guarantees = append(guarantees, &flowgo.CollectionGuarantee{
+				CollectionID: collection,
+				Signature:    nil,
+			})
+		}
 	}
+
 	block := &flowgo.Block{
 		Header: header,
 		Payload: &flowgo.Payload{
@@ -150,11 +153,13 @@ func (a *AccessAdapter) GetBlockByHeight(_ context.Context, height uint64) (*flo
 
 	collections, _ := a.store.CollectionsAtBlock(header.ID())
 	guarantees := make([]*flowgo.CollectionGuarantee, 0)
-	for _, collection := range collections {
-		guarantees = append(guarantees, &flowgo.CollectionGuarantee{
-			CollectionID: collection,
-			Signature:    nil,
-		})
+	if len(collections) > 0 {
+		for _, collection := range collections[:len(collections)-1] {
+			guarantees = append(guarantees, &flowgo.CollectionGuarantee{
+				CollectionID: collection,
+				Signature:    nil,
+			})
+		}
 	}
 	block := &flowgo.Block{
 		Header: header,
@@ -178,11 +183,14 @@ func (a *AccessAdapter) GetBlockByID(_ context.Context, id flowgo.Identifier) (*
 
 	collections, _ := a.store.CollectionsAtBlock(id)
 	guarantees := make([]*flowgo.CollectionGuarantee, 0)
-	for _, collection := range collections {
-		guarantees = append(guarantees, &flowgo.CollectionGuarantee{
-			CollectionID: collection,
-			Signature:    nil,
-		})
+	if len(collections) > 0 {
+
+		for _, collection := range collections[:len(collections)-1] {
+			guarantees = append(guarantees, &flowgo.CollectionGuarantee{
+				CollectionID: collection,
+				Signature:    nil,
+			})
+		}
 	}
 	block := &flowgo.Block{
 		Header: header,
