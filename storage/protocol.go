@@ -22,6 +22,7 @@ var (
 	codeBlockHeightByID byte = 0x31
 	codeBlockByHeight   byte = 0x32
 	codeLastHeight      byte = 0x33
+	codeBlockIdByHeight byte = 0x34
 )
 
 type ProtocolStorage struct {
@@ -277,6 +278,13 @@ func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, header *flow.Header) er
 		return err
 	}
 
+	if err := s.codec.MarshalAndSet(batch,
+		makePrefix(codeBlockIdByHeight, height),
+		header.ID(),
+	); err != nil {
+		return err
+	}
+
 	s.SaveProgress(batch, height)
 
 	return nil
@@ -309,6 +317,16 @@ func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Header, error) 
 		return nil, err
 	}
 	return &block, nil
+}
+
+func (s *ProtocolStorage) GetBlockIdByHeight(height uint64) (flow.Identifier, error) {
+	dbKey := makePrefix(codeBlockIdByHeight, b(height))
+	var id flow.Identifier
+	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &id)
+	if err != nil {
+		return flow.ZeroID, err
+	}
+	return id, nil
 }
 
 func (s *ProtocolStorage) GetBlockById(id flow.Identifier) (*flow.Header, error) {

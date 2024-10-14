@@ -379,7 +379,7 @@ func (a *AccessAdapter) GetEventsForBlockIDs(
 		if err != nil {
 			continue
 		}
-		events := a.store.EventsByName(block.Height, block.ID(), eventType)
+		events := a.store.EventsByName(block.Height, blockID, eventType)
 		results = append(results, flowgo.BlockEvents{
 			BlockID:        block.ID(),
 			BlockHeight:    block.Height,
