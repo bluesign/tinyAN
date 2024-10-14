@@ -193,7 +193,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		Receipts:     []*models.Receipt{},
 	}
 	if height > 0 {
-		evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+		evmBlock, err = a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
 		if err != nil {
 			return handleError[*api.Block](errs.ErrEntityNotFound)
 		}
