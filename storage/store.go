@@ -286,7 +286,7 @@ func (s *SporkStorage) Bootstrap() {
 		go s.ledger.importWorker(s.index, s.name, s.startHeight, ch, &wg)
 	}
 
-	for i := 0; i < 16; i++ {
+	for i := 16; i <= 16; i++ {
 		wg.Add(1)
 		ch <- i
 	}
