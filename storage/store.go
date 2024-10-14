@@ -149,13 +149,12 @@ func (s *HeightBasedStorage) Sync() {
 }
 
 func (s *HeightBasedStorage) StorageForHeight(height uint64) *SporkStorage {
-	var storage *SporkStorage
 	for _, spork := range s.sporks {
 		if spork.StartHeight() <= height {
-			storage = spork
+			return spork
 		}
 	}
-	return storage
+	return nil
 }
 
 func (s *HeightBasedStorage) StorageForEVMHeight(height uint64) *SporkStorage {
