@@ -13,6 +13,7 @@ import (
 	"github.com/onflow/flow-go/module/executiondatasync/execution_data"
 	flowStorage "github.com/onflow/flow-go/storage"
 	"github.com/rs/zerolog"
+	"os"
 	"sync"
 	"time"
 )
@@ -220,6 +221,7 @@ func NewSporkStorage(spork string, accessURL string, startHeight uint64, endHeig
 		ledger:         ledger,
 		index:          index,
 		evm:            evm,
+		logger:         zerolog.New(os.Stdout).With().Timestamp().Logger(),
 	}
 }
 

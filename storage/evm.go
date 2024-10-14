@@ -7,6 +7,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/models"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/rs/zerolog"
+	"os"
 )
 
 const (
@@ -41,6 +42,7 @@ func NewEVMStorage(spork string, startHeight uint64) (*EVMStorage, error) {
 		startHeight: startHeight,
 		evmDB:       evmDb,
 		codec:       NewCodec(),
+		logger:      zerolog.New(os.Stdout).With().Timestamp().Logger(),
 	}, nil
 }
 

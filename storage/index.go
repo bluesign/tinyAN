@@ -10,6 +10,7 @@ import (
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module/executiondatasync/execution_data"
 	"github.com/rs/zerolog"
+	"os"
 	"reflect"
 )
 
@@ -39,6 +40,7 @@ func NewIndexStorage(spork string, startHeight uint64, ledger *LedgerStorage) (*
 		ledger:      ledger,
 		indexDb:     indexDb,
 		codec:       NewCodec(),
+		logger:      zerolog.New(os.Stdout).With().Timestamp().Logger(),
 	}, nil
 }
 
