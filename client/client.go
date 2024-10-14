@@ -79,9 +79,9 @@ func (c *BlockFollower) SubscribeBlockData(
 				sub.err = fmt.Errorf("error converting block data: %w", err)
 				return
 			}
-			/*if header.Height%1000 == 0 {
-				log.Printf("received block data for block %d", header)
-			}*/
+			if block.Header.Height%1000 == 0 {
+				log.Printf("received block data for block %d", block.Header.Height)
+			}
 			sub.ch <- BlockDataResponse{
 				Header: block.Header,
 			}
