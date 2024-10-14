@@ -320,6 +320,7 @@ func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Header, error) 
 	var block flow.Header
 	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &block)
 	if err != nil {
+		s.logger.Log().Err(err).Msg("error getting block by height")
 		return nil, err
 	}
 	return &block, nil
