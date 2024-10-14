@@ -237,8 +237,8 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	fmt.Println("Key", string(key))
 
 	reg := flow.RegisterID{
-		Owner: string(owner),
-		Key:   string(key),
+		Owner: string(storage.DeepCopy(owner)),
+		Key:   string(storage.DeepCopy(key)),
 	}
 	fmt.Println("RegisterID", reg)
 
