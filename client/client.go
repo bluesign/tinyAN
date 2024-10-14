@@ -72,7 +72,7 @@ func (c *BlockFollower) SubscribeBlockData(
 				sub.err = fmt.Errorf("error receiving execution data: %w", err)
 				return
 			}
-			fmt.Println(resp.Block)
+			//fmt.Println(resp.Block)
 			block, err := convert.MessageToBlock(resp.GetBlock())
 			if err != nil {
 				log.Printf("error converting block data:\n%v", resp.Block)
