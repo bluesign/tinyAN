@@ -311,6 +311,7 @@ func (s *ProtocolStorage) GetLatestBlock() (*flow.Header, error) {
 }
 
 func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Header, error) {
+	s.logger.Log().Msgf("GetBlockByHeight %d", height)
 	dbKey := makePrefix(codeBlockByHeight, b(height))
 	var block flow.Header
 	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &block)
