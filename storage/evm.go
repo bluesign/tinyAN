@@ -50,7 +50,7 @@ func (s *EVMStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
 
 func (s *EVMStorage) LastProcessedHeight() uint64 {
 	var height uint64
-	err := s.codec.UnmarshalAndGet(s.evmDB, b(keyProgress), height)
+	err := s.codec.UnmarshalAndGet(s.evmDB, b(keyProgress), &height)
 	if err != nil {
 		return 0
 	}
