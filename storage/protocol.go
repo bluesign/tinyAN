@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
+	"os"
 )
 
 var (
@@ -40,7 +41,7 @@ func NewProtocolStorage(spork string, startHeight uint64) (*ProtocolStorage, err
 		startHeight: startHeight,
 		protocolDB:  protocolDb,
 		codec:       NewCodec(),
-		logger:      zerolog.Logger{},
+		logger:      zerolog.New(os.Stdout),
 	}, nil
 }
 
