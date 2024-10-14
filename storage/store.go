@@ -299,6 +299,7 @@ func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, 
 
 		err := s.protocol.SaveCollection(batch, executionData.BlockID, uint32(index), chunk.Collection)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
 
