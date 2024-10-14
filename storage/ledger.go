@@ -9,6 +9,7 @@ import (
 	"github.com/onflow/flow-go/ledger/common/convert"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
+	"os"
 	"sync"
 )
 
@@ -35,6 +36,7 @@ func NewLedgerStorage(spork string, startHeight uint64) (*LedgerStorage, error) 
 		ledgerDb:     ledgerDb,
 		checkpointDb: checkpointDb,
 		codec:        NewCodec(),
+		logger:       zerolog.New(os.Stdout).With().Timestamp().Logger(),
 	}, nil
 }
 
