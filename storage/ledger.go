@@ -128,47 +128,77 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		debug = true
 	}
 
-	for _, db := range s.databases {
+	iter, _ := s.ledgerDb.NewIter(options)
+
+	for iter.SeekGE(preFixHeight); iter.Valid(); iter.Next() {
+		k = iter.Key()
+		v = iter.Value()
+
 		if debug {
-			fmt.Println("DB", db)
+			fmt.Println("Key", k)
 		}
-		iter, _ := db.NewIter(options)
-
-		for iter.SeekGE(preFixHeight); iter.Valid(); iter.Next() {
-			k = iter.Key()
-			v = iter.Value()
-
-			if debug {
-				fmt.Println("Key", k)
-			}
-			if !bytes.HasPrefix(k, prefix) {
-				break
-			}
-
-			if len(k)-len(prefix) > 8 {
-				continue
-			}
-			//found the key
-			err := iter.Close()
-			if err != nil {
-				s.logger.Log().Err(err).Msg("error closing iterator")
-				return nil
-			}
-			var data []byte
-			err = s.codec.Unmarshal(v, &data)
-			if err != nil {
-				s.logger.Log().Err(err).Msg("error unmarshalling data")
-				return nil
-			}
-			return data
+		if !bytes.HasPrefix(k, prefix) {
+			break
 		}
+
+		if len(k)-len(prefix) > 8 {
+			continue
+		}
+		//found the key
 		err := iter.Close()
 		if err != nil {
 			s.logger.Log().Err(err).Msg("error closing iterator")
 			return nil
 		}
+		var data []byte
+		err = s.codec.Unmarshal(v, &data)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error unmarshalling data")
+			return nil
+		}
+		return data
 	}
-	//fmt.Println("GetRegister Failed", register, height)
+	err := iter.Close()
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error closing iterator")
+		return nil
+	}
+
+	iter, _ = s.ledgerDb.NewIter(options)
+
+	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
+		k = iter.Key()
+		v = iter.Value()
+
+		if debug {
+			fmt.Println("Key", k)
+		}
+		if !bytes.HasPrefix(k, prefix) {
+			break
+		}
+
+		if len(k)-len(prefix) > 8 {
+			continue
+		}
+		//found the key
+		err := iter.Close()
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error closing iterator")
+			return nil
+		}
+		var data []byte
+		err = s.codec.Unmarshal(v, &data)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error unmarshalling data")
+			return nil
+		}
+		return data
+	}
+	err = iter.Close()
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error closing iterator")
+		return nil
+	}
 
 	return nil
 }
