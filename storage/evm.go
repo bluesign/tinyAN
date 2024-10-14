@@ -89,7 +89,9 @@ func (s *EVMStorage) SaveLastHeight(batch *pebble.Batch, height uint64) error {
 	)
 }
 
-func (s *EVMStorage) SaveBlock(batch *pebble.Batch, evmEvents *models.CadenceEvents) error {
+func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
+	batch := s.evmDB.NewBatch()
+	defer batch.Commit(pebble.Sync)
 
 	for _, transaction := range evmEvents.Transactions() {
 		err := s.codec.MarshalAndSet(batch,
