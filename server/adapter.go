@@ -43,8 +43,9 @@ func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage) 
 	executor.Setup(store, "flow-mainnet")
 
 	return &AccessAdapter{
-		logger: logger,
-		store:  store,
+		logger:   logger,
+		store:    store,
+		executor: executor,
 	}
 }
 
