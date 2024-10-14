@@ -275,11 +275,13 @@ func (a *APINamespace) GetBalance(
 	snap := store.Ledger().StorageSnapshot(cadenceHeight)
 
 	fmt.Println("Address", address)
+
 	fmt.Println("Height", height)
 	fmt.Println("CadenceHeight", cadenceHeight)
 	fmt.Println("Snap", snap)
 
 	base, _ := flow.StringToAddress("0xe467b9dd11fa00df")
+	fmt.Println("Base", base)
 	bv, err := state.NewBaseView(&ViewOnlyLedger{
 		snapshot: snap,
 	}, base)
