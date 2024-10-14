@@ -150,6 +150,8 @@ func (s *ProtocolStorage) CollectionsAtBlock(blockId flow.Identifier) (result []
 		if err != nil {
 			break
 		}
+		fmt.Println(iter.Key())
+
 		if !bytes.HasPrefix(iter.Key(), prefix) {
 			break
 		}
