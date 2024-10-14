@@ -292,6 +292,8 @@ func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, header *flow.Header) er
 }
 
 func (s *ProtocolStorage) GetBlockHeightByID(id flow.Identifier) (uint64, error) {
+	s.logger.Log().Msgf("GetBlockHeightByID %s", id.String())
+
 	dbKey := makePrefix(codeBlockHeightByID, b(id))
 	var height []byte
 	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &height)
@@ -322,6 +324,8 @@ func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Header, error) 
 }
 
 func (s *ProtocolStorage) GetBlockIdByHeight(height uint64) (flow.Identifier, error) {
+	s.logger.Log().Msgf("GetBlockIdByHeight %d", height)
+
 	dbKey := makePrefix(codeBlockIdByHeight, b(height))
 	var id flow.Identifier
 	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &id)
@@ -332,6 +336,8 @@ func (s *ProtocolStorage) GetBlockIdByHeight(height uint64) (flow.Identifier, er
 }
 
 func (s *ProtocolStorage) GetBlockById(id flow.Identifier) (*flow.Header, error) {
+	s.logger.Log().Msgf("GetBlockById %s", id.String())
+
 	height, err := s.GetBlockHeightByID(id)
 	if err != nil {
 		return nil, err
