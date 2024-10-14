@@ -243,6 +243,9 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	fmt.Println("RegisterID", reg)
 
 	lkey := convert.RegisterIDToLedgerKey(reg)
+	for _, part := lkey.KeyParts {
+		fmt.Println("KeyPart", part)
+	}
 	fmt.Println("Key", lkey)
 	fmt.Println("Key", hex.EncodeToString(lkey.CanonicalForm()))
 	fmt.Println("Key", string(lkey.CanonicalForm()))
