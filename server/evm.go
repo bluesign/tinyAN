@@ -735,7 +735,7 @@ func (a *APINamespace) EstimateGas(
 
 }
 */
-/*
+
 // GetCode returns the code stored at the given address in
 // the state for the given block number.
 func (a *APINamespace) GetCode(
@@ -744,21 +744,21 @@ func (a *APINamespace) GetCode(
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (hexutil.Bytes, error) {
 
-	height := a.blockNumberOrHashToHeight(blockNumberOrHash)
-	if height == 0 {
-		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
-	}
-
-	cadenceHeight, err := a.storage.GetCadenceHeightFromEVMHeight(height)
+	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
 	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
 	}
-
-	//execute script here
+	bv, err := a.BaseViewForEVMHeight(height)
+	if err != nil {
+		return handleError[hexutil.Bytes](errs.ErrInternal)
+	}
+	code, err := bv.GetCode(address)
+	if err != nil {
+		return nil, err
+	}
 
 	return code, nil
 }
-*/
 
 // FeeHistory returns transaction base fee per gas and effective priority fee
 // per gas for the requested/supported block range.
@@ -841,7 +841,6 @@ func (a *APINamespace) FeeHistory(
 // GetStorageAt returns the storage from the state at the given address, key and
 // block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta block
 // numbers are also allowed.
-/*
 func (a *APINamespace) GetStorageAt(
 	ctx context.Context,
 	address common.Address,
@@ -856,19 +855,25 @@ func (a *APINamespace) GetStorageAt(
 		)
 	}
 
-	evmHeight := a.blockNumberOrHashToHeight(blockNumberOrHash)
-	if evmHeight == 0 {
+	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
+	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
 	}
-
-	result, err := b.evm.GetStorageAt(ctx, address, key, evmHeight)
+	bv, err := a.BaseViewForEVMHeight(height)
 	if err != nil {
-		return handleError[hexutil.Bytes](err, l, b.collector)
+		return handleError[hexutil.Bytes](errs.ErrInternal)
+	}
+	data, err := bv.GetState(evmTypes.SlotAddress{
+		Address: address,
+		Key:     key,
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return result[:], nil
+	return data[:], nil
+
 }
-*/
 
 // decodeHash parses a hex-encoded 32-byte hash. The input may optionally
 // be prefixed by 0x and can have a byte length up to 32.
