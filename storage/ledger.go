@@ -102,7 +102,9 @@ func (s *LedgerStorage) SavePayload(batch *pebble.Batch, payload *ledger.Payload
 		makePrefix(codeLedgerPayload, key.CanonicalForm(), uint64(0xFFFFFFFFFFFFFFFF-height)),
 		payload.Value(),
 	); err != nil {
+		s.logger.Log().Err(err).Msg("error saving payload")
 		return err
+
 	}
 
 	return nil
@@ -132,6 +134,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			if len(k)-len(prefix) > 8 {
 				continue
 			}
+			//found the key
 			err := iter.Close()
 			if err != nil {
 				s.logger.Log().Err(err).Msg("error closing iterator")
