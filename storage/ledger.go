@@ -164,7 +164,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		return nil
 	}
 
-	iter, _ = s.ledgerDb.NewIter(options)
+	iter, _ = s.checkpointDb.NewIter(options)
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
 		k = iter.Key()
