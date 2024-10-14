@@ -149,7 +149,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			return nil
 		}
 	}
-	fmt.Println("GetRegister Failed", register, height)
+	//fmt.Println("GetRegister Failed", register, height)
 
 	return nil
 }
