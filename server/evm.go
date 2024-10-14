@@ -261,6 +261,9 @@ func (a *APINamespace) GetBalance(
 	address common.Address,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (*hexutil.Big, error) {
+	fmt.Println("GetBalance called")
+	fmt.Println(blockNumberOrHash)
+
 	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
 	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrEntityNotFound)
