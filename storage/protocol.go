@@ -266,6 +266,7 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 
 		result = append(result, event)
 	}
+	fmt.Println(result)
 	return result
 }
 
