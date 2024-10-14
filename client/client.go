@@ -48,13 +48,12 @@ func (c *BlockFollower) SubscribeBlockData(
 	opts ...grpc.CallOption,
 ) (*Subscription[BlockDataResponse], error) {
 
-	req := access.SubscribeBlocksFromStartHeightRequest{
-		StartBlockHeight:  startHeight,
-		BlockStatus:       entities.BlockStatus_BLOCK_SEALED,
-		FullBlockResponse: true,
+	req := access.SubscribeBlockHeadersFromStartHeightRequest{
+		StartBlockHeight: startHeight,
+		BlockStatus:      entities.BlockStatus_BLOCK_SEALED,
 	}
 
-	stream, err := c.client.SubscribeBlocksFromStartHeight(ctx, &req, opts...)
+	stream, err := c.client.SubscribeBlockHeadersFromStartHeight(ctx, &req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,17 +72,17 @@ func (c *BlockFollower) SubscribeBlockData(
 				return
 			}
 			//fmt.Println(resp.Block)
-			block, err := convert.MessageToBlock(resp.GetBlock())
+			header, err := convert.MessageToBlockHeader(resp.GetHeader())
 			if err != nil {
-				log.Printf("error converting block data:\n%v", resp.Block)
+				log.Printf("error converting block data:\n%v", header)
 				sub.err = fmt.Errorf("error converting block data: %w", err)
 				return
 			}
-			if block.Header.Height%1000 == 0 {
-				log.Printf("received block data for block %d", block.Header.Height)
+			if header.Height%1000 == 0 {
+				log.Printf("received block data for block %d", header.Height)
 			}
 			sub.ch <- BlockDataResponse{
-				Header: block.Header,
+				Header: header,
 			}
 		}
 	}()
