@@ -40,6 +40,7 @@ func NewProtocolStorage(spork string, startHeight uint64) (*ProtocolStorage, err
 		startHeight: startHeight,
 		protocolDB:  protocolDb,
 		codec:       NewCodec(),
+		logger:      zerolog.Logger{},
 	}, nil
 }
 
