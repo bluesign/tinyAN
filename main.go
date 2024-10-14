@@ -90,7 +90,7 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	for i, s := range store.Sporks() {
 		fmt.Println("Starting worker for ", s.Name(), i)
 		go workers.UpdateExecution(s, chain)
-		go workers.UpdateBlocks(s, chain)
+		//go workers.UpdateBlocks(s, chain)
 	}
 
 	for {
