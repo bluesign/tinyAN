@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-go/model/flow"
@@ -292,12 +293,12 @@ func (s *ProtocolStorage) SaveBlock(batch *pebble.Batch, header *flow.Header) er
 
 func (s *ProtocolStorage) GetBlockHeightByID(id flow.Identifier) (uint64, error) {
 	dbKey := makePrefix(codeBlockHeightByID, b(id))
-	var height uint64
+	var height []byte
 	err := s.codec.UnmarshalAndGet(s.protocolDB, dbKey, &height)
 	if err != nil {
 		return 0, err
 	}
-	return height, nil
+	return binary.BigEndian.Uint64(height), nil
 }
 
 func (s *ProtocolStorage) LastHeight() uint64 {
