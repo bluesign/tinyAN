@@ -10,6 +10,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
+	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
 	"github.com/onflow/go-ethereum/common/math"
@@ -136,12 +137,15 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
-	if err != nil {
-		return handleError[*api.Block](errs.ErrEntityNotFound)
-	}
+	block := models.GenesisBlock(flow.Mainnet)
+	if height > 0 {
+		evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+		if err != nil {
+			return handleError[*api.Block](errs.ErrEntityNotFound)
+		}
 
-	block := evmBlock.Block
+		block = evmBlock.Block
+	}
 	h, err := block.Hash()
 
 	if block.TransactionHashes == nil {
