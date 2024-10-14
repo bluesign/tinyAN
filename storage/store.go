@@ -360,7 +360,7 @@ func (s *SporkStorage) ProcessExecutionData(batch *pebble.Batch, height uint64, 
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error saving evm block")
 	}
-	err := evmBatch.Commit(pebble.Sync)
+	err = evmBatch.Commit(pebble.Sync)
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error committing evm batch")
 	}
