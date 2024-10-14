@@ -125,6 +125,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	debug := false
 	if strings.Contains(string(key.CanonicalForm()), "AccountsStorageIDKey") {
 		fmt.Println("Key", key.CanonicalForm())
+		fmt.Println("Prefix", prefix)
 		debug = true
 	}
 
