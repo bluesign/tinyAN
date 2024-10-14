@@ -74,6 +74,11 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		},
 	)
 
+	/*ui.MainUI(store)
+	if true {
+		return
+	}*/
+
 	//bootstrap
 	store.Sync()
 

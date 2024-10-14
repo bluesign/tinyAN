@@ -266,7 +266,12 @@ func (s *SporkStorage) EndHeight() uint64 {
 }
 
 func (s *SporkStorage) LastBlocksHeight() uint64 {
-	return s.protocol.LastHeight()
+	protocolHeight := s.protocol.LastProcessedHeight()
+	ledgerHeight := s.ledger.LastProcessedHeight()
+	if ledgerHeight < protocolHeight {
+		return ledgerHeight
+	}
+	return protocolHeight
 }
 
 func (s *SporkStorage) Bootstrap() {
