@@ -109,6 +109,7 @@ func (a *APINamespace) blockNumberToHeight(blockNumber rpc.BlockNumber) (uint64,
 
 func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumberOrHash) (uint64, error) {
 	blockNumber, ok := blockNumberOrHash.Number()
+	fmt.Println("blockNumber", blockNumber)
 	if ok {
 		return a.blockNumberToHeight(blockNumber)
 	}
