@@ -236,7 +236,7 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	fmt.Println("Key", flow.BytesToAddress(owner))
 	fmt.Println("Key", string(key))
 
-	reg := &flow.RegisterID{
+	reg := flow.RegisterID{
 		Owner: string(owner),
 		Key:   string(key),
 	}
