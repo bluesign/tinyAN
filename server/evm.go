@@ -261,6 +261,20 @@ func (v ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error)
 
 var _ atree.Ledger = (*ViewOnlyLedger)(nil)
 
+func (a *APINamespace) BaseViewForEVMHeight(height uint64) (*state.BaseView, error) {
+	store := a.storage.StorageForEVMHeight(height)
+	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	snap := a.storage.LedgerSnapshot(cadenceHeight)
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	return state.NewBaseView(&ViewOnlyLedger{
+		snapshot: snap,
+	}, base)
+
+}
+
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
@@ -269,31 +283,14 @@ func (a *APINamespace) GetBalance(
 	address common.Address,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (*hexutil.Big, error) {
-	fmt.Println("GetBalance called")
-	fmt.Println(blockNumberOrHash)
 
 	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
 	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrEntityNotFound)
 	}
-
-	store := a.storage.StorageForEVMHeight(height)
-	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
-	snap := a.storage.LedgerSnapshot(cadenceHeight)
-
-	fmt.Println("Address", address)
-
-	fmt.Println("Height", height)
-	fmt.Println("CadenceHeight", cadenceHeight)
-	fmt.Println("Snap", snap)
-
-	base, _ := flow.StringToAddress("d421a63faae318f9")
-	fmt.Println("Base", base)
-	bv, err := state.NewBaseView(&ViewOnlyLedger{
-		snapshot: snap,
-	}, base)
+	bv, err := a.BaseViewForEVMHeight(height)
 	if err != nil {
-		return nil, err
+		return handleError[*hexutil.Big](errs.ErrInternal)
 	}
 	bal, err := bv.GetBalance(address)
 	if err != nil {
@@ -663,7 +660,6 @@ func (a *APINamespace) GetLogs(
 }
 */
 
-/*
 // GetTransactionCount returns the number of transactions the given address
 // has sent for the given block number.
 func (a *APINamespace) GetTransactionCount(
@@ -672,19 +668,21 @@ func (a *APINamespace) GetTransactionCount(
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (*hexutil.Uint64, error) {
 
-	evmHeight := a.blockNumberOrHashToHeight(blockNumberOrHash)
-	if evmHeight == 0 {
+	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
+	if err != nil {
 		return handleError[*hexutil.Uint64](errs.ErrEntityNotFound)
 	}
-
-	networkNonce, err := b.evm.GetNonce(ctx, address, evmHeight)
+	bv, err := a.BaseViewForEVMHeight(height)
 	if err != nil {
-		return handleError[*hexutil.Uint64](err)
+		return handleError[*hexutil.Uint64](errs.ErrInternal)
+	}
+	nonce, err := bv.GetNonce(address)
+	if err != nil {
+		return nil, err
 	}
 
-	return (*hexutil.Uint64)(&networkNonce), nil
+	return (*hexutil.Uint64)(&nonce), nil
 }
-*/
 
 /*
 // EstimateGas returns the lowest possible gas limit that allows the transaction to run
