@@ -39,6 +39,10 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 		storage: storage,
 	})
 
+	rpcServer.RegisterName("eth", &DebugAPI{
+		storage: storage,
+	})
+
 	router.HandleFunc("/", rpcServer.ServeHTTP)
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
