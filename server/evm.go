@@ -20,6 +20,7 @@ import (
 	"github.com/onflow/go-ethereum/common/math"
 	"github.com/onflow/go-ethereum/core/types"
 	types2 "github.com/onflow/go-ethereum/core/types"
+	"github.com/onflow/go-ethereum/eth/filters"
 	"github.com/onflow/go-ethereum/rlp"
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
@@ -631,21 +632,28 @@ func (a *APINamespace) Call(
 	return result.ReturnedData, nil
 }
 
-/*
 // GetLogs returns logs matching the given argument that are stored within the state.
 func (a *APINamespace) GetLogs(
 	ctx context.Context,
 	criteria filters.FilterCriteria,
 ) ([]*types.Log, error) {
 
-	filter := gwlogs.FilterCriteria{
+	filter := FilterCriteria{
 		Addresses: criteria.Addresses,
 		Topics:    criteria.Topics,
 	}
 
 	// if filter provided specific block ID
 	if criteria.BlockHash != nil {
-		f, err := gwlogs.NewIDFilter(*criteria.BlockHash, filter, a.blocks, a.receipts)
+
+		height, err := a.blockNumberOrHashToHeight(rpc.BlockNumberOrHash{
+			BlockHash: criteria.BlockHash,
+		})
+		if err != nil {
+			return handleError[[]*types.Log](errs.ErrEntityNotFound)
+		}
+
+		f, err := NewIDFilter(*criteria.BlockHash, filter, a.storage.StorageForEVMHeight(height).EVM())
 		if err != nil {
 			return handleError[[]*types.Log](err)
 		}
@@ -670,7 +678,7 @@ func (a *APINamespace) GetLogs(
 		to = criteria.ToBlock
 	}
 
-	h := a.storage.LastEVMBlockHeight()
+	h := a.storage.Latest().EVM().LastProcessedHeight()
 	if h == 0 {
 		return handleError[[]*types.Log](fmt.Errorf("failed to get latest block height"))
 	}
@@ -684,7 +692,7 @@ func (a *APINamespace) GetLogs(
 		to = latest
 	}
 
-	f, err := logs.NewRangeFilter(from.Uint64(), to.Uint64(), filter, a.receipts)
+	f, err := NewRangeFilter(from.Uint64(), to.Uint64(), filter, a.storage.StorageForEVMHeight(from.Uint64()).EVM())
 	if err != nil {
 		return handleError[[]*types.Log](err)
 	}
@@ -701,7 +709,6 @@ func (a *APINamespace) GetLogs(
 
 	return res, nil
 }
-*/
 
 // GetTransactionCount returns the number of transactions the given address
 // has sent for the given block number.
@@ -727,7 +734,6 @@ func (a *APINamespace) GetTransactionCount(
 	return (*hexutil.Uint64)(&nonce), nil
 }
 
-/*
 // EstimateGas returns the lowest possible gas limit that allows the transaction to run
 // successfully at block `blockNrOrHash`, or the latest block if `blockNrOrHash` is unspecified. It
 // returns error if the transaction would revert or if there are unexpected failures. The returned
@@ -739,45 +745,58 @@ func (a *APINamespace) EstimateGas(
 	blockNumberOrHash *rpc.BlockNumberOrHash,
 	overrides *api.StateOverride,
 ) (hexutil.Uint64, error) {
+	err := args.Validate()
+	if err != nil {
+		return handleError[hexutil.Uint64](err)
+	}
 
+	_, err = encodeTxFromArgs(args)
+	if err != nil {
+		return hexutil.Uint64(blockGasLimit), nil // return block gas limit
+	}
+	if blockNumberOrHash == nil {
+		latest := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
+		blockNumberOrHash = &latest
+	}
 
-		err := args.Validate()
-		if err != nil {
-			return handleError[hexutil.Uint64](err, l, b.collector)
-		}
+	height, err := a.blockNumberOrHashToHeight(*blockNumberOrHash)
+	if err != nil {
+		return handleError[hexutil.Uint64](errs.ErrEntityNotFound)
+	}
 
-		tx, err := encodeTxFromArgs(args)
-		if err != nil {
-			return hexutil.Uint64(blockGasLimit), nil // return block gas limit
-		}
+	store := a.storage.StorageForEVMHeight(height)
+	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	if err != nil {
+		return handleError[hexutil.Uint64](errs.ErrInternal)
+	}
+	snap := a.storage.LedgerSnapshot(cadenceHeight)
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
+		snapshot: snap,
+	}, base)
 
-		// Default address in case user does not provide one
-		from := b.config.Coinbase
-		if args.From != nil {
-			from = *args.From
-		}
-		var height uint64
-		if blockNumberOrHash != nil {
-			height = a.blockNumberOrHashToHeight(*blockNumberOrHash)
-		} else {
-			height = a.storage.LastEVMBlockHeight()
-		}
+	rbv, err := emulator.NewBlockView(evmTypes.NewDefaultBlockContext(height))
 
-		evmHeight, err := b.getBlockNumber(blockNumberOrHash)
-		if err != nil {
-			return handleError[hexutil.Uint64](err, l, b.collector)
-		}
+	tx, err := txFromArgs(args)
+	if err != nil {
+		return handleError[hexutil.Uint64](err)
+	}
 
-		estimatedGas, err := b.evm.EstimateGas(ctx, tx, from, evmHeight)
-		if err != nil {
-			return handleError[hexutil.Uint64](err, l, b.collector)
-		}
+	// Default address in case user does not provide one
+	from, _ := a.Coinbase(ctx)
+	if args.From != nil {
+		from = *args.From
+	}
 
-		return hexutil.Uint64(estimatedGas), nil
+	result, err := rbv.DryRunTransaction(tx, from)
 
+	if err != nil {
+		return handleError[hexutil.Uint64](err)
+	}
+
+	return hexutil.Uint64(result.GasConsumed), nil
 
 }
-*/
 
 // GetCode returns the code stored at the given address in
 // the state for the given block number.
