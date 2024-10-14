@@ -55,11 +55,11 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	})
 
 	r.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:8080"),
+		Addr:    fmt.Sprintf("0.0.0.0:80"),
 		Handler: c.Handler(router),
 	}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 8080))
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 80))
 	if err != nil {
 		panic(err)
 	}
