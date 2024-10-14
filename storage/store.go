@@ -359,7 +359,7 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 				continue
 			}
 
-			err = s.ledger.SavePayload(batch, payload, height)
+			err = s.ledger.SavePayload(ledger_batch, payload, height)
 			if err != nil {
 				s.logger.Log().Err(err).Msg("error saving payload")
 				return err
