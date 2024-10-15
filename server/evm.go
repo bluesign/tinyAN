@@ -203,6 +203,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
 		cumulativeGasUsed := uint64(0)
+		logIndex := uint(0)
 		for _, eventRaw := range cadenceEvents {
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
@@ -221,11 +222,12 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 			receipt.BlockHash, _ = block.Hash()
 
 			for i, log := range receipt.Logs {
-				log.Index = uint(i)
+				log.Index = logIndex
 				log.BlockNumber = block.Height
 				log.TxHash = receipt.TxHash
 				log.TxIndex = receipt.TransactionIndex
 				log.BlockHash = receipt.BlockHash
+				logIndex++
 			}
 			transactions[receipt.TransactionIndex] = tx
 			receipts[receipt.TransactionIndex] = receipt
