@@ -173,6 +173,43 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 
 }
 
+func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transaction, []*models.Receipt, error) {
+	cadenceHeight, err := a.storage.StorageForEVMHeight(blockHeight).EVM().GetCadenceHeightFromEVMHeight(blockHeight)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cadenceBlockId, err := a.storage.StorageForHeight(cadenceHeight).Protocol().GetBlockIdByHeight(cadenceHeight)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+
+	receipts := make([]*models.Receipt, len(cadenceEvents))
+	transactions := make([]models.Transaction, len(cadenceEvents))
+
+	if cadenceEvents != nil && len(cadenceEvents) > 0 {
+		for _, eventRaw := range cadenceEvents {
+			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
+			if err != nil {
+				return nil, nil, err
+			}
+			event, ok := eventDecoded.(cadence.Event)
+			if !ok {
+				return nil, nil, err
+			}
+			tx, receipt, err := storage.DecodeTransactionEvent(event)
+			if err != nil {
+				return nil, nil, err
+			}
+			transactions[receipt.TransactionIndex] = tx
+			receipts[receipt.TransactionIndex] = receipt
+		}
+	}
+	return transactions, receipts, nil
+}
+
 // GetBlockByNumber returns the requested canonical block.
 //   - When blockNr is -1 the chain pending block is returned.
 //   - When blockNr is -2 the chain latest block is returned.
@@ -211,6 +248,12 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		Sha3Uncles:       types.EmptyUncleHash,
 	}
 
+	blockBytes, err := block.ToBytes()
+	if err != nil {
+		return handleError[*api.Block](errs.ErrInternal)
+	}
+	blockSize := rlp.ListSize(uint64(len(blockBytes)))
+
 	cadenceHeight, err := a.storage.StorageForEVMHeight(block.Height).EVM().GetCadenceHeightFromEVMHeight(block.Height)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
@@ -223,11 +266,6 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 
 	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
 
-	blockBytes, err := block.ToBytes()
-	if err != nil {
-		return handleError[*api.Block](errs.ErrInternal)
-	}
-	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 	transactionResults := make([]*api.Transaction, len(cadenceEvents))
 	transactionHashes := make([]common.Hash, len(cadenceEvents))
 
@@ -398,20 +436,21 @@ func (a *APINamespace) GetTransactionByHash(
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.StorageForEVMHeight(targetHeight).EVM().GetEvmBlockByHeight(targetHeight)
+	block, err := a.blockFromBlockStorage(targetHeight)
 	if err != nil {
-		return handleError[*api.Transaction](errs.ErrEntityNotFound)
+		return handleError[*api.Transaction](errs.ErrInternal)
 	}
 
-	block := evmBlock.Transactions
-	for i, txBytes := range block {
-		tx, err := models.UnmarshalTransaction(txBytes)
-		if err != nil {
-			return handleError[*api.Transaction](errs.ErrInternal)
-		}
+	transactions, receipts, err := a.blockTransactions(targetHeight)
+	if err != nil {
+		return handleError[*api.Transaction](errs.ErrInternal)
+	}
+
+	for i, tx := range transactions {
 		if tx.Hash() == hash {
-			//TODO: chain config
-			return api.NewTransactionResult(tx, *evmBlock.Receipts[i], EVMMainnetChainID)
+			receipt := receipts[i]
+			receipt.BlockHash, _ = block.Hash()
+			return api.NewTransactionResult(tx, *receipts[i], EVMMainnetChainID)
 		}
 	}
 	return handleError[*api.Transaction](errs.ErrEntityNotFound)
