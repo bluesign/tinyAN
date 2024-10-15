@@ -193,6 +193,15 @@ func (s *EVMStorage) GetEvmBlockByHeight(height uint64) (*EVMBlock, error) {
 	return &block, nil
 }
 
+func (s *EVMStorage) GetCadenceBlockHeightForBlock(hash gethCommon.Hash) (uint64, err) {
+	var height uint64
+	err := s.codec.UnmarshalAndGet(s.evmDB, makePrefix(codeEVMBlockIDToCadenceHeight, hash), &height)
+	if err != nil {
+		return 0, err
+	}
+	return height, nil
+}
+
 func (s *EVMStorage) GetCadenceBlockHeightForTransaction(hash gethCommon.Hash) (uint64, error) {
 	var height uint64
 	err := s.codec.UnmarshalAndGet(s.evmDB, makePrefix(codeEVMTransactionIDToCadenceHeight, hash), &height)

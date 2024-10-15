@@ -425,7 +425,6 @@ func (a *APINamespace) GetTransactionByHash(
 	ctx context.Context,
 	hash common.Hash,
 ) (*api.Transaction, error) {
-
 	cadenceHeight := uint64(0)
 	for _, spork := range a.storage.Sporks() {
 		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(hash)
@@ -434,23 +433,18 @@ func (a *APINamespace) GetTransactionByHash(
 			break
 		}
 	}
-
 	if cadenceHeight == 0 {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-	fmt.Println("cadenceHeight", cadenceHeight)
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		fmt.Println(err)
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-	fmt.Println("block", block)
 	transactions, receipts, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-
-	fmt.Println("transactions", transactions)
 	for i, tx := range transactions {
 		if tx.Hash() == hash {
 			receipt := receipts[i]
@@ -468,10 +462,10 @@ func (a *APINamespace) GetTransactionByBlockHashAndIndex(
 	index hexutil.Uint,
 ) (*api.Transaction, error) {
 
-	var height uint64 = 0
+	var cadenceHeight uint64 = 0
 	var err error
 	for _, spork := range a.storage.Sporks() {
-		height, err = spork.EVM().GetEVMHeightFromHash(blockHash)
+		cadenceHeight, err = spork.EVM().GetCadenceBlockHeightForBlock(blockHash)
 		if err == nil {
 			break
 		}
@@ -480,17 +474,23 @@ func (a *APINamespace) GetTransactionByBlockHashAndIndex(
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
-		return handleError[*api.Transaction](errs.ErrEntityNotFound)
+		fmt.Println(err)
+		return handleError[*api.Transaction](errs.ErrInternal)
+	}
+	transactions, receipts, err := a.blockTransactions(block.Height)
+	if err != nil {
+		return handleError[*api.Transaction](errs.ErrInternal)
 	}
 
 	txIndex := int(index)
-	if txIndex >= len(evmBlock.Block.TransactionHashes) {
+	if txIndex >= len(transactions) {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-	txHash := evmBlock.Block.TransactionHashes[index]
-	return a.GetTransactionByHash(ctx, txHash)
+	receipt := receipts[txIndex]
+	receipt.BlockHash, _ = block.Hash()
+	return api.NewTransactionResult(transactions[txIndex], *receipts[txIndex], EVMMainnetChainID)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction
