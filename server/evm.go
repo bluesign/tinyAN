@@ -141,7 +141,7 @@ func txFromArgs(args api.TransactionArgs) (*types2.Transaction, error) {
 }
 
 // BlockNumber returns the block number of the chain head.
-func (a *APINamespace) BlockNumber(ctx context.Context) (hexutil.Uint64, error) {
+func (a *APINamespace) BlockNumber(_ context.Context) (hexutil.Uint64, error) {
 	latestBlockHeight := a.storage.Latest().EVM().LastProcessedHeight()
 	return hexutil.Uint64(latestBlockHeight), nil
 }
@@ -165,7 +165,7 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 	}
 
 	for _, spork := range a.storage.Sporks() {
-		height, err := spork.EVM().GetEVMHeightFromHash(blockHash)
+		height, err := spork.EVM().EVMHeightForBlockHash(blockHash)
 		if err == nil {
 			return height, nil
 		}
@@ -182,12 +182,12 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 		}
 	}()
 
-	cadenceHeight, err := a.storage.StorageForEVMHeight(blockHeight).EVM().GetCadenceHeightFromEVMHeight(blockHeight)
+	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	cadenceBlockId, err := a.storage.StorageForHeight(cadenceHeight).Protocol().GetBlockIdByHeight(cadenceHeight)
+	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -251,7 +251,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 //   - When blockNr is -4 the chain safe block is returned.
 //   - When fullTx is true all transactions in the block are returned, otherwise
 //     only the transaction hash is returned.
-func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber, full bool) (*api.Block, error) {
+func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.BlockNumber, full bool) (*api.Block, error) {
 
 	height, err := a.blockNumberToHeight(blockNumber)
 	if err != nil {
@@ -288,12 +288,12 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 
-	cadenceHeight, err := a.storage.StorageForEVMHeight(block.Height).EVM().GetCadenceHeightFromEVMHeight(block.Height)
+	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(block.Height)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 
-	cadenceBlockId, err := a.storage.StorageForHeight(cadenceHeight).Protocol().GetBlockIdByHeight(cadenceHeight)
+	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
@@ -341,14 +341,14 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	return blockResponse, nil
 }
 
-func (a *APINamespace) Syncing(ctx context.Context) (interface{}, error) {
+func (a *APINamespace) Syncing(_ context.Context) (interface{}, error) {
 	return false, nil
 }
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (a *APINamespace) SendRawTransaction(
-	ctx context.Context,
+	_ context.Context,
 	input hexutil.Bytes,
 ) (common.Hash, error) {
 	//TODO: implement transaction simulation
@@ -413,9 +413,8 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 	return true, nil
 }
 
-func (v ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error) {
-	fmt.Println("!!!!!!!!! AllocateSlabIndex called")
-
+func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
+	//we allocate fake slab index here
 	slabIndex := atree.SlabIndex{}
 	binary.BigEndian.PutUint64(slabIndex[:8], v.counter)
 	v.counter--
@@ -426,15 +425,13 @@ func (v ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error)
 var _ atree.Ledger = (*ViewOnlyLedger)(nil)
 
 func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, error) {
-	store := a.storage.StorageForEVMHeight(height)
-	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	return state.NewBaseView(NewViewOnlyLedger(snap), base)
-
 }
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
@@ -453,8 +450,7 @@ func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64
 }
 
 func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
-	store := a.storage.StorageForEVMHeight(height)
-	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +461,7 @@ func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, er
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
 func (a *APINamespace) GetBalance(
-	ctx context.Context,
+	_ context.Context,
 	address common.Address,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (*hexutil.Big, error) {
@@ -478,7 +474,6 @@ func (a *APINamespace) GetBalance(
 	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrInternal)
 	}
-
 	bal, err := bv.GetBalance(address)
 	if err != nil {
 		return nil, err
@@ -488,18 +483,11 @@ func (a *APINamespace) GetBalance(
 
 // GetTransactionByHash returns the transaction for the given hash
 func (a *APINamespace) GetTransactionByHash(
-	ctx context.Context,
+	_ context.Context,
 	hash common.Hash,
 ) (*api.Transaction, error) {
-	cadenceHeight := uint64(0)
-	for _, spork := range a.storage.Sporks() {
-		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(hash)
-		if err == nil {
-			cadenceHeight = height
-			break
-		}
-	}
-	if cadenceHeight == 0 {
+	cadenceHeight, err := a.storage.CadenceBlockHeightForTransactionHash(hash)
+	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
@@ -523,23 +511,15 @@ func (a *APINamespace) GetTransactionByHash(
 
 // GetTransactionByBlockHashAndIndex returns the transaction for the given block hash and index.
 func (a *APINamespace) GetTransactionByBlockHashAndIndex(
-	ctx context.Context,
+	_ context.Context,
 	blockHash common.Hash,
 	index hexutil.Uint,
 ) (*api.Transaction, error) {
 
-	var cadenceHeight uint64 = 0
-	var err error
-	for _, spork := range a.storage.Sporks() {
-		cadenceHeight, err = spork.EVM().GetCadenceBlockHeightForBlock(blockHash)
-		if err == nil {
-			break
-		}
-	}
+	cadenceHeight, err := a.storage.CadenceHeightForBlockHash(blockHash)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		fmt.Println(err)
@@ -562,7 +542,7 @@ func (a *APINamespace) GetTransactionByBlockHashAndIndex(
 // GetTransactionByBlockNumberAndIndex returns the transaction
 // for the given block number and index.
 func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
-	ctx context.Context,
+	_ context.Context,
 	blockNumber rpc.BlockNumber,
 	index hexutil.Uint,
 ) (*api.Transaction, error) {
@@ -572,7 +552,7 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	cadenceHeight, err := a.storage.StorageForEVMHeight(height).EVM().GetCadenceHeightFromEVMHeight(height)
+	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
@@ -598,18 +578,11 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
 func (a *APINamespace) GetTransactionReceipt(
-	ctx context.Context,
+	_ context.Context,
 	hash common.Hash,
 ) (map[string]interface{}, error) {
 
-	var cadenceHeight uint64 = 0
-	var err error
-	for _, spork := range a.storage.Sporks() {
-		cadenceHeight, err = spork.EVM().GetCadenceBlockHeightForTransaction(hash)
-		if err == nil {
-			break
-		}
-	}
+	cadenceHeight, err := a.storage.CadenceBlockHeightForTransactionHash(hash)
 
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
@@ -651,15 +624,7 @@ func (a *APINamespace) GetBlockByHash(
 	fullTx bool,
 ) (*api.Block, error) {
 
-	var height uint64 = 0
-	var err error
-	for _, spork := range a.storage.Sporks() {
-		height, err = spork.EVM().GetEVMHeightFromHash(hash)
-		if err == nil {
-			break
-		}
-	}
-
+	height, err := a.storage.EVMHeightForBlockHash(hash)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
@@ -668,7 +633,7 @@ func (a *APINamespace) GetBlockByHash(
 
 // GetBlockReceipts returns the block receipts for the given block hash or number or tag.
 func (a *APINamespace) GetBlockReceipts(
-	ctx context.Context,
+	_ context.Context,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) ([]map[string]interface{}, error) {
 
@@ -718,7 +683,7 @@ func (a *APINamespace) GetBlockTransactionCountByHash(
 // GetBlockTransactionCountByNumber returns the number of transactions
 // in the block with the given block number.
 func (a *APINamespace) GetBlockTransactionCountByNumber(
-	ctx context.Context,
+	_ context.Context,
 	blockNumber rpc.BlockNumber,
 ) (*hexutil.Uint, error) {
 
@@ -767,7 +732,7 @@ func (a *APINamespace) Call(
 	}
 
 	store := a.storage.StorageForEVMHeight(height)
-	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	cadenceHeight, err := store.EVM().CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
 	}
@@ -799,7 +764,7 @@ func (a *APINamespace) Call(
 
 // GetLogs returns logs matching the given argument that are stored within the state.
 func (a *APINamespace) GetLogs(
-	ctx context.Context,
+	_ context.Context,
 	criteria filters.FilterCriteria,
 ) ([]*types.Log, error) {
 
@@ -807,7 +772,6 @@ func (a *APINamespace) GetLogs(
 		Addresses: criteria.Addresses,
 		Topics:    criteria.Topics,
 	}
-
 	// if filter provided specific block ID
 	if criteria.BlockHash != nil {
 
@@ -825,7 +789,6 @@ func (a *APINamespace) GetLogs(
 	}
 
 	// otherwise we use the block range as the filter
-
 	// assign default values to latest block number, unless provided
 	from := models.LatestBlockNumber
 	if criteria.FromBlock != nil {
@@ -873,7 +836,7 @@ func (a *APINamespace) GetLogs(
 // GetTransactionCount returns the number of transactions the given address
 // has sent for the given block number.
 func (a *APINamespace) GetTransactionCount(
-	ctx context.Context,
+	_ context.Context,
 	address common.Address,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (*hexutil.Uint64, error) {
@@ -924,8 +887,7 @@ func (a *APINamespace) EstimateGas(
 		return handleError[hexutil.Uint64](errs.ErrEntityNotFound)
 	}
 
-	store := a.storage.StorageForEVMHeight(height)
-	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return handleError[hexutil.Uint64](errs.ErrInternal)
 	}
@@ -959,7 +921,7 @@ func (a *APINamespace) EstimateGas(
 // GetCode returns the code stored at the given address in
 // the state for the given block number.
 func (a *APINamespace) GetCode(
-	ctx context.Context,
+	_ context.Context,
 	address common.Address,
 	blockNumberOrHash rpc.BlockNumberOrHash,
 ) (hexutil.Bytes, error) {
@@ -990,7 +952,7 @@ func (a *APINamespace) GetCode(
 // ascending order by effective tip per gas and the coresponding effective tip
 // for the percentile will be determined, accounting for gas consumed.
 func (a *APINamespace) FeeHistory(
-	ctx context.Context,
+	_ context.Context,
 	blockCount math.HexOrDecimal64,
 	lastBlock rpc.BlockNumber,
 	rewardPercentiles []float64,
@@ -1063,7 +1025,7 @@ func (a *APINamespace) FeeHistory(
 // block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta block
 // numbers are also allowed.
 func (a *APINamespace) GetStorageAt(
-	ctx context.Context,
+	_ context.Context,
 	address common.Address,
 	storageSlot string,
 	blockNumberOrHash rpc.BlockNumberOrHash,
@@ -1075,7 +1037,6 @@ func (a *APINamespace) GetStorageAt(
 			fmt.Errorf("%w: %w", errs.ErrInvalid, err),
 		)
 	}
-
 	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
 	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
@@ -1131,24 +1092,24 @@ or because it doesn't make sense yet to implement more complex solution
 // returned, regardless of the current head block. We used to return an error when the chain
 // wasn't synced up to a block where EIP-155 is enabled, but this behavior caused issues
 // in CL clients.
-func (a *APINamespace) ChainId(ctx context.Context) (*hexutil.Big, error) {
+func (a *APINamespace) ChainId(_ context.Context) (*hexutil.Big, error) {
 	return (*hexutil.Big)(EVMMainnetChainID), nil
 }
 
 // Coinbase is the address that mining rewards will be sent to (alias for Etherbase).
-func (a *APINamespace) Coinbase(ctx context.Context) (common.Address, error) {
+func (a *APINamespace) Coinbase(_ context.Context) (common.Address, error) {
 	return evmTypes.CoinbaseAddress.ToCommon(), nil
 }
 
 // GasPrice returns a suggestion for a gas price for legacy transactions.
-func (a *APINamespace) GasPrice(ctx context.Context) (*hexutil.Big, error) {
+func (a *APINamespace) GasPrice(_ context.Context) (*hexutil.Big, error) {
 	return (*hexutil.Big)(big.NewInt(0)), nil
 }
 
 // GetUncleCountByBlockHash returns number of uncles in the block for the given block hash
 func (a *APINamespace) GetUncleCountByBlockHash(
-	ctx context.Context,
-	blockHash common.Hash,
+	_ context.Context,
+	_ common.Hash,
 ) *hexutil.Uint {
 	count := hexutil.Uint(0)
 	return &count
@@ -1156,8 +1117,8 @@ func (a *APINamespace) GetUncleCountByBlockHash(
 
 // GetUncleCountByBlockNumber returns number of uncles in the block for the given block number
 func (a *APINamespace) GetUncleCountByBlockNumber(
-	ctx context.Context,
-	blockNumber rpc.BlockNumber,
+	_ context.Context,
+	_ rpc.BlockNumber,
 ) *hexutil.Uint {
 	count := hexutil.Uint(0)
 	return &count
@@ -1165,24 +1126,24 @@ func (a *APINamespace) GetUncleCountByBlockNumber(
 
 // GetUncleByBlockHashAndIndex returns the uncle block for the given block hash and index.
 func (a *APINamespace) GetUncleByBlockHashAndIndex(
-	ctx context.Context,
-	blockHash common.Hash,
-	index hexutil.Uint,
+	_ context.Context,
+	_ common.Hash,
+	_ hexutil.Uint,
 ) (map[string]interface{}, error) {
 	return map[string]interface{}{}, nil
 }
 
 // GetUncleByBlockNumberAndIndex returns the uncle block for the given block hash and index.
 func (a *APINamespace) GetUncleByBlockNumberAndIndex(
-	ctx context.Context,
-	blockNumber rpc.BlockNumber,
-	index hexutil.Uint,
+	_ context.Context,
+	_ rpc.BlockNumber,
+	_ hexutil.Uint,
 ) (map[string]interface{}, error) {
 	return map[string]interface{}{}, nil
 }
 
 // MaxPriorityFeePerGas returns a suggestion for a gas tip cap for dynamic fee transactions.
-func (a *APINamespace) MaxPriorityFeePerGas(ctx context.Context) (*hexutil.Big, error) {
+func (a *APINamespace) MaxPriorityFeePerGas(_ context.Context) (*hexutil.Big, error) {
 	fee := hexutil.Big(*big.NewInt(1))
 	return &fee, nil
 }
@@ -1212,10 +1173,10 @@ ever or we don't support it at this phase.
 
 // GetProof returns the Merkle-proof for a given account and optionally some storage keys.
 func (a *APINamespace) GetProof(
-	ctx context.Context,
-	address common.Address,
-	storageKeys []string,
-	blockNumberOrHash rpc.BlockNumberOrHash,
+	_ context.Context,
+	_ common.Address,
+	_ []string,
+	_ rpc.BlockNumberOrHash,
 ) (*api.AccountResult, error) {
 	return nil, errs.NewEndpointNotSupportedError("eth_getProof")
 }
@@ -1223,9 +1184,9 @@ func (a *APINamespace) GetProof(
 // CreateAccessList creates an EIP-2930 type AccessList for the given transaction.
 // Reexec and blockNumberOrHash can be specified to create the accessList on top of a certain state.
 func (a *APINamespace) CreateAccessList(
-	ctx context.Context,
-	args api.TransactionArgs,
-	blockNumberOrHash *rpc.BlockNumberOrHash,
+	_ context.Context,
+	_ api.TransactionArgs,
+	_ *rpc.BlockNumberOrHash,
 ) (*api.AccessListResult, error) {
 	return nil, errs.NewEndpointNotSupportedError("eth_createAccessList")
 }

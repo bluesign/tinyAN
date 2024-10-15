@@ -12,6 +12,7 @@ import (
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module/executiondatasync/execution_data"
 	flowStorage "github.com/onflow/flow-go/storage"
+	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/rs/zerolog"
 	"os"
 	"sync"
@@ -39,13 +40,53 @@ func NewHeightBasedStorage(sporks []*SporkStorage) *HeightBasedStorage {
 	}
 }
 
+// Height lookup for EVM
+var _ EVMHeightLookup = &HeightBasedStorage{}
+
+func (s *HeightBasedStorage) EVMHeightForBlockHash(hash gethCommon.Hash) (uint64, error) {
+	for _, storage := range s.sporks {
+		height, err := storage.EVM().EVMHeightForBlockHash(hash)
+		if err == nil {
+			return height, nil
+		}
+	}
+	return 0, fmt.Errorf("not found")
+}
+
+func (s *HeightBasedStorage) CadenceHeightForBlockHash(hash gethCommon.Hash) (uint64, error) {
+	for _, storage := range s.sporks {
+		height, err := storage.EVM().CadenceHeightForBlockHash(hash)
+		if err == nil {
+			return height, nil
+		}
+	}
+	return 0, fmt.Errorf("not found")
+}
+
+func (s *HeightBasedStorage) CadenceBlockHeightForTransactionHash(hash gethCommon.Hash) (uint64, error) {
+	for _, storage := range s.sporks {
+		height, err := storage.EVM().CadenceBlockHeightForTransactionHash(hash)
+		if err == nil {
+			return height, nil
+		}
+	}
+	return 0, fmt.Errorf("not found")
+}
+
+func (s *HeightBasedStorage) CadenceHeightFromEVMHeight(evmHeight uint64) (uint64, error) {
+	return s.StorageForEVMHeight(evmHeight).EVM().CadenceHeightFromEVMHeight(evmHeight)
+}
+
+func (s *HeightBasedStorage) EVMHeightFromCadenceHeight(cadenceHeight uint64) (uint64, error) {
+	return s.StorageForEVMHeight(cadenceHeight).EVM().EVMHeightFromCadenceHeight(cadenceHeight)
+}
+
 func (s *HeightBasedStorage) Sporks() []*SporkStorage {
 	return s.sporks
 }
+
 func (s *HeightBasedStorage) GetBlockByHeight(height uint64) (*flow.Header, error) {
-	storage := s.StorageForHeight(height)
-	fmt.Println("storage", storage.Name())
-	return storage.Protocol().GetBlockByHeight(height)
+	return s.StorageForHeight(height).Protocol().GetBlockByHeight(height)
 }
 
 func (s *HeightBasedStorage) GetLatestBlock() (*flow.Header, error) {
@@ -59,12 +100,9 @@ func (s *HeightBasedStorage) LedgerSnapshot(height uint64) FVMStorageSnapshot {
 }
 
 func (s *HeightBasedStorage) ByHeightFrom(height uint64, header *flow.Header) (*flow.Header, error) {
-	fmt.Println("ByHeightFrom", height)
-
 	if header.Height > height {
 		return nil, flowStorage.ErrNotFound
 	}
-
 	storage := s.StorageForHeight(height)
 	block, err := storage.Protocol().GetBlockByHeight(height)
 	if err != nil {
@@ -81,6 +119,11 @@ func (s *HeightBasedStorage) CollectionsAtBlock(id flow.Identifier) ([]flow.Iden
 		}
 	}
 	return []flow.Identifier{}, nil
+}
+
+func (s *HeightBasedStorage) GetBlockIdByHeight(cadenceHeight uint64) (flow.Identifier, error) {
+	storage := s.StorageForHeight(cadenceHeight)
+	return storage.Protocol().GetBlockIdByHeight(cadenceHeight)
 }
 
 func (s *HeightBasedStorage) GetBlockById(id flow.Identifier) (*flow.Header, error) {

@@ -78,7 +78,7 @@ func (d *DebugAPI) TraceBlockByHash(
 	var height uint64 = 0
 	var err error
 	for _, spork := range d.api.storage.Sporks() {
-		height, err = spork.EVM().GetEVMHeightFromHash(hash)
+		height, err = spork.EVM().EVMHeightForBlockHash(hash)
 		if err == nil {
 			break
 		}
@@ -99,7 +99,7 @@ func (d *DebugAPI) TraceTransaction(
 
 	cadenceHeight := uint64(0)
 	for _, spork := range d.api.storage.Sporks() {
-		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(txId)
+		height, err := spork.EVM().CadenceBlockHeightForTransactionHash(txId)
 		if err == nil {
 			cadenceHeight = height
 			break
@@ -135,7 +135,7 @@ func (d *DebugAPI) traceBlock(
 	_ *tracers.TraceConfig,
 ) ([]*txTraceResult, error) {
 
-	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().GetCadenceHeightFromEVMHeight(height)
+	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
 	}
@@ -262,8 +262,8 @@ func (s *Web3API) Sha3(input hexutil.Bytes) hexutil.Bytes {
 type TxPool struct{}
 
 type content struct {
-	Pending any
-	Queued  any
+	Pending any `json:"pending"`
+	Queued  any `json:"queued"`
 }
 
 func emptyPool() content {
