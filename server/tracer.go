@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	tracerConfig = `{ "onlyTopCall": true }`
+	tracerConfig = `{ "onlyTopCall": false }`
 	tracerName   = "callTracer"
 )
 
