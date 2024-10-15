@@ -399,7 +399,7 @@ func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 	defer v.mu.Unlock()
 	v.cache[reg.String()] = storage.DeepCopy(value)
 
-	fmt.Println("!!!!!!!!! SetValue called", reg.String())
+	fmt.Println("!!!!!!!!! SetValue called", reg.String(), hex.EncodeToString(value))
 	return nil
 }
 
