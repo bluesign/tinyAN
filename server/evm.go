@@ -363,6 +363,7 @@ type ViewOnlyLedger struct {
 }
 
 func NewViewOnlyLedger(snapshot storage2.Transaction, counter uint64) *ViewOnlyLedger {
+	fmt.Println("!!!!!!!!!!!!!!!! NewViewOnlyLedger", counter)
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
 		Counter:  counter,
