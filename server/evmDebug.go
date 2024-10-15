@@ -132,6 +132,8 @@ func (d *DebugAPI) TraceTransaction(
 
 			// step 5 - run transaction
 			res, err := rbv.RunTransaction(gethTx)
+			fmt.Println(res)
+			fmt.Println(err)
 			if err != nil {
 				return nil, err
 			}
