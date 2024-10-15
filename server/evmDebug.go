@@ -162,6 +162,7 @@ func (d *DebugAPI) traceBlock(
 		Random:                 block.PrevRandao,
 		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
 		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
+		GasFeeCollector:        evmTypes.CoinbaseAddress,
 		GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
 			return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
 		},
