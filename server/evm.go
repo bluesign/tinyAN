@@ -366,7 +366,6 @@ type ViewOnlyLedger struct {
 func NewViewOnlyLedger(snapshot storage2.Transaction) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
-		cache:    make(map[string][]byte),
 		counter:  0x00FFFFFFFFFFFFFF,
 	}
 }
