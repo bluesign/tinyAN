@@ -371,6 +371,7 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 		fmt.Println("!!!!!!!!! cached returned")
 		return vv, nil
 	}
+	fmt.Println("!!!!!!!!! normal returned")
 	vv, err := v.snapshot.Get(reg)
 
 	return vv, err
