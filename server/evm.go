@@ -28,6 +28,7 @@ import (
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
 	"strings"
+	"sync"
 )
 
 var (
@@ -359,6 +360,7 @@ type ViewOnlyLedger struct {
 	snapshot snapshot.StorageSnapshot
 	cache    map[string][]byte
 	counter  uint64
+	mu       sync.Mutex
 }
 
 func NewViewOnlyLedger(snapshot snapshot.StorageSnapshot) *ViewOnlyLedger {
@@ -374,10 +376,13 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
 	if vv, ok := v.cache[reg.String()]; ok {
 		fmt.Println("!!!!!!!!! cached returned", reg.String())
 		return vv, nil
 	}
+
 	fmt.Println("!!!!!!!!! normal returned", reg.String())
 	vv, err := v.snapshot.Get(reg)
 
@@ -390,6 +395,8 @@ func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
 	v.cache[reg.String()] = storage.DeepCopy(value)
 
 	fmt.Println("!!!!!!!!! SetValue called", reg.String())
