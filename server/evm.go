@@ -818,6 +818,8 @@ func (a *APINamespace) GetLogs(
 	if to.Cmp(models.EarliestBlockNumber) < 0 {
 		to = latest
 	}
+	fmt.Println("from", from)
+	fmt.Println("to", to)
 
 	f, err := NewRangeFilter(from.Uint64(), to.Uint64(), filter, a)
 	if err != nil {
