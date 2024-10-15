@@ -83,7 +83,6 @@ func (r *RangeFilter) Match() ([]*gethTypes.Log, error) {
 	var logs []*gethTypes.Log
 
 	for height := r.start; height <= r.end; height++ {
-		fmt.Println("height", height)
 		_, receipts, err := r.api.blockTransactions(height)
 		if err != nil {
 			return nil, err

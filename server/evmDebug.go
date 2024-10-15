@@ -3,12 +3,17 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
+	"github.com/onflow/flow-go/fvm/evm/debug"
+	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
+	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
+	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common/hexutil"
+	gethTypes "github.com/onflow/go-ethereum/core/types"
 	"github.com/onflow/go-ethereum/crypto"
+	"math/big"
 	"os"
 
 	"github.com/goccy/go-json"
@@ -27,23 +32,112 @@ type txTraceResult struct {
 
 type DebugAPI struct {
 	logger zerolog.Logger
-	store  *storage.HeightBasedStorage
+	api    *APINamespace
 }
 
-func NewDebugAPI(store *storage.HeightBasedStorage) *DebugAPI {
+func NewDebugAPI(api *APINamespace) *DebugAPI {
 	return &DebugAPI{
 		logger: zerolog.New(os.Stdout).With().Timestamp().Logger(),
-		store:  store,
+		api:    api,
 	}
 }
 
+type EVMTraceListener struct {
+	Data map[string]json.RawMessage
+}
+
+// Upload implements debug.Uploader.
+func (e *EVMTraceListener) Upload(id string, data json.RawMessage) error {
+	e.Data[id] = data
+	return nil
+}
+
+var _ debug.Uploader = &EVMTraceListener{}
+
 func (d *DebugAPI) TraceTransaction(
 	_ context.Context,
-	tx models.Transaction,
+	txId gethCommon.Hash,
 	_ *tracers.TraceConfig,
 ) (json.RawMessage, error) {
 
-	return json.RawMessage{}, nil
+	evmListener := &EVMTraceListener{
+		Data: make(map[string]json.RawMessage),
+	}
+
+	tracer, _ := debug.NewEVMCallTracer(evmListener, zerolog.New(os.Stdout).With().Timestamp().Logger())
+
+	cadenceHeight := uint64(0)
+	evmHeight := uint64(0)
+
+	for _, spork := range d.api.storage.Sporks() {
+		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(txId)
+		if err == nil {
+			cadenceHeight = height
+			break
+		}
+	}
+	if cadenceHeight == 0 {
+		return handleError[json.RawMessage](errs.ErrEntityNotFound)
+	}
+
+	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
+	if err != nil {
+		return handleError[json.RawMessage](errs.ErrInternal)
+	}
+
+	transactions, _, err := d.api.blockTransactions(block.Height)
+	if err != nil {
+		return handleError[json.RawMessage](errs.ErrInternal)
+	}
+
+	snap := d.api.storage.LedgerSnapshot(cadenceHeight)
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
+		snapshot: snap,
+	}, base)
+
+	ctx := evmTypes.BlockContext{
+		ChainID:                evmTypes.FlowEVMMainNetChainID,
+		BlockNumber:            evmHeight,
+		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
+		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
+		GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
+			return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
+		},
+		Tracer: tracer.TxTracer(),
+		//Tracer: debug.NewEVMCallTracer(nil, nil),
+	}
+	rbv, err := emulator.NewBlockView(ctx)
+
+	for _, tx := range transactions {
+
+		if tx.Hash() == txId {
+			var gethTx *gethTypes.Transaction
+			switch v := tx.(type) {
+
+			case *models.DirectCall:
+				gethTx = v.Transaction()
+			case *models.TransactionCall:
+				gethTx = v.Transaction
+			default:
+				panic("invalid transaction type")
+			}
+
+			// step 5 - run transaction
+			res, err := rbv.RunTransaction(gethTx)
+			if err != nil {
+				return nil, err
+			}
+			if res == nil { // safety check for result
+				return nil, evmTypes.ErrUnexpectedEmptyResult
+			}
+
+			// step 11 - collect traces
+			//tracer.Collect(res.TxHash)
+		}
+	}
+
+	return tracer.GetResultByTxHash(txId), nil
 }
 
 func (d *DebugAPI) TraceBlockByNumber(
@@ -55,15 +149,10 @@ func (d *DebugAPI) TraceBlockByNumber(
 	if number.Int64() >= 0 {
 		height = uint64(number.Int64())
 	} else {
-		height = d.store.Latest().EVM().LastProcessedHeight()
+		height = d.api.storage.Latest().EVM().LastProcessedHeight()
 	}
 
-	block, err := d.store.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
-	if err != nil {
-		return handleError[[]*txTraceResult](err)
-	}
-
-	return d.traceBlock(ctx, block, cfg)
+	return d.traceBlock(ctx, height, cfg)
 }
 
 func (d *DebugAPI) TraceBlockByHash(
@@ -74,7 +163,7 @@ func (d *DebugAPI) TraceBlockByHash(
 
 	var height uint64 = 0
 	var err error
-	for _, spork := range d.store.Sporks() {
+	for _, spork := range d.api.storage.Sporks() {
 		height, err = spork.EVM().GetEVMHeightFromHash(hash)
 		if err == nil {
 			break
@@ -85,32 +174,29 @@ func (d *DebugAPI) TraceBlockByHash(
 		return handleError[[]*txTraceResult](errs.ErrEntityNotFound)
 	}
 
-	block, err := d.store.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
-	if err != nil {
-		return handleError[[]*txTraceResult](err)
-	}
-
-	return d.traceBlock(ctx, block, cfg)
+	return d.traceBlock(ctx, height, cfg)
 }
 
 func (d *DebugAPI) traceBlock(
 	ctx context.Context,
-	block *storage.EVMBlock,
+	height uint64,
 	_ *tracers.TraceConfig,
 ) ([]*txTraceResult, error) {
 
-	results := make([]*txTraceResult, len(block.Transactions))
-	for i, txBytes := range block.Transactions {
-		tx, err := models.UnmarshalTransaction(txBytes)
-		if err != nil {
-			continue
-		}
+	transactions, receipts, err := d.api.blockTransactions(height)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*txTraceResult, len(transactions))
+	for i, tx := range transactions {
+
 		txTrace, err := d.TraceTransaction(ctx, tx, nil)
 
 		if err != nil {
-			results[i] = &txTraceResult{TxHash: tx.Hash(), Error: err.Error()}
+			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Error: err.Error()}
 		} else {
-			results[i] = &txTraceResult{TxHash: tx.Hash(), Result: txTrace}
+			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: txTrace}
 		}
 	}
 
