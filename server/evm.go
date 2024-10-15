@@ -214,6 +214,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	}
 
 	cadenceHeight, err := a.storage.StorageForEVMHeight(block.Height).EVM().GetCadenceHeightFromEVMHeight(block.Height)
+	fmt.Println("cadenceHeight", cadenceHeight)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
