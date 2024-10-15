@@ -221,7 +221,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 			receipt.CumulativeGasUsed = cumulativeGasUsed
 			receipt.BlockHash, _ = block.Hash()
 
-			for i, log := range receipt.Logs {
+			for _, log := range receipt.Logs {
 				log.Index = logIndex
 				log.BlockNumber = block.Height
 				log.TxHash = receipt.TxHash
