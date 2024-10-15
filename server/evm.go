@@ -223,8 +223,10 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
+	fmt.Println("cadenceBlockId", cadenceBlockId)
 
 	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+	fmt.Println("cadenceEvents", cadenceEvents)
 
 	blockBytes, err := block.ToBytes()
 	if err != nil {
