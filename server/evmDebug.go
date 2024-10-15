@@ -60,12 +60,7 @@ func (d *DebugAPI) TraceTransaction(
 	_ *tracers.TraceConfig,
 ) (json.RawMessage, error) {
 
-	evmListener := &EVMTraceListener{
-		Data: make(map[string]json.RawMessage),
-	}
-
-	tracer, _ := debug.NewEVMCallTracer(evmListener, zerolog.New(os.Stdout).With().Timestamp().Logger())
-
+	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
 	cadenceHeight := uint64(0)
 	evmHeight := uint64(0)
 
