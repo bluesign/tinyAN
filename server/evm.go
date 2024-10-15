@@ -28,6 +28,7 @@ import (
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
 	"strings"
+	"sync"
 )
 
 var (
@@ -358,12 +359,14 @@ func (a *APINamespace) SendRawTransaction(
 type ViewOnlyLedger struct {
 	snapshot storage2.Transaction
 	Counter  uint64
+	mu       sync.Mutex
 }
 
 func NewViewOnlyLedger(snapshot storage2.Transaction, counter uint64) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
 		Counter:  counter,
+		mu:       sync.Mutex{},
 	}
 }
 
@@ -419,6 +422,8 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 
 func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	//we allocate fake slab index here
+	v.mu.Lock()
+	defer v.mu.Unlock()
 	slabIndex := atree.SlabIndex{}
 	binary.BigEndian.PutUint64(slabIndex[:], v.Counter)
 	v.Counter--
