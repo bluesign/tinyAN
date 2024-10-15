@@ -407,8 +407,8 @@ func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 	/*v.mu.Lock()
 	defer v.mu.Unlock()
 	v.cache[reg.String()] = storage.DeepCopy(value)
-
-	return nil*/
+	*/
+	return nil
 }
 
 func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
