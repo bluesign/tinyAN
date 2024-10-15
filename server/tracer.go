@@ -153,7 +153,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnTxStart trace collection failed")
 			}
 		}()
-		l.Debug().Msg("tracing OnTxStart is called")
+		//l.Debug().Msg("tracing OnTxStart is called")
 		if ct.tracer.OnTxStart != nil {
 			ct.tracer.OnTxStart(vm, tx, from)
 		}
@@ -177,7 +177,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnTxEnd trace collection failed")
 			}
 		}()
-		l.Debug().Msg("tracing OnTxEnd is called")
+		//l.Debug().Msg("tracing OnTxEnd is called")
 		if ct.tracer.OnTxEnd != nil {
 			ct.tracer.OnTxEnd(receipt, err)
 		}
@@ -210,7 +210,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnEnter trace collection failed")
 			}
 		}()
-		l.Debug().Int("depth", depth).Msg("tracing OnEnter is called")
+		//l.Debug().Int("depth", depth).Msg("tracing OnEnter is called")
 		if ct.tracer.OnEnter != nil {
 			ct.tracer.OnEnter(depth, typ, from, to, input, gas, value)
 		}
@@ -228,7 +228,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnExit trace collection failed")
 			}
 		}()
-		l.Debug().Int("depth", depth).Msg("tracing OnExit is called")
+		//l.Debug().Int("depth", depth).Msg("tracing OnExit is called")
 		if ct.tracer.OnExit != nil {
 			ct.tracer.OnExit(depth, output, gasUsed, err, reverted)
 		}
@@ -254,7 +254,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnOpcode trace collection failed")
 			}
 		}()
-		l.Debug().Msg("tracing OnOpcode is called")
+		//l.Debug().Msg("tracing OnOpcode is called")
 		if ct.tracer.OnOpcode != nil {
 			ct.tracer.OnOpcode(pc, op, gas, cost, scope, rData, depth, err)
 		}
@@ -277,7 +277,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnFault trace collection failed")
 			}
 		}()
-		l.Debug().Msg("tracing OnFault is called")
+		//l.Debug().Msg("tracing OnFault is called")
 		if ct.tracer.OnFault != nil {
 			ct.tracer.OnFault(pc, op, gas, cost, scope, depth, err)
 		}
@@ -295,7 +295,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnGasChange trace collection failed")
 			}
 		}()
-		l.Debug().Msg("tracing OnGasChange is called")
+		//l.Debug().Msg("tracing OnGasChange is called")
 		if ct.tracer.OnGasChange != nil {
 			ct.tracer.OnGasChange(old, new, reason)
 		}
