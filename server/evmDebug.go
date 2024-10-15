@@ -91,6 +91,7 @@ func (d *DebugAPI) TraceTransaction(
 		snapshot: snap,
 	}, base)
 	fmt.Println("emulator", emulator)
+
 	ctx := evmTypes.BlockContext{
 		ChainID:                evmTypes.FlowEVMMainNetChainID,
 		BlockNumber:            evmHeight,
@@ -118,9 +119,11 @@ func (d *DebugAPI) TraceTransaction(
 			switch v := tx.(type) {
 
 			case models.DirectCall:
+				fmt.Println("DirectCall")
 				res, err = rbv.DirectCall(v.DirectCall)
 
 			case models.TransactionCall:
+				fmt.Println("TransactionCall")
 				gethTx = v.Transaction
 				res, err = rbv.RunTransaction(gethTx)
 
