@@ -187,18 +187,25 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	}
 
 	block := models.GenesisBlock(flow.Mainnet)
-	evmBlock := &storage.EVMBlock{
-		Block:        block,
-		Transactions: [][]byte{},
-		Receipts:     []*models.Receipt{},
-	}
+
+	var cadenceEvents *storage.CadenceEvents
 	if height > 0 {
-		evmBlock, err = a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+		cadenceHeight, err := a.storage.StorageForEVMHeight(height).EVM().GetCadenceHeightFromEVMHeight(height)
+		if err != nil {
+			return handleError[*api.Block](errs.ErrEntityNotFound)
+		}
+		flowBlock, err := a.storage.GetBlockByHeight(cadenceHeight)
 		if err != nil {
 			return handleError[*api.Block](errs.ErrEntityNotFound)
 		}
 
-		block = evmBlock.Block
+		events := a.storage.StorageForEVMHeight(height).Protocol().EventsByName(flowBlock.ID(), "A.e467b9dd11fa00df.EVM")
+		cadenceEvents, err = storage.ParseCadenceEvents(events)
+		if err != nil {
+			return handleError[*api.Block](errs.ErrInternal)
+		}
+
+		block = cadenceEvents.Block
 	}
 	h, err := block.Hash()
 
@@ -230,16 +237,12 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 	transactions := make([]models.Transaction, 0)
 
-	if len(evmBlock.Transactions) > 0 {
+	if cadenceEvents != nil && len(cadenceEvents.Transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
-		for i, txBytes := range evmBlock.Transactions {
-			tx, err := models.UnmarshalTransaction(txBytes)
+		for i, tx := range cadenceEvents.Transactions {
 			transactions = append(transactions, tx)
-			if err != nil {
-				return handleError[*api.Block](errs.ErrInternal)
-			}
-			txReceipt := evmBlock.Receipts[i]
+			txReceipt := cadenceEvents.Receipts[i]
 			totalGasUsed += hexutil.Uint64(txReceipt.GasUsed)
 			logs = append(logs, txReceipt.Logs...)
 			blockSize += tx.Size()
