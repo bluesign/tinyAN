@@ -506,17 +506,28 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+	cadenceHeight, err := a.storage.StorageForEVMHeight(height).EVM().GetCadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
 
+	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
+	if err != nil {
+		fmt.Println(err)
+		return handleError[*api.Transaction](errs.ErrInternal)
+	}
+	transactions, receipts, err := a.blockTransactions(block.Height)
+	if err != nil {
+		return handleError[*api.Transaction](errs.ErrInternal)
+	}
+
 	txIndex := int(index)
-	if txIndex >= len(evmBlock.Block.TransactionHashes) {
+	if txIndex >= len(transactions) {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-	txHash := evmBlock.Block.TransactionHashes[index]
-	return a.GetTransactionByHash(ctx, txHash)
+	receipt := receipts[txIndex]
+	receipt.BlockHash, _ = block.Hash()
+	return api.NewTransactionResult(transactions[txIndex], *receipts[txIndex], EVMMainnetChainID)
 }
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
