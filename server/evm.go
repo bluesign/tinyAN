@@ -28,7 +28,6 @@ import (
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
 	"strings"
-	"sync"
 )
 
 var (
@@ -358,15 +357,13 @@ func (a *APINamespace) SendRawTransaction(
 
 type ViewOnlyLedger struct {
 	snapshot storage2.Transaction
-	cache    map[string][]byte
-	counter  uint64
-	mu       sync.Mutex
+	Counter  uint64
 }
 
-func NewViewOnlyLedger(snapshot storage2.Transaction) *ViewOnlyLedger {
+func NewViewOnlyLedger(snapshot storage2.Transaction, counter uint64) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
-		counter:  0x000000FFFFFFFFFF,
+		Counter:  counter,
 	}
 }
 
@@ -423,9 +420,9 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	//we allocate fake slab index here
 	slabIndex := atree.SlabIndex{}
-	binary.BigEndian.PutUint64(slabIndex[:], v.counter)
-	v.counter--
-	fmt.Println("Allocate", v.counter)
+	binary.BigEndian.PutUint64(slabIndex[:], v.Counter)
+	v.Counter--
+	fmt.Println("!!!!!!!!!!!!!!!! Allocate", v.Counter)
 	return slabIndex, nil
 }
 
@@ -438,12 +435,12 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	return state.NewBaseView(NewViewOnlyLedger(snap), base)
+	return state.NewBaseView(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
 }
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	view := NewViewOnlyLedger(a.storage.LedgerSnapshot(cadenceHeight))
+	view := NewViewOnlyLedger(a.storage.LedgerSnapshot(cadenceHeight), 0xFFFFFFFFFFFFFFFF)
 
 	data, err := view.GetValue(base[:], []byte(BlockStoreLatestBlockKey))
 	if err != nil {
@@ -744,7 +741,7 @@ func (a *APINamespace) Call(
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
 
 	rbv, err := emulator.NewBlockView(evmTypes.NewDefaultBlockContext(height))
 
@@ -899,7 +896,7 @@ func (a *APINamespace) EstimateGas(
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
 
 	rbv, err := emulator.NewBlockView(evmTypes.NewDefaultBlockContext(height))
 

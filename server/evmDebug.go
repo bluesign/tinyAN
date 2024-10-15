@@ -146,7 +146,7 @@ func (d *DebugAPI) traceBlock(
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
 
 	fmt.Println("emulator", emulator)
 
