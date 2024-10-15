@@ -367,7 +367,7 @@ func NewViewOnlyLedger(snapshot snapshot.StorageSnapshot) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
 		cache:    make(map[string][]byte),
-		counter:  0xFFFFFFFFFFFFFFFF,
+		counter:  0x00FFFFFFFFFFFFFF,
 	}
 }
 
@@ -437,9 +437,8 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	view := &ViewOnlyLedger{
-		snapshot: a.storage.LedgerSnapshot(cadenceHeight),
-	}
+	view := NewViewOnlyLedger(a.storage.LedgerSnapshot(cadenceHeight))
+
 	data, err := view.GetValue(base[:], []byte(BlockStoreLatestBlockKey))
 	if err != nil {
 		return nil, err
