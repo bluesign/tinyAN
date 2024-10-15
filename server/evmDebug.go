@@ -90,7 +90,7 @@ func (d *DebugAPI) TraceTransaction(
 		return handleError[json.RawMessage](errs.ErrInternal)
 	}
 
-	snap := d.api.storage.LedgerSnapshot(cadenceHeight)
+	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
 		snapshot: snap,
