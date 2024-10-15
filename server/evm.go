@@ -425,8 +425,11 @@ func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	slabIndex := atree.SlabIndex{}
+	fmt.Println(v.Counter)
+
 	binary.BigEndian.PutUint64(slabIndex[:], v.Counter)
 	v.Counter = v.Counter - 1
+	fmt.Println(v.Counter)
 	fmt.Println("!!!!!!!!!!!!!!!! Allocate", v.Counter)
 	return slabIndex, nil
 }
