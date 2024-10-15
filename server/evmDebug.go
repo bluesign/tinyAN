@@ -97,7 +97,7 @@ func (d *DebugAPI) TraceTransaction(
 	}, base)
 	fmt.Println("emulator", emulator)
 	ctx := evmTypes.BlockContext{
-		ChainID:                big.NewInt(110),
+		ChainID:                evmTypes.FlowEVMMainNetChainID,
 		BlockNumber:            evmHeight,
 		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
 		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
