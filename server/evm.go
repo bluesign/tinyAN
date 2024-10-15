@@ -413,7 +413,6 @@ func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 
 func (v *ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
 
-	fmt.Println("!!!!!!!!! ValueExists called")
 	_, err = v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
 	if err != nil {
 		return false, err
@@ -426,12 +425,8 @@ func (v *ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	slabIndex := atree.SlabIndex{}
-	fmt.Println(v.Counter)
-
 	binary.BigEndian.PutUint64(slabIndex[:], v.Counter)
 	v.Counter = v.Counter - 1
-	fmt.Println(v.Counter)
-	fmt.Println("!!!!!!!!!!!!!!!! Allocate", v.Counter)
 	return slabIndex, nil
 }
 
