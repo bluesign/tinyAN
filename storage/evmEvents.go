@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/onflow/cadence"
-	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go/fvm/evm/events"
 )
 
@@ -177,10 +176,9 @@ func ParseCadenceEvents(events []flowgo.Event) (*CadenceEvents, error) {
 }
 
 type CadenceEvents struct {
-	Events       flow.BlockEvents  // Flow events for a specific flow block
-	Block        *models.Block     // EVM block (at most one per Flow block)
-	Transactions []any             // transactions in the EVM block
-	Receipts     []*models.Receipt // receipts for transactions
+	Block        *models.Block        // EVM block (at most one per Flow block)
+	Transactions []models.Transaction // transactions in the EVM block
+	Receipts     []*models.Receipt    // receipts for transactions
 }
 
 func DecodeCadenceEvents(events []flowgo.Event) (*CadenceEvents, error) {
