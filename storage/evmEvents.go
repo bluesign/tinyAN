@@ -36,7 +36,7 @@ func isTransactionExecutedEvent(event cadence.Event) bool {
 	return strings.Contains(event.EventType.ID(), string(events.EventTypeTransactionExecuted))
 }
 
-func decodeTransactionEvent(event cadence.Event) (models.Transaction, *models.Receipt, error) {
+func DecodeTransactionEvent(event cadence.Event) (models.Transaction, *models.Receipt, error) {
 	txEvent, err := events.DecodeTransactionEventPayload(event)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to Cadence decode transaction event [%s]: %w", event.String(), err)
@@ -204,7 +204,7 @@ func DecodeCadenceEvents(events []flowgo.Event) (*CadenceEvents, error) {
 		}
 
 		if isTransactionExecutedEvent(val) {
-			tx, receipt, err := decodeTransactionEvent(val)
+			tx, receipt, err := DecodeTransactionEvent(val)
 			if err != nil {
 				return &e, err
 			}

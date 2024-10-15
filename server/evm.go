@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/atree"
+	"github.com/onflow/cadence"
+	"github.com/onflow/cadence/encoding/ccf"
 	"github.com/onflow/flow-evm-gateway/api"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
@@ -28,7 +30,8 @@ import (
 )
 
 var (
-	EVMMainnetChainID = big.NewInt(747)
+	EVMMainnetChainID        = big.NewInt(747)
+	BlockStoreLatestBlockKey = "LatestBlock"
 )
 
 const maxFeeHistoryBlockCount = 1024
@@ -186,33 +189,12 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
 
-	block := models.GenesisBlock(flow.Mainnet)
-
-	var cadenceEvents *storage.CadenceEvents
-	if height > 0 {
-		cadenceHeight, err := a.storage.StorageForEVMHeight(height).EVM().GetCadenceHeightFromEVMHeight(height)
-		if err != nil {
-			return handleError[*api.Block](errs.ErrEntityNotFound)
-		}
-		flowBlock, err := a.storage.GetBlockByHeight(cadenceHeight)
-		if err != nil {
-			return handleError[*api.Block](errs.ErrEntityNotFound)
-		}
-
-		events := a.storage.StorageForEVMHeight(height).Protocol().EventsByName(flowBlock.ID(), "A.e467b9dd11fa00df.EVM")
-		cadenceEvents, err = storage.ParseCadenceEvents(events)
-		fmt.Println(cadenceEvents)
-		if err != nil {
-			return handleError[*api.Block](errs.ErrInternal)
-		}
-
-		block = cadenceEvents.Block
+	block, err := a.blockFromBlockStorage(height)
+	if err != nil {
+		return handleError[*api.Block](errs.ErrEntityNotFound)
 	}
+
 	h, err := block.Hash()
-
-	if block.TransactionHashes == nil {
-		block.TransactionHashes = []common.Hash{}
-	}
 
 	blockResponse := &api.Block{
 		Hash:             h,
@@ -220,7 +202,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		ParentHash:       block.ParentBlockHash,
 		ReceiptsRoot:     block.ReceiptRoot,
 		TransactionsRoot: block.TransactionHashRoot,
-		Transactions:     block.TransactionHashes,
+		Transactions:     []common.Hash{},
 		Uncles:           []common.Hash{},
 		GasLimit:         hexutil.Uint64(blockGasLimit),
 		Nonce:            types.BlockNonce{0x1},
@@ -231,22 +213,46 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		Sha3Uncles:       types.EmptyUncleHash,
 	}
 
+	cadenceHeight, err := a.storage.StorageForEVMHeight(block.Height).EVM().GetCadenceHeightFromEVMHeight(block.Height)
+	if err != nil {
+		return handleError[*api.Block](errs.ErrInternal)
+	}
+
+	cadenceBlockId, err := a.storage.StorageForHeight(cadenceHeight).Protocol().GetBlockIdByHeight(cadenceHeight)
+	if err != nil {
+		return handleError[*api.Block](errs.ErrInternal)
+	}
+
+	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+
 	blockBytes, err := block.ToBytes()
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 	transactions := make([]models.Transaction, 0)
+	transactionHashes := make([]common.Hash, 0)
 
-	if cadenceEvents != nil && len(cadenceEvents.Transactions) > 0 {
+	if cadenceEvents != nil && len(cadenceEvents) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
-		for i, tx := range cadenceEvents.Transactions {
-			block.TransactionHashes = append(block.TransactionHashes, tx.Hash())
+		for _, eventRaw := range cadenceEvents {
+			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
+			if err != nil {
+				return handleError[*api.Block](errs.ErrInternal)
+			}
+			event, ok := eventDecoded.(cadence.Event)
+			if !ok {
+				return handleError[*api.Block](errs.ErrInternal)
+			}
+			tx, receipt, err := storage.DecodeTransactionEvent(event)
+			if err != nil {
+				return handleError[*api.Block](errs.ErrInternal)
+			}
+			transactionHashes = append(transactionHashes, tx.Hash())
 			transactions = append(transactions, tx)
-			txReceipt := cadenceEvents.Receipts[i]
-			totalGasUsed += hexutil.Uint64(txReceipt.GasUsed)
-			logs = append(logs, txReceipt.Logs...)
+			totalGasUsed += hexutil.Uint64(receipt.GasUsed)
+			logs = append(logs, receipt.Logs...)
 			blockSize += tx.Size()
 		}
 		blockResponse.GasUsed = totalGasUsed
@@ -256,6 +262,8 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 
 	if full {
 		blockResponse.Transactions = transactions
+	} else {
+		blockResponse.Transactions = transactionHashes
 	}
 
 	return blockResponse, nil
@@ -311,7 +319,7 @@ func (v ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error)
 
 var _ atree.Ledger = (*ViewOnlyLedger)(nil)
 
-func (a *APINamespace) BaseViewForEVMHeight(height uint64) (*state.BaseView, error) {
+func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, error) {
 	store := a.storage.StorageForEVMHeight(height)
 	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
 	if err != nil {
@@ -322,6 +330,27 @@ func (a *APINamespace) BaseViewForEVMHeight(height uint64) (*state.BaseView, err
 	return state.NewBaseView(&ViewOnlyLedger{
 		snapshot: snap,
 	}, base)
+
+}
+
+func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
+	store := a.storage.StorageForEVMHeight(height)
+	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	view := &ViewOnlyLedger{
+		snapshot: a.storage.LedgerSnapshot(cadenceHeight),
+	}
+	data, err := view.GetValue(base[:], []byte(BlockStoreLatestBlockKey))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return evmTypes.GenesisBlock(flow.Mainnet), nil
+	}
+	return evmTypes.NewBlockFromBytes(data)
 
 }
 
@@ -338,7 +367,7 @@ func (a *APINamespace) GetBalance(
 	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrEntityNotFound)
 	}
-	bv, err := a.BaseViewForEVMHeight(height)
+	bv, err := a.baseViewForEVMHeight(height)
 	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrInternal)
 	}
@@ -736,7 +765,7 @@ func (a *APINamespace) GetTransactionCount(
 	if err != nil {
 		return handleError[*hexutil.Uint64](errs.ErrEntityNotFound)
 	}
-	bv, err := a.BaseViewForEVMHeight(height)
+	bv, err := a.baseViewForEVMHeight(height)
 	if err != nil {
 		return handleError[*hexutil.Uint64](errs.ErrInternal)
 	}
@@ -824,7 +853,7 @@ func (a *APINamespace) GetCode(
 	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
 	}
-	bv, err := a.BaseViewForEVMHeight(height)
+	bv, err := a.baseViewForEVMHeight(height)
 	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrInternal)
 	}
@@ -935,7 +964,7 @@ func (a *APINamespace) GetStorageAt(
 	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrEntityNotFound)
 	}
-	bv, err := a.BaseViewForEVMHeight(height)
+	bv, err := a.baseViewForEVMHeight(height)
 	if err != nil {
 		return handleError[hexutil.Bytes](errs.ErrInternal)
 	}
