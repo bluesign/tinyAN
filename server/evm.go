@@ -233,8 +233,8 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
-	transactionResults := make([]*api.Transaction, 0)
-	transactionHashes := make([]common.Hash, 0)
+	transactionResults := make([]*api.Transaction, len(cadenceEvents))
+	transactionHashes := make([]common.Hash, len(cadenceEvents))
 
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
@@ -256,9 +256,9 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 			if err != nil {
 				return handleError[*api.Block](errs.ErrInternal)
 			}
-			transactionHashes = append(transactionHashes, receipt.TxHash)
+			transactionHashes[receipt.TransactionIndex] = receipt.TxHash
 			txResult, _ := api.NewTransactionResult(tx, *receipt, EVMMainnetChainID)
-			transactionResults = append(transactionResults, txResult)
+			transactionResults[receipt.TransactionIndex] = txResult
 			totalGasUsed += hexutil.Uint64(receipt.GasUsed)
 			logs = append(logs, receipt.Logs...)
 			blockSize += tx.Size()
