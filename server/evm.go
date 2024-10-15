@@ -368,10 +368,10 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 		Key:   string(storage.DeepCopy(key)),
 	}
 	if vv, ok := v.cache[reg]; ok {
-		fmt.Println("!!!!!!!!! cached returned")
+		fmt.Println("!!!!!!!!! cached returned", reg.String())
 		return vv, nil
 	}
-	fmt.Println("!!!!!!!!! normal returned")
+	fmt.Println("!!!!!!!!! normal returned", reg.String())
 	vv, err := v.snapshot.Get(reg)
 
 	return vv, err
@@ -387,7 +387,7 @@ func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 	}
 	v.cache[reg] = storage.DeepCopy(value)
 
-	fmt.Println("!!!!!!!!! SetValue called")
+	fmt.Println("!!!!!!!!! SetValue called", reg.String())
 	return nil
 }
 
