@@ -650,7 +650,7 @@ func (a *APINamespace) GetBlockReceipts(
 		if err != nil {
 			return handleError[[]map[string]interface{}](errs.ErrInternal)
 		}
-		result = append(result, txReceipt)
+		result[i] = txReceipt
 	}
 
 	return result, nil
