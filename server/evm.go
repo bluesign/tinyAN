@@ -435,17 +435,18 @@ func (a *APINamespace) GetTransactionByHash(
 	if targetHeight == 0 {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-
+	fmt.Println("targetHeight", targetHeight)
 	block, err := a.blockFromBlockStorage(targetHeight)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-
+	fmt.Println("block", block)
 	transactions, receipts, err := a.blockTransactions(targetHeight)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
 
+	fmt.Println("transactions", transactions)
 	for i, tx := range transactions {
 		if tx.Hash() == hash {
 			receipt := receipts[i]
