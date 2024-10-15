@@ -130,6 +130,8 @@ func (d *DebugAPI) TraceTransaction(
 			}
 			fmt.Println("gethTx", gethTx)
 
+			fmt.Println(gethTx.ChainId())
+
 			// step 5 - run transaction
 			res, err := rbv.RunTransaction(gethTx)
 			fmt.Println(res)
