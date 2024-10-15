@@ -141,9 +141,7 @@ func txFromArgs(args api.TransactionArgs) (*types2.Transaction, error) {
 
 // BlockNumber returns the block number of the chain head.
 func (a *APINamespace) BlockNumber(ctx context.Context) (hexutil.Uint64, error) {
-
 	latestBlockHeight := a.storage.Latest().EVM().LastProcessedHeight()
-
 	return hexutil.Uint64(latestBlockHeight), nil
 }
 
@@ -162,7 +160,7 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 	}
 	blockHash, ok := blockNumberOrHash.Hash()
 	if !ok {
-		return 0, errs.ErrMissingBlock
+		return 0, fmt.Errorf("%w %w", errs.ErrInvalid, "neither block number nor hash specified")
 	}
 
 	for _, spork := range a.storage.Sporks() {
@@ -367,12 +365,13 @@ func (a *APINamespace) GetBalance(
 
 	height, err := a.blockNumberOrHashToHeight(blockNumberOrHash)
 	if err != nil {
-		return handleError[*hexutil.Big](errs.ErrEntityNotFound)
+		return handleError[*hexutil.Big](err)
 	}
 	bv, err := a.baseViewForEVMHeight(height)
 	if err != nil {
 		return handleError[*hexutil.Big](errs.ErrInternal)
 	}
+
 	bal, err := bv.GetBalance(address)
 	if err != nil {
 		return nil, err
