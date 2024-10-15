@@ -160,7 +160,7 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 	}
 	blockHash, ok := blockNumberOrHash.Hash()
 	if !ok {
-		return 0, fmt.Errorf("%w %w", errs.ErrInvalid, errors.New("neither block number nor hash specified"))
+		return 0, fmt.Errorf("%w: %w", errs.ErrInvalid, errors.New("neither block number nor hash specified"))
 	}
 
 	for _, spork := range a.storage.Sporks() {
