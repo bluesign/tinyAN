@@ -214,7 +214,6 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	}
 
 	cadenceHeight, err := a.storage.StorageForEVMHeight(block.Height).EVM().GetCadenceHeightFromEVMHeight(block.Height)
-	fmt.Println("cadenceHeight", cadenceHeight)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
@@ -223,10 +222,8 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
-	fmt.Println("cadenceBlockId", cadenceBlockId)
 
 	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
-	fmt.Println("cadenceEvents", cadenceEvents)
 
 	blockBytes, err := block.ToBytes()
 	if err != nil {
@@ -240,9 +237,6 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
 		for _, eventRaw := range cadenceEvents {
-			fmt.Println("eventRaw", eventRaw.ID())
-			fmt.Println("eventRaw", eventRaw.TransactionID)
-			fmt.Println("eventRaw", eventRaw.TransactionIndex)
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
 				return handleError[*api.Block](errs.ErrInternal)
