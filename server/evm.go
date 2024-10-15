@@ -246,6 +246,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 				return handleError[*api.Block](errs.ErrInternal)
 			}
 			tx, receipt, err := storage.DecodeTransactionEvent(event)
+			receipt.BlockHash = h
 			if err != nil {
 				return handleError[*api.Block](errs.ErrInternal)
 			}
