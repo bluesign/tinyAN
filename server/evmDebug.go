@@ -148,6 +148,7 @@ func (d *DebugAPI) traceBlock(
 	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
 		snapshot: snap,
 		cache:    make(map[string][]byte),
+		counter:  0xFFFFFFFFFFFFFFFF,
 	}, base)
 	fmt.Println("emulator", emulator)
 

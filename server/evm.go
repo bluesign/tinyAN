@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -357,6 +358,7 @@ func (a *APINamespace) SendRawTransaction(
 type ViewOnlyLedger struct {
 	snapshot snapshot.StorageSnapshot
 	cache    map[string][]byte
+	counter  uint64
 }
 
 func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
@@ -405,7 +407,11 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 
 func (v ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error) {
 	fmt.Println("!!!!!!!!! AllocateSlabIndex called")
-	return atree.SlabIndex{}, nil
+
+	slabIndex := atree.SlabIndex{}
+	binary.BigEndian.PutUint64(slabIndex[:8], v.counter)
+	v.counter--
+	return slabIndex, nil
 
 }
 
