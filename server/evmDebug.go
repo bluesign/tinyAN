@@ -120,9 +120,9 @@ func (d *DebugAPI) TraceTransaction(
 			var gethTx *gethTypes.Transaction
 			switch v := tx.(type) {
 
-			case *models.DirectCall:
+			case models.DirectCall:
 				gethTx = v.Transaction()
-			case *models.TransactionCall:
+			case models.TransactionCall:
 				gethTx = v.Transaction
 			default:
 				fmt.Println(fmt.Sprintf("%T", v))
