@@ -54,100 +54,6 @@ func (e *EVMTraceListener) Upload(id string, data json.RawMessage) error {
 
 var _ debug.Uploader = &EVMTraceListener{}
 
-func (d *DebugAPI) TraceTransaction(
-	_ context.Context,
-	txId gethCommon.Hash,
-	_ *tracers.TraceConfig,
-) (json.RawMessage, error) {
-
-	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
-	cadenceHeight := uint64(0)
-	evmHeight := uint64(0)
-
-	for _, spork := range d.api.storage.Sporks() {
-		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(txId)
-		if err == nil {
-			cadenceHeight = height
-			break
-		}
-	}
-	if cadenceHeight == 0 {
-		return handleError[json.RawMessage](errs.ErrEntityNotFound)
-	}
-	fmt.Println("cadenceHeight", cadenceHeight)
-	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
-	if err != nil {
-		return handleError[json.RawMessage](errs.ErrInternal)
-	}
-
-	transactions, _, err := d.api.blockTransactions(block.Height)
-	if err != nil {
-		return handleError[json.RawMessage](errs.ErrInternal)
-	}
-
-	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
-	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
-		snapshot: snap,
-	}, base)
-	fmt.Println("emulator", emulator)
-
-	ctx := evmTypes.BlockContext{
-		ChainID:                evmTypes.FlowEVMMainNetChainID,
-		BlockNumber:            evmHeight,
-		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
-		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
-		GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
-			return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
-		},
-		Tracer: tracer.TxTracer(),
-		//Tracer: debug.NewEVMCallTracer(nil, nil),
-	}
-	fmt.Println("ctx", ctx)
-
-	rbv, err := emulator.NewBlockView(ctx)
-	fmt.Println("rbv", rbv)
-
-	for _, tx := range transactions {
-
-		if tx.Hash() == txId {
-			fmt.Println("tx", tx)
-
-			var gethTx *gethTypes.Transaction
-			var res *evmTypes.Result
-
-			switch v := tx.(type) {
-
-			case models.DirectCall:
-				fmt.Println("DirectCall")
-				res, err = rbv.DirectCall(v.DirectCall)
-
-			case models.TransactionCall:
-				fmt.Println("TransactionCall")
-				gethTx = v.Transaction
-				res, err = rbv.RunTransaction(gethTx)
-
-			default:
-				fmt.Println(fmt.Sprintf("%T", v))
-				panic("invalid transaction type")
-			}
-
-			// step 5 - run transaction
-			fmt.Println(res)
-			fmt.Println(err)
-			if err != nil {
-				return nil, err
-			}
-			if res == nil { // safety check for result
-				return nil, evmTypes.ErrUnexpectedEmptyResult
-			}
-
-		}
-	}
-
-	return tracer.GetResultByTxHash(txId), nil
-}
-
 func (d *DebugAPI) TraceBlockByNumber(
 	ctx context.Context,
 	number rpc.BlockNumber,
@@ -185,27 +91,125 @@ func (d *DebugAPI) TraceBlockByHash(
 	return d.traceBlock(ctx, height, cfg)
 }
 
+func (d *DebugAPI) TraceTransaction(
+	_ context.Context,
+	txId gethCommon.Hash,
+	_ *tracers.TraceConfig,
+) (json.RawMessage, error) {
+
+	cadenceHeight := uint64(0)
+	for _, spork := range d.api.storage.Sporks() {
+		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(txId)
+		if err == nil {
+			cadenceHeight = height
+			break
+		}
+	}
+	if cadenceHeight == 0 {
+		return handleError[json.RawMessage](errs.ErrEntityNotFound)
+	}
+	fmt.Println("cadenceHeight", cadenceHeight)
+	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
+	if err != nil {
+		return handleError[json.RawMessage](errs.ErrInternal)
+	}
+	traced, err := d.traceBlock(context.Background(), block.Height, nil)
+	if err != nil {
+		return handleError[json.RawMessage](errs.ErrInternal)
+	}
+
+	for _, txResult := range traced {
+		if txResult.TxHash == txId {
+			jsonRaw, _ := json.Marshal(txResult.Result)
+			return jsonRaw, nil
+		}
+	}
+
+	return handleError[json.RawMessage](errs.ErrEntityNotFound)
+
+}
+
 func (d *DebugAPI) traceBlock(
 	ctx context.Context,
 	height uint64,
 	_ *tracers.TraceConfig,
 ) ([]*txTraceResult, error) {
 
+	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().GetCadenceHeightFromEVMHeight(height)
+	if err != nil {
+		return nil, err
+	}
+
+	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
+		snapshot: snap,
+	}, base)
+	fmt.Println("emulator", emulator)
+
 	transactions, receipts, err := d.api.blockTransactions(height)
 	if err != nil {
 		return nil, err
 	}
 
+	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
+	blockContext := evmTypes.BlockContext{
+		ChainID:                evmTypes.FlowEVMMainNetChainID,
+		BlockNumber:            height,
+		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
+		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
+		GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
+			return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
+		},
+		Tracer: tracer.TxTracer(),
+		//Tracer: debug.NewEVMCallTracer(nil, nil),
+	}
+	rbv, err := emulator.NewBlockView(blockContext)
+	fmt.Println("rbv", rbv)
+
 	results := make([]*txTraceResult, len(transactions))
+
 	for i, tx := range transactions {
 
-		txTrace, err := d.TraceTransaction(ctx, tx.Hash(), nil)
+		fmt.Println("tx", tx)
+
+		var gethTx *gethTypes.Transaction
+		var res *evmTypes.Result
+
+		switch v := tx.(type) {
+
+		case models.DirectCall:
+			fmt.Println("DirectCall")
+			res, err = rbv.DirectCall(v.DirectCall)
+
+		case models.TransactionCall:
+			fmt.Println("TransactionCall")
+			gethTx = v.Transaction
+			res, err = rbv.RunTransaction(gethTx)
+
+		default:
+			fmt.Println(fmt.Sprintf("%T", v))
+			panic("invalid transaction type")
+		}
+
+		// step 5 - run transaction
+		fmt.Println(res)
+		fmt.Println(err)
+		if err != nil {
+			return nil, err
+		}
+		if res == nil { // safety check for result
+			return nil, evmTypes.ErrUnexpectedEmptyResult
+		}
+
+		txTrace := tracer.GetResultByTxHash(receipts[i].TxHash)
 
 		if err != nil {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Error: err.Error()}
 		} else {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: txTrace}
 		}
+
 	}
 
 	return results, nil
