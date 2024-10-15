@@ -2,9 +2,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/go-ethereum/common"
 	gethTypes "github.com/onflow/go-ethereum/core/types"
+	"github.com/onflow/go-ethereum/rpc"
 	"golang.org/x/exp/slices"
 
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
@@ -48,13 +48,13 @@ func NewFilterCriteria(addresses []common.Address, topics [][]common.Hash) (*Fil
 type RangeFilter struct {
 	start, end uint64
 	criteria   *FilterCriteria
-	store      *storage.EVMStorage
+	api        *APINamespace
 }
 
 func NewRangeFilter(
 	start, end uint64,
 	criteria FilterCriteria,
-	storage *storage.EVMStorage,
+	api *APINamespace,
 ) (*RangeFilter, error) {
 	if len(criteria.Topics) > maxTopics {
 		return nil, fmt.Errorf("max topics exceeded, only %d allowed, got %d", maxTopics, len(criteria.Topics))
@@ -74,7 +74,7 @@ func NewRangeFilter(
 		start:    start,
 		end:      end,
 		criteria: &criteria,
-		store:    storage,
+		api:      api,
 	}, nil
 }
 
@@ -83,12 +83,13 @@ func (r *RangeFilter) Match() ([]*gethTypes.Log, error) {
 	var logs []*gethTypes.Log
 
 	for height := r.start; height < r.end; height++ {
-		blk, err := r.store.GetEvmBlockByHeight(height)
+
+		_, receipts, err := r.api.blockTransactions(height)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, receipt := range blk.Receipts {
+		for _, receipt := range receipts {
 			if bloomMatch(receipt.Bloom, r.criteria) {
 				for _, log := range receipt.Logs {
 					if ExactMatch(log, r.criteria) {
@@ -109,13 +110,13 @@ func (r *RangeFilter) Match() ([]*gethTypes.Log, error) {
 type IDFilter struct {
 	id       common.Hash
 	criteria *FilterCriteria
-	store    *storage.EVMStorage
+	api      *APINamespace
 }
 
 func NewIDFilter(
 	id common.Hash,
 	criteria FilterCriteria,
-	store *storage.EVMStorage,
+	api *APINamespace,
 ) (*IDFilter, error) {
 	if len(criteria.Topics) > maxTopics {
 		return nil, fmt.Errorf("max topics exceeded, only %d allowed, got %d", maxTopics, len(criteria.Topics))
@@ -124,21 +125,24 @@ func NewIDFilter(
 	return &IDFilter{
 		id:       id,
 		criteria: &criteria,
-		store:    store,
+		api:      api,
 	}, nil
 }
 
 func (i *IDFilter) Match() ([]*gethTypes.Log, error) {
-	height, err := i.store.GetEVMHeightFromHash(i.id)
+	height, err := i.api.blockNumberOrHashToHeight(
+		rpc.BlockNumberOrHash{
+			BlockHash: &i.id,
+		})
 	if err != nil {
 		return nil, err
 	}
-	block, err := i.store.GetEvmBlockByHeight(height)
+	_, receipts, err := i.api.blockTransactions(height)
 	if err != nil {
 		return nil, err
 	}
 	logs := make([]*gethTypes.Log, 0)
-	for _, receipt := range block.Receipts {
+	for _, receipt := range receipts {
 		for _, log := range receipt.Logs {
 			if ExactMatch(log, i.criteria) {
 				logs = append(logs, log)

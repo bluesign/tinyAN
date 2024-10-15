@@ -780,14 +780,7 @@ func (a *APINamespace) GetLogs(
 	// if filter provided specific block ID
 	if criteria.BlockHash != nil {
 
-		height, err := a.blockNumberOrHashToHeight(rpc.BlockNumberOrHash{
-			BlockHash: criteria.BlockHash,
-		})
-		if err != nil {
-			return handleError[[]*types.Log](errs.ErrEntityNotFound)
-		}
-
-		f, err := NewIDFilter(*criteria.BlockHash, filter, a.storage.StorageForEVMHeight(height).EVM())
+		f, err := NewIDFilter(*criteria.BlockHash, filter, a)
 		if err != nil {
 			return handleError[[]*types.Log](err)
 		}
@@ -826,7 +819,7 @@ func (a *APINamespace) GetLogs(
 		to = latest
 	}
 
-	f, err := NewRangeFilter(from.Uint64(), to.Uint64(), filter, a.storage.StorageForEVMHeight(from.Uint64()).EVM())
+	f, err := NewRangeFilter(from.Uint64(), to.Uint64(), filter, a)
 	if err != nil {
 		return handleError[[]*types.Log](err)
 	}
