@@ -201,9 +201,10 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 	receipts := make([]*models.Receipt, len(cadenceEvents))
 	transactions := make([]models.Transaction, len(cadenceEvents))
 
+	logIndex := uint(0)
+	cumulativeGasUsed := uint64(0)
+
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
-		cumulativeGasUsed := uint64(0)
-		logIndex := uint(0)
 		for _, eventRaw := range cadenceEvents {
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
