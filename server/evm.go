@@ -356,18 +356,18 @@ func (a *APINamespace) SendRawTransaction(
 
 type ViewOnlyLedger struct {
 	snapshot snapshot.StorageSnapshot
-	cache    map[flow.RegisterID][]byte
+	cache    map[string][]byte
 }
 
 func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	if v.cache == nil {
-		v.cache = make(map[flow.RegisterID][]byte)
+		v.cache = make(map[string][]byte)
 	}
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	if vv, ok := v.cache[reg]; ok {
+	if vv, ok := v.cache[reg.String()]; ok {
 		fmt.Println("!!!!!!!!! cached returned", reg.String())
 		return vv, nil
 	}
@@ -379,13 +379,13 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 
 func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 	if v.cache == nil {
-		v.cache = make(map[flow.RegisterID][]byte)
+		v.cache = make(map[string][]byte)
 	}
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	v.cache[reg] = storage.DeepCopy(value)
+	v.cache[reg.String()] = storage.DeepCopy(value)
 
 	fmt.Println("!!!!!!!!! SetValue called", reg.String())
 	return nil
@@ -393,7 +393,7 @@ func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 
 func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
 	if v.cache == nil {
-		v.cache = make(map[flow.RegisterID][]byte)
+		v.cache = make(map[string][]byte)
 	}
 	fmt.Println("!!!!!!!!! ValueExists called")
 	_, err = v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
