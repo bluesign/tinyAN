@@ -363,7 +363,6 @@ type ViewOnlyLedger struct {
 }
 
 func NewViewOnlyLedger(snapshot storage2.Transaction, counter uint64) *ViewOnlyLedger {
-	fmt.Println("!!!!!!!!!!!!!!!! NewViewOnlyLedger", counter)
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
 		Counter:  counter,
@@ -376,7 +375,6 @@ func (v *ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	fmt.Println("!!!!!!!!! normal returned", reg.String())
 
 	return v.snapshot.Get(reg)
 
@@ -401,7 +399,6 @@ func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	fmt.Println("!!!!!!!!! SetValue called", reg.String(), hex.EncodeToString(value))
 
 	v.snapshot.Set(reg, storage.DeepCopy(value))
 	/*v.mu.Lock()
