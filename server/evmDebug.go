@@ -194,6 +194,8 @@ func (d *DebugAPI) traceBlock(
 		case models.TransactionCall:
 			fmt.Println("TransactionCall")
 			gethTx = v.Transaction
+			fmt.Println("gethTx", gethTx)
+			fmt.Println("gas", gethTx.GasPrice(), gethTx.Gas())
 			res, err = rbv.RunTransaction(gethTx)
 
 		default:
