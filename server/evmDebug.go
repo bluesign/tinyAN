@@ -143,9 +143,8 @@ func (d *DebugAPI) traceBlock(
 	if err != nil {
 		return nil, err
 	}
-	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-
+	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	led := NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF)
 	emulator := emulator2.NewEmulator(led, base)
 

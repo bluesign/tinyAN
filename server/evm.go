@@ -449,9 +449,9 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	view := NewViewOnlyLedger(a.storage.LedgerSnapshot(cadenceHeight), 0xFFFFFFFFFFFFFFFF)
+	view := a.storage.LedgerSnapshot(cadenceHeight)
 
-	data, err := view.GetValue(base[:], []byte(BlockStoreLatestBlockKey))
+	data, err := view.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
 	if err != nil {
 		return nil, err
 	}
