@@ -536,14 +536,15 @@ func (a *APINamespace) GetTransactionReceipt(
 	hash common.Hash,
 ) (map[string]interface{}, error) {
 
-	var height uint64 = 0
+	var cadenceHeight uint64 = 0
 	var err error
 	for _, spork := range a.storage.Sporks() {
-		height, err = spork.EVM().GetCadenceBlockHeightForTransaction(hash)
+		cadenceHeight, err = spork.EVM().GetCadenceBlockHeightForTransaction(hash)
 		if err == nil {
 			break
 		}
 	}
+
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
 	}
