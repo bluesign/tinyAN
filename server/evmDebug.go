@@ -147,6 +147,7 @@ func (d *DebugAPI) traceBlock(
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
 		snapshot: snap,
+		cache:    make(map[string][]byte),
 	}, base)
 	fmt.Println("emulator", emulator)
 
