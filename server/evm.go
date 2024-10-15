@@ -438,6 +438,7 @@ func (a *APINamespace) GetTransactionByHash(
 	fmt.Println("targetHeight", targetHeight)
 	block, err := a.blockFromBlockStorage(targetHeight)
 	if err != nil {
+		fmt.Println(err)
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
 	fmt.Println("block", block)
