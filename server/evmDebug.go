@@ -139,7 +139,10 @@ func (d *DebugAPI) traceBlock(
 	if err != nil {
 		return nil, err
 	}
-
+	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
+	if err != nil {
+		return nil, err
+	}
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
@@ -155,7 +158,8 @@ func (d *DebugAPI) traceBlock(
 	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
 	blockContext := evmTypes.BlockContext{
 		ChainID:                evmTypes.FlowEVMMainNetChainID,
-		BlockNumber:            height,
+		BlockNumber:            block.Height,
+		Random:                 block.PrevRandao,
 		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
 		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
 		GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
@@ -164,6 +168,7 @@ func (d *DebugAPI) traceBlock(
 		Tracer: tracer.TxTracer(),
 		//Tracer: debug.NewEVMCallTracer(nil, nil),
 	}
+
 	rbv, err := emulator.NewBlockView(blockContext)
 	fmt.Println("rbv", rbv)
 
@@ -192,9 +197,6 @@ func (d *DebugAPI) traceBlock(
 			panic("invalid transaction type")
 		}
 
-		// step 5 - run transaction
-		fmt.Println(res)
-		fmt.Println(err)
 		if err != nil {
 			return nil, err
 		}
