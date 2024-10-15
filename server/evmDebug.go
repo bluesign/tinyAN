@@ -113,23 +113,23 @@ func (d *DebugAPI) TraceTransaction(
 			fmt.Println("tx", tx)
 
 			var gethTx *gethTypes.Transaction
+			var res *evmTypes.Result
+
 			switch v := tx.(type) {
 
 			case models.DirectCall:
-				gethTx = v.Transaction()
+				res, err = rbv.DirectCall(v)
+
 			case models.TransactionCall:
 				gethTx = v.Transaction
+				res, err = rbv.RunTransaction(gethTx)
+
 			default:
 				fmt.Println(fmt.Sprintf("%T", v))
 				panic("invalid transaction type")
 			}
-			fmt.Println("gethTx", gethTx)
-
-			jb, _ := gethTx.MarshalJSON()
-			fmt.Println(string(jb))
 
 			// step 5 - run transaction
-			res, err := rbv.RunTransaction(gethTx)
 			fmt.Println(res)
 			fmt.Println(err)
 			if err != nil {
