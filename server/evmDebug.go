@@ -145,11 +145,8 @@ func (d *DebugAPI) traceBlock(
 	}
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
-		snapshot: snap,
-		cache:    make(map[string][]byte),
-		counter:  0xFFFFFFFFFFFFFFFF,
-	}, base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
+
 	fmt.Println("emulator", emulator)
 
 	transactions, receipts, err := d.api.blockTransactions(height)
