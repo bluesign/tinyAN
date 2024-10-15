@@ -1001,28 +1001,29 @@ func (a *APINamespace) FeeHistory(
 
 	blockRewards := make([]*hexutil.Big, len(rewardPercentiles))
 	for i := range rewardPercentiles {
-		blockRewards[i] = (*hexutil.Big)(big.NewInt(0))
+		blockRewards[i] = (*hexutil.Big)(big.NewInt(0x5f5e100))
 	}
 
 	for i := maxCount; i >= uint64(1); i-- {
 		// If the requested block count is 5, and the last block number
 		// is 20, then we need the blocks [16, 17, 18, 19, 20] in this
 		// specific order. The first block we fetch is 20 - 5 + 1 = 16.
+
 		blockHeight := lastBlockNumber - i + 1
-		evmBlock, err := a.storage.StorageForEVMHeight(blockHeight).EVM().GetEvmBlockByHeight(blockHeight)
+		block, err := a.blockFromBlockStorage(blockHeight)
 		if err != nil {
 			continue
 		}
 
 		if i == maxCount {
-			oldestBlock = (*hexutil.Big)(big.NewInt(int64(evmBlock.Block.Height)))
+			oldestBlock = (*hexutil.Big)(big.NewInt(int64(block.Height)))
 		}
 
 		baseFees = append(baseFees, (*hexutil.Big)(big.NewInt(0)))
 
 		rewards = append(rewards, blockRewards)
 
-		gasUsedRatio := float64(evmBlock.Block.TotalGasUsed) / float64(blockGasLimit)
+		gasUsedRatio := float64(block.TotalGasUsed) / float64(blockGasLimit)
 		gasUsedRatios = append(gasUsedRatios, gasUsedRatio)
 	}
 
