@@ -191,7 +191,7 @@ func (d *DebugAPI) traceBlock(
 	results := make([]*txTraceResult, len(transactions))
 	for i, tx := range transactions {
 
-		txTrace, err := d.TraceTransaction(ctx, tx, nil)
+		txTrace, err := d.TraceTransaction(ctx, tx.Hash(), nil)
 
 		if err != nil {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Error: err.Error()}

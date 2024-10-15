@@ -35,8 +35,9 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	}
 
 	rpcServer := rpc.NewServer()
-	rpcServer.RegisterName("eth", &APINamespace{storage: storage})
-	rpcServer.RegisterName("debug", &DebugAPI{store: storage})
+	apiEth := &APINamespace{storage: storage}
+	rpcServer.RegisterName("eth", apiEth)
+	rpcServer.RegisterName("debug", &DebugAPI{api: apiEth})
 	rpcServer.RegisterName("net", &NetAPI{})
 	rpcServer.RegisterName("web3", &Web3API{})
 	rpcServer.RegisterName("txpool", &TxPool{})
