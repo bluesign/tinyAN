@@ -218,22 +218,28 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 			if err != nil {
 				return nil, nil, err
 			}
-			cumulativeGasUsed += receipt.GasUsed
-			receipt.CumulativeGasUsed = cumulativeGasUsed
-			receipt.BlockHash, _ = block.Hash()
 
-			for _, log := range receipt.Logs {
-				log.Index = logIndex
-				log.BlockNumber = block.Height
-				log.TxHash = receipt.TxHash
-				log.TxIndex = receipt.TransactionIndex
-				log.BlockHash = receipt.BlockHash
-				logIndex++
-			}
 			transactions[receipt.TransactionIndex] = tx
 			receipts[receipt.TransactionIndex] = receipt
 		}
 	}
+
+	for i, receipt := range receipts {
+		cumulativeGasUsed += receipt.GasUsed
+		receipt.CumulativeGasUsed = cumulativeGasUsed
+
+		receipt.BlockHash, _ = block.Hash()
+
+		for _, log := range receipt.Logs {
+			log.Index = logIndex
+			log.BlockNumber = block.Height
+			log.TxHash = receipt.TxHash
+			log.TxIndex = receipt.TransactionIndex
+			log.BlockHash = receipt.BlockHash
+			logIndex++
+		}
+	}
+
 	return transactions, receipts, nil
 }
 
