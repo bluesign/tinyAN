@@ -634,27 +634,26 @@ func (a *APINamespace) GetBlockReceipts(
 	if err != nil {
 		return handleError[[]map[string]interface{}](errs.ErrEntityNotFound)
 	}
-	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+
+	block, err := a.blockFromBlockStorage(height)
 	if err != nil {
-		return handleError[[]map[string]interface{}](errs.ErrEntityNotFound)
+		return handleError[[]map[string]interface{}](errs.ErrInternal)
+	}
+	transactions, receipts, err := a.blockTransactions(block.Height)
+	if err != nil {
+		return handleError[[]map[string]interface{}](errs.ErrInternal)
 	}
 
-	receipts := make([]map[string]interface{}, len(evmBlock.Block.TransactionHashes))
-	transactions := evmBlock.Transactions
-	for i, txBytes := range transactions {
-		tx, err := models.UnmarshalTransaction(txBytes)
+	result := make([]map[string]interface{}, len(transactions))
+	for i, tx := range transactions {
+		txReceipt, err := api.MarshalReceipt(receipts[i], tx)
 		if err != nil {
 			return handleError[[]map[string]interface{}](errs.ErrInternal)
 		}
-		txReceipt, err := api.MarshalReceipt(evmBlock.Receipts[i], tx)
-		if err != nil {
-			return handleError[[]map[string]interface{}](errs.ErrInternal)
-		}
-		receipts = append(receipts, txReceipt)
-
+		result = append(result, txReceipt)
 	}
 
-	return receipts, nil
+	return result, nil
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions
