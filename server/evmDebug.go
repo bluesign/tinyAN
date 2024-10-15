@@ -139,8 +139,6 @@ func (d *DebugAPI) TraceTransaction(
 				return nil, evmTypes.ErrUnexpectedEmptyResult
 			}
 
-			// step 11 - collect traces
-			//tracer.Collect(res.TxHash)
 		}
 	}
 

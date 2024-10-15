@@ -20,7 +20,7 @@ import (
 
 const (
 	tracerConfig = `{ "onlyTopCall": false }`
-	tracerName   = "callTracer"
+	tracerName   = "prestateTracer"
 )
 
 type EVMTracer interface {
