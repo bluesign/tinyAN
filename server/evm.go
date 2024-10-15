@@ -380,6 +380,7 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	defer v.mu.Unlock()
 	if vv, ok := v.cache[reg.String()]; ok {
 		fmt.Println("!!!!!!!!! cached returned", reg.String())
+		fmt.Println(hex.EncodeToString(vv))
 		return vv, nil
 	}
 
