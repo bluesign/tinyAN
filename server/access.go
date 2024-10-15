@@ -705,9 +705,7 @@ func (h *Handler) SendTransaction(
 	fmt.Println("output", output)
 	fmt.Println("logs", output.Logs)
 
-	/*for _, t := range mt.Traces {
-		//fmt.Println("mt:", t)
-	}*/
+
 	evmTrace := ""
 	for x, t := range evmListener.Data {
 		fmt.Println("evm ", x)
