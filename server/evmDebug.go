@@ -9,6 +9,8 @@ import (
 	"github.com/onflow/flow-go/fvm/evm/debug"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
+	"github.com/onflow/flow-go/fvm/storage"
+	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common/hexutil"
 	gethTypes "github.com/onflow/go-ethereum/core/types"
@@ -145,7 +147,11 @@ func (d *DebugAPI) traceBlock(
 	}
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
+
+	blockDatabase := storage.NewBlockDatabase(snap, 0, nil)
+	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(txnState), base)
 
 	fmt.Println("emulator", emulator)
 

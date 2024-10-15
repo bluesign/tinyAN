@@ -16,7 +16,7 @@ import (
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	"github.com/onflow/flow-go/fvm/evm/emulator/state"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
-	"github.com/onflow/flow-go/fvm/storage/snapshot"
+	storage2 "github.com/onflow/flow-go/fvm/storage"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -357,13 +357,13 @@ func (a *APINamespace) SendRawTransaction(
 }
 
 type ViewOnlyLedger struct {
-	snapshot snapshot.StorageSnapshot
+	snapshot storage2.Transaction
 	cache    map[string][]byte
 	counter  uint64
 	mu       sync.Mutex
 }
 
-func NewViewOnlyLedger(snapshot snapshot.StorageSnapshot) *ViewOnlyLedger {
+func NewViewOnlyLedger(snapshot storage2.Transaction) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
 		cache:    make(map[string][]byte),
@@ -371,37 +371,44 @@ func NewViewOnlyLedger(snapshot snapshot.StorageSnapshot) *ViewOnlyLedger {
 	}
 }
 
-func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
+func (v *ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	if vv, ok := v.cache[reg.String()]; ok {
-		fmt.Println("!!!!!!!!! cached returned", reg.String())
-		fmt.Println(hex.EncodeToString(vv))
-		return vv, nil
-	}
-
 	fmt.Println("!!!!!!!!! normal returned", reg.String())
-	vv, err := v.snapshot.Get(reg)
 
-	return vv, err
+	return v.snapshot.Get(reg)
+
+	/*
+		v.mu.Lock()
+		defer v.mu.Unlock()
+		if vv, ok := v.cache[reg.String()]; ok {
+			fmt.Println("!!!!!!!!! cached returned", reg.String())
+			fmt.Println(hex.EncodeToString(vv))
+			return vv, nil
+		}
+
+		fmt.Println("!!!!!!!!! normal returned", reg.String())
+		vv, err := v.snapshot.Get(reg)
+
+		return vv, err*/
 }
 
-func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
+func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
 	}
-	v.mu.Lock()
+	fmt.Println("!!!!!!!!! SetValue called", reg.String(), hex.EncodeToString(value))
+
+	v.snapshot.Set(reg, storage.DeepCopy(value))
+	/*v.mu.Lock()
 	defer v.mu.Unlock()
 	v.cache[reg.String()] = storage.DeepCopy(value)
 
-	fmt.Println("!!!!!!!!! SetValue called", reg.String(), hex.EncodeToString(value))
-	return nil
+	return nil*/
 }
 
 func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
@@ -421,7 +428,6 @@ func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	binary.BigEndian.PutUint64(slabIndex[:], v.counter)
 	v.counter--
 	return slabIndex, nil
-
 }
 
 var _ atree.Ledger = (*ViewOnlyLedger)(nil)
