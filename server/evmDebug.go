@@ -198,6 +198,7 @@ func (d *DebugAPI) traceBlock(
 			panic("invalid transaction type")
 		}
 
+		fmt.Println("result", res)
 		if err != nil {
 			return nil, err
 		}
