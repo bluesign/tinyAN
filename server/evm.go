@@ -433,7 +433,7 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	return state.NewBaseView(NewViewOnlyLedger(snap), base))
+	return state.NewBaseView(NewViewOnlyLedger(snap), base)
 
 }
 
