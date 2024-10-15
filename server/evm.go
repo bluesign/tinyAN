@@ -675,18 +675,11 @@ func (a *APINamespace) GetBlockTransactionCountByHash(
 	height, err := a.blockNumberOrHashToHeight(rpc.BlockNumberOrHash{
 		BlockHash: &blockHash,
 	})
-
 	if err != nil {
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
-	if err != nil {
-		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
-	}
-
-	count := hexutil.Uint(len(evmBlock.Block.TransactionHashes))
-	return &count, nil
+	return a.GetBlockTransactionCountByNumber(ctx, rpc.BlockNumber(height))
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions
@@ -701,12 +694,17 @@ func (a *APINamespace) GetBlockTransactionCountByNumber(
 		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
 	}
 
-	evmBlock, err := a.storage.StorageForEVMHeight(height).EVM().GetEvmBlockByHeight(height)
+	block, err := a.blockFromBlockStorage(height)
 	if err != nil {
-		return handleError[*hexutil.Uint](errs.ErrEntityNotFound)
+		return handleError[*hexutil.Uint](errs.ErrInternal)
 	}
 
-	count := hexutil.Uint(len(evmBlock.Block.TransactionHashes))
+	transactions, _, err := a.blockTransactions(block.Height)
+	if err != nil {
+		return handleError[*hexutil.Uint](errs.ErrInternal)
+	}
+
+	count := hexutil.Uint(len(transactions))
 	return &count, nil
 }
 
