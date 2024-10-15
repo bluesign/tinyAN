@@ -240,6 +240,9 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
 		for _, eventRaw := range cadenceEvents {
+			fmt.Println("eventRaw", eventRaw.ID())
+			fmt.Println("eventRaw", eventRaw.TransactionID)
+			fmt.Println("eventRaw", eventRaw.TransactionIndex)
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
 				return handleError[*api.Block](errs.ErrInternal)
