@@ -201,6 +201,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 
 		events := a.storage.StorageForEVMHeight(height).Protocol().EventsByName(flowBlock.ID(), "A.e467b9dd11fa00df.EVM")
 		cadenceEvents, err = storage.ParseCadenceEvents(events)
+		fmt.Println(cadenceEvents)
 		if err != nil {
 			return handleError[*api.Block](errs.ErrInternal)
 		}
@@ -241,6 +242,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
 		for i, tx := range cadenceEvents.Transactions {
+			block.TransactionHashes = append(block.TransactionHashes, tx.Hash())
 			transactions = append(transactions, tx)
 			txReceipt := cadenceEvents.Receipts[i]
 			totalGasUsed += hexutil.Uint64(txReceipt.GasUsed)
