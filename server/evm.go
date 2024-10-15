@@ -425,6 +425,7 @@ func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	slabIndex := atree.SlabIndex{}
 	binary.BigEndian.PutUint64(slabIndex[:], v.counter)
 	v.counter--
+	fmt.Println(v.counter)
 	return slabIndex, nil
 }
 
