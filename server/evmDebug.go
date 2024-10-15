@@ -197,6 +197,7 @@ func (d *DebugAPI) traceBlock(
 			fmt.Println("gethTx", gethTx)
 			fmt.Println("gas", gethTx.GasPrice(), gethTx.Gas())
 			res, err = rbv.RunTransaction(gethTx)
+			fmt.Println("rgas", res.GasConsumed, res.GasRefund)
 
 		default:
 			fmt.Println(fmt.Sprintf("%T", v))
