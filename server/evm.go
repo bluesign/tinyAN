@@ -174,6 +174,13 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 }
 
 func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transaction, []*models.Receipt, error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
 	cadenceHeight, err := a.storage.StorageForEVMHeight(blockHeight).EVM().GetCadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
 		return nil, nil, err
