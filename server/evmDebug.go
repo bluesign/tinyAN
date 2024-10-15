@@ -148,9 +148,6 @@ func (d *DebugAPI) traceBlock(
 	led := NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF)
 	emulator := emulator2.NewEmulator(led, base)
 
-	fmt.Println("emulator", emulator)
-	fmt.Println(led.Counter)
-
 	transactions, receipts, err := d.api.blockTransactions(height)
 	if err != nil {
 		return nil, err
@@ -162,9 +159,6 @@ func (d *DebugAPI) traceBlock(
 
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
-
-		fmt.Println("tx", tx)
-		fmt.Println(led.Counter)
 
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
@@ -185,7 +179,6 @@ func (d *DebugAPI) traceBlock(
 			Tracer: tracer.TxTracer(),
 		}
 		rbv, err := emulator.NewBlockView(blockContext)
-		fmt.Println("rbv", rbv)
 
 		switch v := tx.(type) {
 
@@ -196,10 +189,7 @@ func (d *DebugAPI) traceBlock(
 		case models.TransactionCall:
 			fmt.Println("TransactionCall")
 			gethTx = v.Transaction
-			fmt.Println("gethTx", gethTx)
-			fmt.Println("gas", gethTx.GasPrice(), gethTx.Gas())
 			res, err = rbv.RunTransaction(gethTx)
-			fmt.Println("rgas", res.GasConsumed, res.GasRefund)
 
 		default:
 			fmt.Println(fmt.Sprintf("%T", v))
