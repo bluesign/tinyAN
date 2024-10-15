@@ -557,14 +557,18 @@ func (a *APINamespace) GetTransactionReceipt(
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
+	cumulativeGasUsed := uint64(0)
 	for i, tx := range transactions {
+		cumulativeGasUsed += receipts[i].GasUsed
 		if tx.Hash() == hash {
 			receipt := receipts[i]
 			receipt.BlockHash, _ = block.Hash()
+			receipt.CumulativeGasUsed = cumulativeGasUsed
 			txReceipt, err := api.MarshalReceipt(receipt, tx)
 			if err != nil {
 				return handleError[map[string]interface{}](errs.ErrInternal)
 			}
+
 			return txReceipt, nil
 		}
 	}
