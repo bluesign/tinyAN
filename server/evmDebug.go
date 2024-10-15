@@ -156,31 +156,33 @@ func (d *DebugAPI) traceBlock(
 	}
 
 	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
-	blockContext := evmTypes.BlockContext{
-		ChainID:                evmTypes.FlowEVMMainNetChainID,
-		BlockNumber:            block.Height,
-		Random:                 block.PrevRandao,
-		DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
-		DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
-		GasFeeCollector:        evmTypes.CoinbaseAddress,
-		GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
-			return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
-		},
-		Tracer: tracer.TxTracer(),
-		//Tracer: debug.NewEVMCallTracer(nil, nil),
-	}
-
-	rbv, err := emulator.NewBlockView(blockContext)
-	fmt.Println("rbv", rbv)
 
 	results := make([]*txTraceResult, len(transactions))
 
+	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
 
 		fmt.Println("tx", tx)
 
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
+
+		blockContext := evmTypes.BlockContext{
+			ChainID:                evmTypes.FlowEVMMainNetChainID,
+			BlockNumber:            block.Height,
+			Random:                 block.PrevRandao,
+			TotalGasUsedSoFar:      uint64(totalGasUsed),
+			TxCountSoFar:           uint(i),
+			DirectCallBaseGasUsage: evmTypes.DefaultDirectCallBaseGasUsage,
+			DirectCallGasPrice:     evmTypes.DefaultDirectCallGasPrice,
+			GasFeeCollector:        evmTypes.CoinbaseAddress,
+			GetHashFunc: func(n uint64) gethCommon.Hash { // default returns some random hash values
+				return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
+			},
+			Tracer: tracer.TxTracer(),
+		}
+		rbv, err := emulator.NewBlockView(blockContext)
+		fmt.Println("rbv", rbv)
 
 		switch v := tx.(type) {
 
@@ -198,6 +200,7 @@ func (d *DebugAPI) traceBlock(
 			panic("invalid transaction type")
 		}
 
+		totalGasUsed += res.GasConsumed
 		fmt.Println("result", res)
 		if err != nil {
 			return nil, err
