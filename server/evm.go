@@ -366,7 +366,7 @@ type ViewOnlyLedger struct {
 func NewViewOnlyLedger(snapshot storage2.Transaction) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
-		counter:  0x00FFFFFFFFFFFFFF,
+		counter:  0x000000FFFFFFFFFF,
 	}
 }
 
@@ -422,7 +422,6 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 
 func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	//we allocate fake slab index here
-	fmt.Println("!!!!!!!!! AllocateSlabIndex called")
 	slabIndex := atree.SlabIndex{}
 	binary.BigEndian.PutUint64(slabIndex[:], v.counter)
 	v.counter--
