@@ -411,7 +411,7 @@ func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 	return nil
 }
 
-func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
+func (v *ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
 
 	fmt.Println("!!!!!!!!! ValueExists called")
 	_, err = v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
@@ -421,7 +421,7 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 	return true, nil
 }
 
-func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
+func (v *ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	//we allocate fake slab index here
 	v.mu.Lock()
 	defer v.mu.Unlock()
