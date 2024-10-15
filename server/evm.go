@@ -224,7 +224,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 		}
 	}
 
-	for i, receipt := range receipts {
+	for _, receipt := range receipts {
 		cumulativeGasUsed += receipt.GasUsed
 		receipt.CumulativeGasUsed = cumulativeGasUsed
 
