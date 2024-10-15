@@ -79,7 +79,7 @@ func (d *DebugAPI) TraceTransaction(
 	if cadenceHeight == 0 {
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
-
+	fmt.Println("cadenceHeight", cadenceHeight)
 	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		return handleError[json.RawMessage](errs.ErrInternal)
@@ -95,7 +95,7 @@ func (d *DebugAPI) TraceTransaction(
 	emulator := emulator2.NewEmulator(&ViewOnlyLedger{
 		snapshot: snap,
 	}, base)
-
+	fmt.Println("emulator", emulator)
 	ctx := evmTypes.BlockContext{
 		ChainID:                evmTypes.FlowEVMMainNetChainID,
 		BlockNumber:            evmHeight,
@@ -107,11 +107,16 @@ func (d *DebugAPI) TraceTransaction(
 		Tracer: tracer.TxTracer(),
 		//Tracer: debug.NewEVMCallTracer(nil, nil),
 	}
+	fmt.Println("ctx", ctx)
+
 	rbv, err := emulator.NewBlockView(ctx)
+	fmt.Println("rbv", rbv)
 
 	for _, tx := range transactions {
 
 		if tx.Hash() == txId {
+			fmt.Println("tx", tx)
+
 			var gethTx *gethTypes.Transaction
 			switch v := tx.(type) {
 
@@ -122,6 +127,7 @@ func (d *DebugAPI) TraceTransaction(
 			default:
 				panic("invalid transaction type")
 			}
+			fmt.Println("gethTx", gethTx)
 
 			// step 5 - run transaction
 			res, err := rbv.RunTransaction(gethTx)
