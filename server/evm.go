@@ -371,12 +371,7 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 
 }
 
-func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
-	store := a.storage.StorageForEVMHeight(height)
-	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
-	if err != nil {
-		return nil, err
-	}
+func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	view := &ViewOnlyLedger{
 		snapshot: a.storage.LedgerSnapshot(cadenceHeight),
@@ -389,7 +384,15 @@ func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, er
 		return evmTypes.GenesisBlock(flow.Mainnet), nil
 	}
 	return evmTypes.NewBlockFromBytes(data)
+}
 
+func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
+	store := a.storage.StorageForEVMHeight(height)
+	cadenceHeight, err := store.EVM().GetCadenceHeightFromEVMHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	return a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 }
 
 // GetBalance returns the amount of wei for the given address in the state of the
@@ -423,26 +426,26 @@ func (a *APINamespace) GetTransactionByHash(
 	hash common.Hash,
 ) (*api.Transaction, error) {
 
-	targetHeight := uint64(0)
+	cadenceHeight := uint64(0)
 	for _, spork := range a.storage.Sporks() {
-		height, err := spork.EVM().GetEVMBlockHeightForTransaction(hash)
+		height, err := spork.EVM().GetCadenceBlockHeightForTransaction(hash)
 		if err == nil {
-			targetHeight = height
+			cadenceHeight = height
 			break
 		}
 	}
 
-	if targetHeight == 0 {
+	if cadenceHeight == 0 {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-	fmt.Println("targetHeight", targetHeight)
-	block, err := a.blockFromBlockStorage(targetHeight)
+	fmt.Println("cadenceHeight", cadenceHeight)
+	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		fmt.Println(err)
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
 	fmt.Println("block", block)
-	transactions, receipts, err := a.blockTransactions(targetHeight)
+	transactions, receipts, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
