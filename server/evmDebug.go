@@ -118,7 +118,7 @@ func (d *DebugAPI) TraceTransaction(
 			switch v := tx.(type) {
 
 			case models.DirectCall:
-				res, err = rbv.DirectCall(v)
+				res, err = rbv.DirectCall(v.DirectCall)
 
 			case models.TransactionCall:
 				gethTx = v.Transaction
