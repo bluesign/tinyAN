@@ -370,9 +370,6 @@ func NewViewOnlyLedger(snapshot snapshot.StorageSnapshot) *ViewOnlyLedger {
 }
 
 func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
-	if v.cache == nil {
-		v.cache = make(map[string][]byte)
-	}
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
@@ -388,9 +385,7 @@ func (v ViewOnlyLedger) GetValue(owner, key []byte) (value []byte, err error) {
 }
 
 func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
-	if v.cache == nil {
-		v.cache = make(map[string][]byte)
-	}
+
 	reg := flow.RegisterID{
 		Owner: string(storage.DeepCopy(owner)),
 		Key:   string(storage.DeepCopy(key)),
@@ -402,9 +397,7 @@ func (v ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 }
 
 func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) {
-	if v.cache == nil {
-		v.cache = make(map[string][]byte)
-	}
+
 	fmt.Println("!!!!!!!!! ValueExists called")
 	_, err = v.snapshot.Get(flow.NewRegisterID(flow.BytesToAddress(owner), string(key)))
 	if err != nil {
@@ -416,7 +409,7 @@ func (v ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error) 
 func (v ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	//we allocate fake slab index here
 	slabIndex := atree.SlabIndex{}
-	binary.BigEndian.PutUint64(slabIndex[:8], v.counter)
+	binary.BigEndian.PutUint64(slabIndex[:], v.counter)
 	v.counter--
 	return slabIndex, nil
 
