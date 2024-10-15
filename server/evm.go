@@ -544,30 +544,30 @@ func (a *APINamespace) GetTransactionReceipt(
 			break
 		}
 	}
-
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
 	}
-
-	evmBlock, err := a.storage.StorageForHeight(height).EVM().GetEvmBlockByHeight(height)
+	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
-		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
+		fmt.Println(err)
+		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
-
-	transactions := evmBlock.Transactions
-	for i, txBytes := range transactions {
-		tx, err := models.UnmarshalTransaction(txBytes)
-		if err != nil {
-			return handleError[map[string]interface{}](errs.ErrInternal)
-		}
+	transactions, receipts, err := a.blockTransactions(block.Height)
+	if err != nil {
+		return handleError[map[string]interface{}](errs.ErrInternal)
+	}
+	for i, tx := range transactions {
 		if tx.Hash() == hash {
-			txReceipt, err := api.MarshalReceipt(evmBlock.Receipts[i], tx)
+			receipt := receipts[i]
+			receipt.BlockHash, _ = block.Hash()
+			txReceipt, err := api.MarshalReceipt(receipt, tx)
 			if err != nil {
 				return handleError[map[string]interface{}](errs.ErrInternal)
 			}
 			return txReceipt, nil
 		}
 	}
+
 	return handleError[map[string]interface{}](errs.ErrInternal)
 
 }
