@@ -528,7 +528,7 @@ func (a *APINamespace) GetTransactionReceipt(
 	var height uint64 = 0
 	var err error
 	for _, spork := range a.storage.Sporks() {
-		height, err = spork.EVM().GetEVMBlockHeightForTransaction(hash)
+		height, err = spork.EVM().GetCadenceBlockHeightForTransaction(hash)
 		if err == nil {
 			break
 		}
