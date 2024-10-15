@@ -125,7 +125,7 @@ func (d *DebugAPI) TraceTransaction(
 			case *models.TransactionCall:
 				gethTx = v.Transaction
 			default:
-				fmt.Println("%T", v)
+				fmt.Println(fmt.Sprintf("%T", v))
 				panic("invalid transaction type")
 			}
 			fmt.Println("gethTx", gethTx)
