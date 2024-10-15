@@ -230,7 +230,7 @@ func (a *APINamespace) GetBlockByNumber(ctx context.Context, blockNumber rpc.Blo
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
-	transactions := make([]api.Transaction, 0)
+	transactions := make([]*api.Transaction, 0)
 	transactionHashes := make([]common.Hash, 0)
 
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
