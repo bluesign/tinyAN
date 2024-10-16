@@ -664,14 +664,10 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		fmt.Println("after run")
 	}()
 
-	for {
-		fmt.Println("d")
-		stop := debugger.Next()
-		fmt.Println(stop.Statement.String())
-		if debugger.CurrentActivation(stop.Interpreter).Depth == 0 {
-			break
-		}
-	}
+	fmt.Println("d")
+	stop := debugger.Next()
+	fmt.Println(stop.Statement.String())
+	debugger.Continue()
 
 	wg.Wait()
 	if err != nil {
