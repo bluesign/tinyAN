@@ -51,11 +51,10 @@ type AccessAdapter struct {
 	store    *storage.HeightBasedStorage
 	executor *ScriptExecutor
 	txCache  *lru.Cache[flowgo.Identifier, TemporaryTransactionResult]
-	index    *storage.IndexStorage
 }
 
 // NewAccessAdapter returns a new AccessAdapter.
-func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage, index *storage.IndexStorage) *AccessAdapter {
+func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage) *AccessAdapter {
 	executor := &ScriptExecutor{
 		logger: logger,
 	}
@@ -67,7 +66,6 @@ func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage, 
 		store:    store,
 		executor: executor,
 		txCache:  cache,
-		index:    index,
 	}
 }
 
@@ -670,7 +668,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	blockResources := make(map[uint64]*indexer.Resource)
 
 	for _, w := range resultSnapshot.UpdatedRegisters() {
-		a.index.IndexPayload2(blockResources, w, block.Height, false)
+		a.store.StorageForHeight(block.Height).Index().IndexPayload2(blockResources, w, block.Height, false)
 	}
 
 	logs := strings.Join(output.Logs, "\n")
