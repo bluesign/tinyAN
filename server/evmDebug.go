@@ -144,7 +144,7 @@ func (d *DebugAPI) traceBlock(
 	}
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
-	led := NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF)
+	led := NewViewOnlyLedger(snap)
 	emulator := emulator2.NewEmulator(led, base)
 
 	transactions, receipts, err := d.api.blockTransactions(height)

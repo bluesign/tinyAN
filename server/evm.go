@@ -435,7 +435,7 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	return state.NewBaseView(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
+	return state.NewBaseView(NewViewOnlyLedger(snap), base)
 }
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
@@ -741,7 +741,7 @@ func (a *APINamespace) Call(
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
 
 	rbv, err := emulator.NewBlockView(evmTypes.NewDefaultBlockContext(height))
 
@@ -894,7 +894,7 @@ func (a *APINamespace) EstimateGas(
 	}
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap, 0xFFFFFFFFFFFFFFFF), base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
 
 	rbv, err := emulator.NewBlockView(evmTypes.NewDefaultBlockContext(height))
 
