@@ -667,12 +667,16 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	func() {
 		stop := debugger.Pause()
 		fmt.Println(stop.Statement.ElementType().String())
+		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter) {
+			fmt.Println("on function invocation")
+		}
 
 		debugger.RequestPause()
 		debugger.Continue()
 		for {
 			select {
 			case d := <-debugger.Stops():
+
 				fmt.Println(debugger.CurrentActivation(d.Interpreter).IsFunction)
 				fmt.Println(d.Statement.ElementType().String())
 				fmt.Println(d.Statement.String())
