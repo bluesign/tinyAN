@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/goccy/go-json"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
@@ -10,18 +11,40 @@ import (
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/flow-go/model/flow"
+	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
 	gethTypes "github.com/onflow/go-ethereum/core/types"
 	"github.com/onflow/go-ethereum/crypto"
-	"math/big"
-	"os"
-
-	"github.com/goccy/go-json"
-	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/eth/tracers"
 	"github.com/onflow/go-ethereum/rpc"
 	"github.com/rs/zerolog"
+	"math/big"
+	"os"
 )
+
+type Pool struct {
+	c chan func()
+}
+
+func NewPool() *Pool {
+	p := &Pool{make(chan func(), 10000)}
+
+	for i := 0; i < 10; i++ {
+		go p.worker()
+	}
+
+	return p
+}
+
+func (p *Pool) worker() {
+	for work := range p.c {
+		work()
+	}
+}
+
+func (p *Pool) Do(work func()) {
+	p.c <- work
+}
 
 // txTraceResult is the result of a single transaction trace.
 type txTraceResult struct {
@@ -33,12 +56,14 @@ type txTraceResult struct {
 type DebugAPI struct {
 	logger zerolog.Logger
 	api    *APINamespace
+	pool   *Pool
 }
 
-func NewDebugAPI(api *APINamespace) *DebugAPI {
+func NewDebugApi(api *APINamespace) *DebugAPI {
 	return &DebugAPI{
 		logger: zerolog.New(os.Stdout).With().Timestamp().Logger(),
 		api:    api,
+		pool:   NewPool(),
 	}
 }
 
@@ -129,12 +154,38 @@ func (d *DebugAPI) TraceTransaction(
 
 }
 
+type TraceResponse struct {
+	Trace []*txTraceResult
+	Error error
+}
+
 func (d *DebugAPI) traceBlock(
 	ctx context.Context,
 	height uint64,
-	cfg *tracers.TraceConfig,
+	cfg *tracers.TraceConfig) ([]*txTraceResult, error) {
+
+	respC := make(chan TraceResponse)
+
+	d.pool.Do(func() {
+		// Compute your response
+		computedResponse, err := d.traceBlockInner(height)
+		respC <- TraceResponse{Trace: computedResponse, Error: err}
+	})
+
+	resp := <-respC
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	return resp.Trace, nil
+}
+
+func (d *DebugAPI) traceBlockInner(
+	height uint64,
 ) ([]*txTraceResult, error) {
-	fmt.Println(height, cfg)
+
+	fmt.Println(height)
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
