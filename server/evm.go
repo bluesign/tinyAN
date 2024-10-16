@@ -362,10 +362,10 @@ type ViewOnlyLedger struct {
 	mu       sync.Mutex
 }
 
-func NewViewOnlyLedger(snapshot storage2.Transaction, counter uint64) *ViewOnlyLedger {
+func NewViewOnlyLedger(snapshot storage2.Transaction) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
-		Counter:  counter,
+		Counter:  0x1000000000000000,
 		mu:       sync.Mutex{},
 	}
 }
@@ -423,7 +423,7 @@ func (v *ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
 	defer v.mu.Unlock()
 	slabIndex := atree.SlabIndex{}
 	binary.BigEndian.PutUint64(slabIndex[:], v.Counter)
-	v.Counter = v.Counter - 1
+	v.Counter = v.Counter + 1
 	return slabIndex, nil
 }
 
