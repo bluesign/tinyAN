@@ -226,6 +226,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 				return nil, nil, errors.New("failed to decode event")
 			}
 			tx, receipt, err := storage.DecodeTransactionEvent(event)
+			fmt.Println("receipt", receipt.TransactionIndex)
 			if err != nil {
 				fmt.Println(err)
 
