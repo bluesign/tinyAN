@@ -288,21 +288,11 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 
-	transactions, receipts, err := a.blockTransactions(block.Height)
+	transactions, receipts, err := a.blockTransactions(height)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 
-	/*
-		result := make([]map[string]interface{}, len(transactions))
-		for i, tx := range transactions {
-			txReceipt, err := api.MarshalReceipt(receipts[i], tx)
-			if err != nil {
-				return handleError[[]map[string]interface{}](errs.ErrInternal)
-			}
-			result[i] = txReceipt
-		}
-	*/
 	transactionResults := make([]*api.Transaction, len(transactions))
 	transactionHashes := make([]common.Hash, len(transactions))
 
