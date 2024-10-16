@@ -666,7 +666,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	stop := debugger.Pause()
 	fmt.Println(stop.Statement.String())
-	afterCh := time.After(1000 * time.Millisecond)
+	afterCh := time.After(100 * time.Millisecond)
 
 	func() {
 		debugger.RequestPause()
