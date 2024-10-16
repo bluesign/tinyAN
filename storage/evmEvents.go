@@ -13,7 +13,7 @@ import (
 	"math/big"
 )
 
-func DecodeTransactionEvent(event cadence.Event) (models.Transaction, *models.Receipt, error) {
+func DecodeTransactionEvent(i int, event cadence.Event) (models.Transaction, *models.Receipt, error) {
 	txEvent, err := events.DecodeTransactionEventPayload(event)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to Cadence decode transaction event [%s]: %w", event.String(), err)
@@ -25,7 +25,7 @@ func DecodeTransactionEvent(event cadence.Event) (models.Transaction, *models.Re
 		TxHash:            txEvent.Hash,
 		ContractAddress:   gethCommon.HexToAddress(txEvent.ContractAddress),
 		GasUsed:           txEvent.GasConsumed,
-		TransactionIndex:  uint(txEvent.Index),
+		TransactionIndex:  uint(i),
 		EffectiveGasPrice: big.NewInt(0),
 	}
 
