@@ -666,14 +666,15 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	stop := debugger.Pause()
 	fmt.Println(stop.Statement.String())
+	afterCh := time.After(100 * time.Millisecond)
 	func() {
 		for {
-			afterCh := time.After(100 * time.Millisecond)
 			select {
 			case d := <-debugger.Stops():
 				fmt.Println("Got:", d.Statement.String())
 				debugger.RequestPause()
 				debugger.Continue()
+				afterCh = time.After(100 * time.Millisecond)
 			case <-afterCh:
 				fmt.Println("Time's up!")
 				return
