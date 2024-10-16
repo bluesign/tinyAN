@@ -29,7 +29,7 @@ type Pool struct {
 func NewPool() *Pool {
 	p := &Pool{make(chan func(), 10000)}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 30; i++ {
 		go p.worker()
 	}
 
