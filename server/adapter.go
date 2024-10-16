@@ -655,7 +655,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	wg.Add(1)
 	debugger.RequestPause()
 
-	var afterCh chan struct{}
+	afterCh := make(chan struct{})
 	go func() {
 		defer wg.Done()
 		fmt.Println("before run")
