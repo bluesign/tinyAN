@@ -3,17 +3,34 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/bluesign/tinyAN/indexer"
 	"github.com/bluesign/tinyAN/storage"
+	"github.com/hashicorp/golang-lru/v2"
+	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
+	"github.com/onflow/flow-go/fvm"
+
 	"github.com/onflow/flow-go/fvm/environment"
+	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
+	fvmStorage "github.com/onflow/flow-go/fvm/storage"
+	fvmState "github.com/onflow/flow-go/fvm/storage/state"
+
 	flowgo "github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow/protobuf/go/flow/entities"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"strings"
 )
+
+type TemporaryTransactionResult struct {
+	Transaction flowgo.TransactionBody
+	Output      fvm.ProcedureOutput
+	BlockHeight uint64
+	BlockID     flowgo.Identifier
+}
 
 type EntropyProviderPerBlockProvider struct {
 	// AtBlockID returns an entropy provider at the given block ID.
@@ -33,19 +50,24 @@ type AccessAdapter struct {
 	logger   zerolog.Logger
 	store    *storage.HeightBasedStorage
 	executor *ScriptExecutor
+	txCache  *lru.Cache[flowgo.Identifier, TemporaryTransactionResult]
+	index    *storage.IndexStorage
 }
 
 // NewAccessAdapter returns a new AccessAdapter.
-func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage) *AccessAdapter {
+func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage, index *storage.IndexStorage) *AccessAdapter {
 	executor := &ScriptExecutor{
 		logger: logger,
 	}
 	executor.Setup(store, "flow-mainnet")
 
+	cache, _ := lru.New[flowgo.Identifier, TemporaryTransactionResult](1000)
 	return &AccessAdapter{
 		logger:   logger,
 		store:    store,
 		executor: executor,
+		txCache:  cache,
+		index:    index,
 	}
 }
 
@@ -218,11 +240,16 @@ func (a *AccessAdapter) GetFullCollectionByID(_ context.Context, id flowgo.Ident
 }
 
 func (a *AccessAdapter) GetTransaction(_ context.Context, id flowgo.Identifier) (*flowgo.TransactionBody, error) {
+
+	txCached, ok := a.txCache.Get(id)
+	if ok {
+		return &txCached.Transaction, nil
+	}
+
 	tx, err := a.store.GetTransactionById(id)
 	if err != nil {
 		return nil, convertError(err, codes.Internal)
 	}
-
 	a.logger.Debug().
 		Str("txID", id.String()).
 		Msg("💵  GetTransaction called")
@@ -588,148 +615,85 @@ func (a *AccessAdapter) GetTransactionResultsByBlockID(
 func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.TransactionBody) error {
 	a.logger.Debug().
 		Str("txID", tx.ID().String()).
-		Msg(`✉️   Transaction submitted`)
+		Msg(`✉️   Transaction simulated`)
 
-	/*
-		blockHeight := h.store.BlockHeight(flow.Identifier(req.Transaction.ReferenceBlockId))
+	block, err := a.store.GetBlockById(tx.ReferenceBlockID)
+	if err != nil {
+		return err
+	}
+	snapshot := a.store.LedgerSnapshot(block.Height)
 
-			//blockHeight := h.store.LastHeight()
-			blockID := h.store.BlockId(blockHeight)
-			parentHeight := blockHeight - 1
-			parentID := h.store.BlockId(parentHeight)
+	proc := fvm.Transaction(tx, 0)
 
-			blockHeader := &flow.Header{
-				//TODO: make chain config
-				ChainID:            "flow-mainnet",
-				ParentID:           parentID,
-				Height:             blockHeight,
-				PayloadHash:        [32]byte{},
-				Timestamp:          time.Now(),
-				View:               0,
-				ParentView:         0,
-				ParentVoterIndices: []byte{},
-				ParentVoterSigData: []byte{},
-				ProposerID:         [32]byte{},
-				ProposerSigData:    []byte{},
-				LastViewTC:         &flow.TimeoutCertificate{},
-			}
+	context := fvm.NewContext(
+		fvm.WithBlockHeader(block),
+		fvm.WithBlocks(a.store),
+		fvm.WithCadenceLogging(true),
+		fvm.WithAuthorizationChecksEnabled(false),
+		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
+		fvm.WithEVMEnabled(true),
+		fvm.WithReusableCadenceRuntimePool(
+			reusableRuntime.NewReusableCadenceRuntimePool(
+				0,
+				runtime.Config{
+					TracingEnabled:     false,
+					AttachmentsEnabled: true,
+				},
+			),
+		),
+	)
 
-			snapshot := h.store.StorageSnapshot(blockHeight)
+	blockDatabase := fvmStorage.NewBlockDatabase(snapshot, 0, nil)
+	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+	if err != nil {
+		panic(err)
+	}
+	executor := proc.NewExecutor(context, txnState)
 
-			txMsg := req.GetTransaction()
+	err = fvm.Run(executor)
+	if err != nil {
+		return err
+	}
 
-			//TODO: make chain config
-			tx, err := convert.MessageToTransaction(txMsg, flow.Mainnet.Chain())
-			if err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
-			}
+	txId := tx.ID()
 
-			proc := fvm.Transaction(&tx, 0)
-			logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
-			evmListener := &EVMTraceListener{
-				Data: make(map[string]json.RawMessage),
-			}
+	output := executor.Output()
+	fmt.Println("output", output)
+	fmt.Println("logs", output.Logs)
 
-			tracer, _ := debug.NewEVMCallTracer(evmListener, logger)
+	txnState.Finalize()
+	resultSnapshot, err := txnState.Commit()
+	if err != nil {
+		fmt.Println("err", err)
+	}
 
-			context := fvm.NewContext(
-				fvm.WithBlockHeader(blockHeader),
-				fvm.WithBlocks(h.blocks),
-				fvm.WithCadenceLogging(true),
-				fvm.WithAuthorizationChecksEnabled(false),
-				fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
-				fvm.WithEVMEnabled(true),
-				fvm.WithEVMTracer(tracer),
-				fvm.WithReusableCadenceRuntimePool(
-					reusableRuntime.NewReusableCadenceRuntimePool(
-						0,
-						runtime.Config{
-							TracingEnabled:     true,
-							AttachmentsEnabled: true,
-						},
-					),
-				),
-			)
+	blockResources := make(map[uint64]*indexer.Resource)
 
-			blockDatabase := fvmStorage.NewBlockDatabase(snapshot, 0, nil)
+	for _, w := range resultSnapshot.UpdatedRegisters() {
+		a.index.IndexPayload2(blockResources, w, block.Height, false)
+	}
 
-			txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
-			if err != nil {
-				panic(err)
-			}
-			mt := &myTracer{
-				Traces: []string{},
-			}
+	logs := strings.Join(output.Logs, "\n")
 
-			fmt.Println("erR", err)
-			context.Tracer = tracing.TracerSpan{
-				Tracer: mt,
-			}
+	tx.Script = []byte(fmt.Sprintf("%s\n\nLogs\n\n%s", string(tx.Script), logs))
+	tx.Script = []byte(fmt.Sprintf("%s\n\nComputation Details\n\n%v", string(tx.Script), output.ComputationIntensities))
 
-			executor := proc.NewExecutor(context, txnState)
+	stateChanges := ""
+	for _, v := range blockResources {
+		stateChanges = fmt.Sprintf("%s%v", stateChanges, v)
+	}
 
-			err = fvm.Run(executor)
-			if err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
-			}
+	tx.Script = []byte(fmt.Sprintf("%s\n\nResource State Changes\n\n%v", string(tx.Script), stateChanges))
 
-			txId := tx.ID()
+	a.txCache.Add(txId, TemporaryTransactionResult{
+		Transaction: *tx,
+		Output:      output,
+		BlockHeight: block.Height,
+		BlockID:     block.ID(),
+	})
 
-			output := executor.Output()
-			fmt.Println("output", output)
-			fmt.Println("logs", output.Logs)
-
-
-		evmTrace := ""
-		for x, t := range evmListener.Data {
-			fmt.Println("evm ", x)
-			evmTrace = fmt.Sprintf("%s\n%s\n%s\n\n", evmTrace, x, string(t))
-			fmt.Println(string(t))
-		}
-
-		fmt.Println("evm", evmListener)
-
-		txnState.Finalize()
-		resultSnapshot, err := txnState.Commit()
-		if err != nil {
-			fmt.Println("err", err)
-		}
-
-		blockResources := make(map[uint64]*storage.Resource)
-
-		for _, w := range resultSnapshot.UpdatedRegisters() {
-			h.store.IndexPayload2(blockResources, w, blockHeight, false)
-		}
-
-		if txresults == nil {
-			txresults = make(map[flow.Identifier]TemporaryTransactionResult)
-		}
-
-		logs := strings.Join(output.Logs, "\n")
-
-		tx.Script = []byte(fmt.Sprintf("%s\n\nLogs\n\n%s", string(tx.Script), logs))
-		tx.Script = []byte(fmt.Sprintf("%s\n\nComputation Details\n\n%v", string(tx.Script), output.ComputationIntensities))
-
-		stateChanges := ""
-		for _, v := range blockResources {
-			stateChanges = fmt.Sprintf("%s%v", stateChanges, v)
-		}
-
-		tx.Script = []byte(fmt.Sprintf("%s\n\nEVM\n\n%v", string(tx.Script), evmTrace))
-		tx.Script = []byte(fmt.Sprintf("%s\n\nResource State Changes\n\n%v", string(tx.Script), stateChanges))
-
-		txresults[txId] = TemporaryTransactionResult{
-			Transaction: tx,
-			Output:      output,
-			BlockHeight: blockHeight,
-			BlockID:     blockID,
-		}
-
-		return &access.SendTransactionResponse{
-			Id: []byte(txId[:]),
-		}, nil
-	*/
 	return nil
+
 }
 
 func (a *AccessAdapter) GetNodeVersionInfo(
