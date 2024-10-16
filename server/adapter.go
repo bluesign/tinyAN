@@ -655,18 +655,19 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	wg.Add(1)
 	debugger.RequestPause()
 
+	var afterCh chan struct{}
 	go func() {
 		defer wg.Done()
 		fmt.Println("before run")
 		err = fvm.Run(executor)
 		fmt.Println("after run")
+		afterCh <- struct{}{}
 	}()
 
-	stop := debugger.Pause()
-	fmt.Println(stop.Statement.String())
-	var afterCh chan struct{}
-
 	func() {
+		stop := debugger.Pause()
+		fmt.Println(stop.Statement.String())
+
 		debugger.RequestPause()
 		debugger.Continue()
 		for {
@@ -682,7 +683,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	}()
 
 	wg.Wait()
-	afterCh <- struct{}{}
+
 	if err != nil {
 		return err
 	}
