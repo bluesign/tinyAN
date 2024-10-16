@@ -16,8 +16,6 @@ import (
 	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
 	fvmStorage "github.com/onflow/flow-go/fvm/storage"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
-	"sync"
-
 	flowgo "github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow/protobuf/go/flow/entities"
 	"github.com/rs/zerolog"
@@ -650,48 +648,42 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		panic(err)
 	}
 	executor := proc.NewExecutor(context, txnState)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	debugger.RequestPause()
-
-	afterCh := make(chan struct{})
-	go func() {
-		defer wg.Done()
-		fmt.Println("before run")
-		err = fvm.Run(executor)
-		fmt.Println("after run")
-		afterCh <- struct{}{}
-	}()
-
-	func() {
-		stop := debugger.Pause()
-		fmt.Println(stop.Statement.ElementType().String())
-		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter) {
-			fmt.Println("on function invocation")
-		}
-
+	err = fvm.Run(executor)
+	/*
+		var wg sync.WaitGroup
+		wg.Add(1)
 		debugger.RequestPause()
-		debugger.Continue()
-		for {
-			select {
-			case d := <-debugger.Stops():
 
-				fmt.Println(debugger.CurrentActivation(d.Interpreter).IsFunction)
-				fmt.Println(d.Statement.ElementType().String())
-				fmt.Println(d.Statement.String())
-				fmt.Println(d.Interpreter.Location)
-				fmt.Println(d.Interpreter.CallStack())
-				debugger.RequestPause()
-				debugger.Continue()
-			case <-afterCh:
-				return
+
+		afterCh := make(chan struct{})
+		go func() {
+			defer wg.Done()
+			fmt.Println("before run")
+			err = fvm.Run(executor)
+			fmt.Println("after run")
+			afterCh <- struct{}{}
+		}()
+
+
+		func() {
+			stop := debugger.Pause()
+			fmt.Println(stop.Statement.ElementType().String())
+
+			debugger.RequestPause()
+			debugger.Continue()
+			for {
+				select {
+				case d := <-debugger.Stops():
+					debugger.RequestPause()
+					debugger.Continue()
+				case <-afterCh:
+					return
+				}
 			}
-		}
-	}()
+		}()
 
-	wg.Wait()
-
+		wg.Wait()
+	*/
 	if err != nil {
 		return err
 	}
