@@ -183,20 +183,15 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 		}
 	}()
 
-	fmt.Println("blockHeight", blockHeight)
-
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println("cadenceHeight", cadenceHeight)
 
 	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	fmt.Println("cadenceBlockId", cadenceBlockId)
 
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
@@ -218,7 +213,6 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 	logIndex := uint(0)
 	cumulativeGasUsed := uint64(0)
 
-	fmt.Println("cadenceEvents", len(cadenceEvents))
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
 		for i, eventRaw := range cadenceEvents {
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
@@ -237,26 +231,17 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 				fmt.Println(err)
 				return nil, nil, err
 			}
-			fmt.Println("receipt", receipt.TransactionIndex)
-			fmt.Println("receipt", receipt.TxHash)
-
-			fmt.Println(tx.Hash())
-
 			transactions[receipt.TransactionIndex] = tx
 			receipts[receipt.TransactionIndex] = receipt
 		}
 	}
 
-	fmt.Println("receipts", len(receipts))
-
-	fmt.Println(receipts)
 	for _, receipt := range receipts {
 		cumulativeGasUsed += receipt.GasUsed
 		receipt.CumulativeGasUsed = cumulativeGasUsed
 
 		receipt.BlockHash, _ = block.Hash()
 
-		fmt.Println("receipt logs", receipt.Logs)
 		for _, log := range receipt.Logs {
 			log.Index = logIndex
 			log.BlockNumber = block.Height
