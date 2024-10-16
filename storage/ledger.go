@@ -140,7 +140,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		var data []byte
 		err = s.codec.Unmarshal(v, &data)
 		if err != nil {
-			s.logger.Log().Err(err).Msg("error unmarshalling data")
+			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (ledger)")
 			return nil
 		}
 		return data
@@ -173,7 +173,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		var data []byte
 		err = s.codec.Unmarshal(v, &data)
 		if err != nil {
-			s.logger.Log().Err(err).Msg("error unmarshalling data")
+			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (cp)")
 			return nil
 		}
 		return data
