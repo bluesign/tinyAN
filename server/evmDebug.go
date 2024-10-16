@@ -97,6 +97,7 @@ func (d *DebugAPI) TraceTransaction(
 	_ *tracers.TraceConfig,
 ) (json.RawMessage, error) {
 
+	fmt.Println("TraceTransaction", txId)
 	cadenceHeight := uint64(0)
 	for _, spork := range d.api.storage.Sporks() {
 		height, err := spork.EVM().CadenceBlockHeightForTransactionHash(txId)
