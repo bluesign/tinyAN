@@ -239,6 +239,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 
 	fmt.Println("receipts", len(receipts))
 
+	fmt.Println(receipts)
 	for _, receipt := range receipts {
 		cumulativeGasUsed += receipt.GasUsed
 		receipt.CumulativeGasUsed = cumulativeGasUsed
