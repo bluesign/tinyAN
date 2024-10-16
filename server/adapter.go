@@ -654,7 +654,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-
 	debugger.RequestPause()
 
 	go func() {
@@ -663,7 +662,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		err = fvm.Run(executor)
 		fmt.Println("after run")
 	}()
-	debugger.Pause()
 	fmt.Println("d")
 	stop := debugger.Next()
 	fmt.Println(stop.Statement.String())
