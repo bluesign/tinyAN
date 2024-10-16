@@ -674,6 +674,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			select {
 			case d := <-debugger.Stops():
 				fmt.Println(d.Statement.ElementType().String())
+				fmt.Println(d.Statement.String())
+				fmt.Println(d.Interpreter.Location)
 				debugger.RequestPause()
 				debugger.Continue()
 			case <-afterCh:
