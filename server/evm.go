@@ -210,6 +210,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 	logIndex := uint(0)
 	cumulativeGasUsed := uint64(0)
 
+	fmt.Println("cadenceEvents", len(cadenceEvents))
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
 		for i, eventRaw := range cadenceEvents {
 			fmt.Println("eventRaw", eventRaw, i)
