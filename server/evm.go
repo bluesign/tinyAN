@@ -211,17 +211,23 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 	cumulativeGasUsed := uint64(0)
 
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
-		for _, eventRaw := range cadenceEvents {
+		for i, eventRaw := range cadenceEvents {
+			fmt.Println("eventRaw", eventRaw, i)
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
+				fmt.Println(err)
 				return nil, nil, err
 			}
+
 			event, ok := eventDecoded.(cadence.Event)
 			if !ok {
-				return nil, nil, err
+				fmt.Println(err)
+				return nil, nil, errors.New("failed to decode event")
 			}
 			tx, receipt, err := storage.DecodeTransactionEvent(event)
 			if err != nil {
+				fmt.Println(err)
+
 				return nil, nil, err
 			}
 
