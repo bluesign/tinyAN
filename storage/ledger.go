@@ -165,7 +165,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			continue
 		}
 		//found the key
-		err := iter.Close()
+		err = iter.Close()
 		if err != nil {
 			s.logger.Log().Err(err).Msg("error closing iterator")
 			return nil
