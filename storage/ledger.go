@@ -130,20 +130,16 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			continue
 		}
 		//found the key
-		err := iter.Close()
+		defer iter.Close()
+		var data []byte
+		v, err := iter.ValueAndErr()
 		if err != nil {
-			s.logger.Log().Err(err).Msg("error closing iterator")
+			s.logger.Log().Err(err).Str("key", key.String()).Msg("error getting value (ledger)")
 			return nil
 		}
-		var data []byte
-		v := iter.Value()
-		/*if err != nil {
-			s.logger.Log().Err(err).Str("key", register.String()).Msg("error getting value (ledger)")
-			return nil
-		}*/
 		err = s.codec.Unmarshal(v, &data)
 		if err != nil {
-			s.logger.Log().Err(err).Str("key", register.String()).Msg("error unmarshalling data (ledger)")
+			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (ledger)")
 			return nil
 		}
 		return data
@@ -167,17 +163,15 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			continue
 		}
 		//found the key
-		err = iter.Close()
-		if err != nil {
-			s.logger.Log().Err(err).Msg("error closing iterator")
-			return nil
-		}
+		defer iter.Close()
+
 		var data []byte
 		v, err := iter.ValueAndErr()
 		if err != nil {
 			s.logger.Log().Err(err).Str("key", key.String()).Msg("error getting value (cp)")
 			return nil
 		}
+
 		err = s.codec.Unmarshal(v, &data)
 		if err != nil {
 			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (cp)")
