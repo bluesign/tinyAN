@@ -12,13 +12,11 @@ import (
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
 	"github.com/onflow/flow-go/fvm"
-	"sync"
-	"time"
-
 	"github.com/onflow/flow-go/fvm/environment"
 	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
 	fvmStorage "github.com/onflow/flow-go/fvm/storage"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
+	"sync"
 
 	flowgo "github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow/protobuf/go/flow/entities"
@@ -666,7 +664,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	stop := debugger.Pause()
 	fmt.Println(stop.Statement.String())
-	afterCh := time.After(100 * time.Millisecond)
+	var afterCh chan struct{}
 
 	func() {
 		debugger.RequestPause()
@@ -678,13 +676,13 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				debugger.RequestPause()
 				debugger.Continue()
 			case <-afterCh:
-				fmt.Println("Time's up!")
 				return
 			}
 		}
 	}()
 
 	wg.Wait()
+	afterCh <- struct{}{}
 	if err != nil {
 		return err
 	}
