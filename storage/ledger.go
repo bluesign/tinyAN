@@ -122,7 +122,6 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 
 	for iter.SeekGE(preFixHeight); iter.Valid(); iter.Next() {
 		k = iter.Key()
-		v = iter.Value()
 
 		if !bytes.HasPrefix(k, prefix) {
 			break
@@ -138,6 +137,12 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			return nil
 		}
 		var data []byte
+		v, err := iter.ValueAndErr()
+		if err != nil {
+			s.logger.Log().Err(err).Str("key", key.String()).Msg("error getting value (ledger)")
+			return nil
+		}
+		v = DeepCopy(v)
 		err = s.codec.Unmarshal(v, &data)
 		if err != nil {
 			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (ledger)")
