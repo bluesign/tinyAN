@@ -175,7 +175,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		var data []byte
 		v, err := iter.ValueAndErr()
 		if err != nil {
-			s.logger.Log().Err(err).Str("key", key.String()).Msg("error getting value (ledger)")
+			s.logger.Log().Err(err).Str("key", key.String()).Msg("error getting value (cp)")
 			return nil
 		}
 		err = s.codec.Unmarshal(v, &data)
