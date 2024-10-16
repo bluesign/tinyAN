@@ -660,7 +660,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	go func() {
 		defer wg.Done()
 		fmt.Println("before run")
-		debugger.RequestPause()
 		err = fvm.Run(executor)
 		fmt.Println("after run")
 	}()
