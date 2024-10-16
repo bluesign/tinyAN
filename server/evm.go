@@ -288,38 +288,29 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 
-	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(block.Height)
+	transactions, receipts, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 
-	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
-	if err != nil {
-		return handleError[*api.Block](errs.ErrInternal)
-	}
-
-	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
-
+	/*
+		result := make([]map[string]interface{}, len(transactions))
+		for i, tx := range transactions {
+			txReceipt, err := api.MarshalReceipt(receipts[i], tx)
+			if err != nil {
+				return handleError[[]map[string]interface{}](errs.ErrInternal)
+			}
+			result[i] = txReceipt
+		}
+	*/
 	transactionResults := make([]*api.Transaction, len(cadenceEvents))
 	transactionHashes := make([]common.Hash, len(cadenceEvents))
 
-	if cadenceEvents != nil && len(cadenceEvents) > 0 {
+	if transactions != nil && len(transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
-		for _, eventRaw := range cadenceEvents {
-			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
-			if err != nil {
-				return handleError[*api.Block](errs.ErrInternal)
-			}
-			event, ok := eventDecoded.(cadence.Event)
-			if !ok {
-				return handleError[*api.Block](errs.ErrInternal)
-			}
-			tx, receipt, err := storage.DecodeTransactionEvent(event)
-			receipt.BlockHash = h
-			if err != nil {
-				return handleError[*api.Block](errs.ErrInternal)
-			}
+		for i, tx := range transactions {
+			receipt := receipts[i]
 			transactionHashes[receipt.TransactionIndex] = receipt.TxHash
 			txResult, _ := api.NewTransactionResult(tx, *receipt, EVMMainnetChainID)
 			transactionResults[receipt.TransactionIndex] = txResult
