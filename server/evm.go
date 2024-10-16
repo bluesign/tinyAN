@@ -213,7 +213,6 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 	fmt.Println("cadenceEvents", len(cadenceEvents))
 	if cadenceEvents != nil && len(cadenceEvents) > 0 {
 		for i, eventRaw := range cadenceEvents {
-			fmt.Println("eventRaw", eventRaw, i)
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
 				fmt.Println(err)
@@ -226,12 +225,11 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 				return nil, nil, errors.New("failed to decode event")
 			}
 			tx, receipt, err := storage.DecodeTransactionEvent(event)
-			fmt.Println("receipt", receipt.TransactionIndex)
 			if err != nil {
 				fmt.Println(err)
-
 				return nil, nil, err
 			}
+			fmt.Println("receipt", receipt.TransactionIndex)
 
 			transactions[receipt.TransactionIndex] = tx
 			receipts[receipt.TransactionIndex] = receipt
