@@ -336,7 +336,6 @@ func (s *ProtocolStorage) GetBlockByHeight(height uint64) (*flow.Header, error) 
 }
 
 func (s *ProtocolStorage) GetBlockIdByHeight(height uint64) (flow.Identifier, error) {
-	s.logger.Log().Msgf("GetBlockIdByHeight %d", height)
 
 	dbKey := makePrefix(codeBlockIdByHeight, b(height))
 	var id flow.Identifier
