@@ -130,7 +130,6 @@ func (m APIServer) OwnerOfUuid(w http.ResponseWriter, r *http.Request) {
 	//convert uuid string to uint64
 	var uuid uint64 = stringToUint64(uuidString)
 
-	fmt.Println("uuid:", uuid)
 	result := m.storage.StorageForHeight(height).Index().OwnerOfUuid(uuid, height)
 	if result == "not found" {
 		w.WriteHeader(http.StatusNotFound)

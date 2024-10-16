@@ -114,7 +114,7 @@ func checkCompositeKeys(address string, v *atree.MapDataSlab) map[string]any {
 	_, hasUuid := result["uuid"]
 	if !hasUuid {
 		if hasBalance {
-			fmt.Println("no uuid", v)
+			//fmt.Println("no uuid", v)
 		}
 		return make(map[string]any)
 	}
@@ -150,7 +150,6 @@ func processArrayDataSlab(address string, v *atree.ArrayDataSlab, result map[uin
 
 		arraySlab, isArray := value.(*atree.ArrayDataSlab)
 		if isArray {
-			fmt.Println("Array in Array", arraySlab)
 			processArrayDataSlab(address, arraySlab, result)
 		}
 
@@ -205,7 +204,6 @@ func ParseLedgerData(address string, value []byte) map[uint64]map[string]any {
 
 		default:
 
-			fmt.Println("Unhandled")
 			panic("p1")
 		}
 
@@ -220,7 +218,6 @@ func ParseLedgerData(address string, value []byte) map[uint64]map[string]any {
 				processMapDataSlab(address, v, result)
 
 			default:
-				fmt.Println("Unhandled")
 				panic("p2")
 			}
 
@@ -232,7 +229,6 @@ func ParseLedgerData(address string, value []byte) map[uint64]map[string]any {
 		fmt.Println("Storable")
 
 	default:
-		fmt.Println("Unhandled")
 		panic("p3")
 	}
 	return result

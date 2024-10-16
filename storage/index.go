@@ -177,7 +177,6 @@ func (s *IndexStorage) IndexPayload2(chunkResources map[uint64]*indexer.Resource
 		newFields := v
 
 		if len(oldFields) == 0 && len(newFields) == 0 {
-			fmt.Println("no fields")
 			continue
 		}
 
@@ -198,7 +197,6 @@ func (s *IndexStorage) IndexPayload2(chunkResources map[uint64]*indexer.Resource
 		} else if hasTypeNew {
 			typeName = newType.(string)
 		} else {
-			fmt.Println("no type")
 			continue
 		}
 

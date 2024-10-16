@@ -63,7 +63,6 @@ func (s *LedgerStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
 func (s *LedgerStorage) LastProcessedHeight() uint64 {
 	var height uint64
 	err := s.codec.UnmarshalAndGet(s.ledgerDb, keyProgress, &height)
-	fmt.Println("LastProcessedHeight", height)
 	if err != nil {
 		fmt.Println(err)
 		return 0
@@ -115,7 +114,6 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	prefix := makePrefix(codeLedgerPayload, key.CanonicalForm())
 	preFixHeight := makePrefix(codeLedgerPayload, key.CanonicalForm(), uint64(0xFFFFFFFFFFFFFFFF-height))
 
-	//fmt.Println("Key", key.CanonicalForm())
 	options := &pebble.IterOptions{}
 	var v []byte
 	var k []byte

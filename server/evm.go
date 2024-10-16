@@ -156,7 +156,6 @@ func (a *APINamespace) blockNumberToHeight(blockNumber rpc.BlockNumber) (uint64,
 
 func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumberOrHash) (uint64, error) {
 	blockNumber, ok := blockNumberOrHash.Number()
-	fmt.Println("blockNumber", blockNumber)
 	if ok {
 		return a.blockNumberToHeight(blockNumber)
 	}
@@ -816,8 +815,6 @@ func (a *APINamespace) GetLogs(
 	if to.Cmp(models.EarliestBlockNumber) < 0 {
 		to = latest
 	}
-	fmt.Println("from", from)
-	fmt.Println("to", to)
 
 	f, err := NewRangeFilter(from.Uint64(), to.Uint64(), filter, a)
 	if err != nil {

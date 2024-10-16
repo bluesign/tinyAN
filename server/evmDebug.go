@@ -108,7 +108,6 @@ func (d *DebugAPI) TraceTransaction(
 	if cadenceHeight == 0 {
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
-	fmt.Println("cadenceHeight", cadenceHeight)
 	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		return handleError[json.RawMessage](errs.ErrInternal)
@@ -197,7 +196,6 @@ func (d *DebugAPI) traceBlock(
 		}
 
 		totalGasUsed += res.GasConsumed
-		fmt.Println("result", res)
 		if err != nil {
 			return nil, err
 		}
