@@ -625,7 +625,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	proc := fvm.Transaction(tx, 0)
 	debugger := interpreter.NewDebugger()
-	debugger.RequestPause()
 
 	context := fvm.NewContext(
 		fvm.WithBlockHeader(block),
@@ -656,13 +655,18 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	var wg sync.WaitGroup
 	wg.Add(1)
 
+	debugger.RequestPause()
+
 	go func() {
 		defer wg.Done()
-		err = fvm.Run(executor)
+		fmt.Println("before run")
 
+		err = fvm.Run(executor)
+		fmt.Println("after run")
 	}()
 
 	for {
+		fmt.Println("d")
 		stop := debugger.Next()
 		fmt.Println(stop.Statement.String())
 		if debugger.CurrentActivation(stop.Interpreter).Depth == 0 {
