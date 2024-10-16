@@ -303,8 +303,8 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 			result[i] = txReceipt
 		}
 	*/
-	transactionResults := make([]*api.Transaction, len(cadenceEvents))
-	transactionHashes := make([]common.Hash, len(cadenceEvents))
+	transactionResults := make([]*api.Transaction, len(transactions))
+	transactionHashes := make([]common.Hash, len(transactions))
 
 	if transactions != nil && len(transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
