@@ -13,6 +13,7 @@ import (
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
 	"github.com/onflow/flow-go/fvm"
 	"sync"
+	"time"
 
 	"github.com/onflow/flow-go/fvm/environment"
 	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
@@ -665,16 +666,20 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	stop := debugger.Pause()
 	fmt.Println(stop.Statement.String())
-	for {
-		fmt.Println("pre", debugger.CurrentActivation(stop.Interpreter).Depth)
-
-		stop = debugger.Next()
-		fmt.Println(stop.Statement.String())
-		fmt.Println(debugger.CurrentActivation(stop.Interpreter).Depth)
-		if stop.Statement == nil {
-			break
+	func() {
+		for {
+			afterCh := time.After(100 * time.Millisecond)
+			select {
+			case d := <-debugger.Stops():
+				fmt.Println("Got:", d.Statement.String())
+				debugger.RequestPause()
+				debugger.Continue()
+			case <-afterCh:
+				fmt.Println("Time's up!")
+				return
+			}
 		}
-	}
+	}()
 
 	wg.Wait()
 	if err != nil {
