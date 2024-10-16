@@ -27,6 +27,7 @@ import (
 	"github.com/onflow/go-ethereum/rlp"
 	"github.com/onflow/go-ethereum/rpc"
 	"math/big"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -203,6 +204,13 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 	}
 
 	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+
+	sort.Slice(cadenceEvents, func(i, j int) bool {
+		if cadenceEvents[i].TransactionIndex != cadenceEvents[j].TransactionIndex {
+			return cadenceEvents[i].TransactionIndex < cadenceEvents[j].TransactionIndex
+		}
+		return cadenceEvents[i].EventIndex < cadenceEvents[j].EventIndex
+	})
 
 	receipts := make([]*models.Receipt, len(cadenceEvents))
 	transactions := make([]models.Transaction, len(cadenceEvents))
