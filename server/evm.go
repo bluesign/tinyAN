@@ -182,15 +182,20 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 		}
 	}()
 
+	fmt.Println("blockHeight", blockHeight)
+
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Println("cadenceHeight", cadenceHeight)
 
 	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	fmt.Println("cadenceBlockId", cadenceBlockId)
 
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
