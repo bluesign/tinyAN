@@ -230,6 +230,8 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 				return nil, nil, err
 			}
 			fmt.Println("receipt", receipt.TransactionIndex)
+			fmt.Println("receipt", receipt.TxHash)
+
 			fmt.Println(tx.Hash())
 
 			transactions[receipt.TransactionIndex] = tx
