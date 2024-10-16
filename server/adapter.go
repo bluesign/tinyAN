@@ -666,6 +666,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	stop := debugger.Pause()
 	fmt.Println(stop.Statement.String())
 	for {
+		fmt.Println("pre", debugger.CurrentActivation(stop.Interpreter).Depth)
+
 		stop = debugger.Next()
 		fmt.Println(stop.Statement.String())
 		fmt.Println(debugger.CurrentActivation(stop.Interpreter).Depth)
