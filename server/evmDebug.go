@@ -284,9 +284,10 @@ func (d *DebugAPI) traceBlockInner(
 		if err != nil {
 			return nil, err
 		}
-		if res == nil { // safety check for result
+
+		/*if res == nil { // safety check for result
 			return nil, evmTypes.ErrUnexpectedEmptyResult
-		}
+		}*/
 
 		txTrace := tracer.GetResultByTxHash(receipts[i].TxHash)
 
