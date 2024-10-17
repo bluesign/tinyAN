@@ -172,6 +172,8 @@ func (d *DebugAPI) traceBlockInner(
 	height uint64,
 ) ([]*txTraceResult, error) {
 
+	dummy_1 := `{"blockHash":"0x56ecec85c5710327e0a92349ec9a22596eb3fa800c7ca280ee28756b3e3a93f2","blockNumber":"0x1c0359","contractAddress":null,"cumulativeGasUsed":"0x2d329","effectiveGasPrice":"0x0","from":"0x0000000000000000000000030000000000000000","gasUsed":"0x5208","logs":[],"logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","status":"0x1","to":"0x2C91520Ee9E2C55593dC425e1C2B82026391DEA7","transactionHash":"0xad983918d138de85975a2bd462931e1bcea9f5ff38a6f6b100bc62c50a7e11c1","transactionIndex":"0x1","type":"0x0"}`
+
 	fmt.Println("traceBlockInner", height)
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	fmt.Println("cadenceHeight", cadenceHeight)
@@ -234,6 +236,10 @@ func (d *DebugAPI) traceBlockInner(
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
 
+		if tx.Hash().String() == "0xad983918d138de85975a2bd462931e1bcea9f5ff38a6f6b100bc62c50a7e11c1" {
+			fmt.Println("Found tx")
+			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: json.RawMessage(dummy_1)}
+		}
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
 
