@@ -271,6 +271,7 @@ func (d *DebugAPI) traceBlockInner(
 	for k, v := range roView.GetPendingWrites() {
 
 		fmt.Println("key", k.String())
+		fmt.Println("value", len(v))
 		nextValue, _ := snapAfter.Get(k)
 
 		if bytes.Compare(v, nextValue) != 0 {
