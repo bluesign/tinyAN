@@ -293,7 +293,7 @@ func (d *DebugAPI) traceBlockInner(
 		txTrace, ok := tracer.ResultsByTxID[receipts[i].TxHash]
 
 		if !ok {
-			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: map[string]string{}, Error: err.Error()}
+			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: map[string]string{}}
 		} else {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: txTrace}
 		}
