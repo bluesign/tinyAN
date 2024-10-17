@@ -220,6 +220,7 @@ func (d *DebugAPI) traceBlock(
 			fmt.Println(txTrace)
 			fmt.Println(res.VMError)
 		}
+		var emptyChecksum [4]byte = [4]byte{0, 0, 0, 0}
 		//check checksum
 		if !bytes.Equal(tx.Checksum[:], emptyChecksum[:]) && !bytes.Equal(res.StateChangeCommitment[:4], tx.Checksum[:]) {
 			fmt.Println("checksum failed")
