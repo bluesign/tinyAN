@@ -25,30 +25,6 @@ import (
 	"strings"
 )
 
-type Pool struct {
-	c chan func()
-}
-
-func NewPool() *Pool {
-	p := &Pool{make(chan func(), 10000)}
-
-	for i := 0; i < 30; i++ {
-		go p.worker()
-	}
-
-	return p
-}
-
-func (p *Pool) worker() {
-	for work := range p.c {
-		work()
-	}
-}
-
-func (p *Pool) Do(work func()) {
-	p.c <- work
-}
-
 // txTraceResult is the result of a single transaction trace.
 type txTraceResult struct {
 	TxHash gethCommon.Hash `json:"txHash"`           // transaction hash
@@ -59,14 +35,12 @@ type txTraceResult struct {
 type DebugAPI struct {
 	logger zerolog.Logger
 	api    *APINamespace
-	pool   *Pool
 }
 
 func NewDebugApi(api *APINamespace) *DebugAPI {
 	return &DebugAPI{
 		logger: zerolog.New(os.Stdout).With().Timestamp().Logger(),
 		api:    api,
-		pool:   NewPool(),
 	}
 }
 
@@ -108,28 +82,22 @@ func (d *DebugAPI) TraceBlockByHash(
 }
 
 func (d *DebugAPI) TraceTransaction(
-	_ context.Context,
+	ctx context.Context,
 	txId gethCommon.Hash,
 	_ *tracers.TraceConfig,
 ) (json.RawMessage, error) {
 
-	fmt.Println("TraceTransaction", txId)
-	cadenceHeight := uint64(0)
-	for _, spork := range d.api.storage.Sporks() {
-		height, err := spork.EVM().CadenceBlockHeightForTransactionHash(txId)
-		if err == nil {
-			cadenceHeight = height
-			break
-		}
-	}
-	if cadenceHeight == 0 {
+	cadenceHeight, err := d.api.storage.CadenceBlockHeightForTransactionHash(txId)
+
+	if err != nil {
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
+
 	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		return handleError[json.RawMessage](errs.ErrInternal)
 	}
-	traced, err := d.traceBlock(context.Background(), block.Height, nil)
+	traced, err := d.traceBlock(ctx, block.Height, nil)
 	if err != nil {
 		return handleError[json.RawMessage](errs.ErrInternal)
 	}
@@ -154,14 +122,6 @@ func (d *DebugAPI) traceBlock(
 	_ context.Context,
 	height uint64,
 	_ *tracers.TraceConfig) ([]*txTraceResult, error) {
-
-	//respC := make(chan TraceResponse)
-
-	/*d.pool.Do(func() {
-		// Compute your response
-		computedResponse, err := d.traceBlockInner(height)
-		respC <- TraceResponse{Trace: computedResponse, Error: err}
-	})*/
 
 	resp, err := d.traceBlockInner(height)
 
