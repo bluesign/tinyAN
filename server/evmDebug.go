@@ -173,8 +173,6 @@ func (d *DebugAPI) traceBlockInner(
 	height uint64,
 ) ([]*txTraceResult, error) {
 
-	dummy_1 := `{"from":"0x0000000000000000000000030000000000000000","gas":"0x0","gasUsed":"0x5208","to":"0x2c91520ee9e2c55593dc425e1c2b82026391dea7","input":"0x","value":"0xeed6d130100","type":"CALL"}`
-
 	fmt.Println("traceBlockInner", height)
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	fmt.Println("cadenceHeight", cadenceHeight)
@@ -190,7 +188,7 @@ func (d *DebugAPI) traceBlockInner(
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
 
-	transactions, receipts, calls, err := d.api.blockTransactions(height)
+	transactions, err := d.api.blockTransactions(height)
 	if err != nil {
 		return nil, err
 	}
@@ -201,11 +199,7 @@ func (d *DebugAPI) traceBlockInner(
 
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
-		/*if height == 1835895 || height == 1835865 {
-			fmt.Println("Found tx")
-			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: json.RawMessage(dummy_1)}
-			continue
-		}*/
+
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
 
@@ -224,16 +218,16 @@ func (d *DebugAPI) traceBlockInner(
 			},
 			Tracer: tracer.TxTracer(),
 		}
-		if calls[i] != nil {
-			pcs, err := evmTypes.AggregatedPrecompileCallsFromEncoded(calls[i])
+		if tx.PrecompiledCalls != nil {
+			pcs, err := evmTypes.AggregatedPrecompileCallsFromEncoded(tx.PrecompiledCalls)
 			if err != nil {
-				return nil, fmt.Errorf("error decoding precompiled calls [%x]: %w", calls[i], err)
+				return nil, fmt.Errorf("error decoding precompiled calls [%x]: %w", tx.PrecompiledCalls, err)
 			}
 			blockContext.ExtraPrecompiledContracts = precompiles.AggregatedPrecompiledCallsToPrecompiledContracts(pcs)
 		}
 		rbv, err := emulator.NewBlockView(blockContext)
 
-		switch v := tx.(type) {
+		switch v := tx.Transaction.(type) {
 
 		case models.DirectCall:
 			fmt.Println("DirectCall")
@@ -259,12 +253,12 @@ func (d *DebugAPI) traceBlockInner(
 			return nil, evmTypes.ErrUnexpectedEmptyResult
 		}
 
-		txTrace, ok := tracer.ResultsByTxID[receipts[i].TxHash]
+		txTrace, ok := tracer.ResultsByTxID[tx.Receipt.TxHash]
 
 		if !ok {
-			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: map[string]string{}}
+			results[i] = &txTraceResult{TxHash: tx.Receipt.TxHash, Result: map[string]string{}}
 		} else {
-			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: txTrace}
+			results[i] = &txTraceResult{TxHash: tx.Receipt.TxHash, Result: txTrace}
 		}
 
 	}

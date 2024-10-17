@@ -83,14 +83,14 @@ func (r *RangeFilter) Match() ([]*gethTypes.Log, error) {
 	var logs []*gethTypes.Log
 
 	for height := r.start; height <= r.end; height++ {
-		_, receipts, err := r.api.blockTransactions(height)
+		transactions, err := r.api.blockTransactions(height)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, receipt := range receipts {
-			if bloomMatch(receipt.Bloom, r.criteria) {
-				for _, log := range receipt.Logs {
+		for _, transaction := range transactions {
+			if bloomMatch(transaction.Receipt.Bloom, r.criteria) {
+				for _, log := range transaction.Receipt.Logs {
 					if ExactMatch(log, r.criteria) {
 						logs = append(logs, log)
 					}
@@ -136,13 +136,13 @@ func (i *IDFilter) Match() ([]*gethTypes.Log, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, receipts, err := i.api.blockTransactions(height)
+	transactions, err := i.api.blockTransactions(height)
 	if err != nil {
 		return nil, err
 	}
 	logs := make([]*gethTypes.Log, 0)
-	for _, receipt := range receipts {
-		for _, log := range receipt.Logs {
+	for _, tx := range transactions {
+		for _, log := range tx.Receipt.Logs {
 			if ExactMatch(log, i.criteria) {
 				logs = append(logs, log)
 			}
