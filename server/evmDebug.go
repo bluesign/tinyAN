@@ -218,11 +218,12 @@ func (d *DebugAPI) traceBlock(
 		if res.StateChangeCommitment == nil {
 			fmt.Println("res.StateChangeCommitment is nil")
 			fmt.Println(res.TxHash)
+			fmt.Println(res.Logs)
 			fmt.Println(res.Receipt().BlockNumber)
 			fmt.Println(txTrace)
 			fmt.Println(res.VMError)
 		}
-		var emptyChecksum [4]byte = [4]byte{0, 0, 0, 0}
+		var emptyChecksum = [4]byte{0, 0, 0, 0}
 		//check checksum
 		if !bytes.Equal(tx.Checksum[:], emptyChecksum[:]) && !bytes.Equal(res.StateChangeCommitment[:4], tx.Checksum[:]) {
 			fmt.Println("checksum failed")
