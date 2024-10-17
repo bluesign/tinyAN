@@ -117,7 +117,11 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	options := &pebble.IterOptions{}
 	var k []byte
 
-	iter, _ := s.ledgerDb.NewIter(options)
+	iter, err := s.ledgerDb.NewIter(options)
+	if err != nil {
+		s.logger.Log().Err(err).Str("key", key.String()).Msg("error creating iterator")
+		return nil
+	}
 	defer iter.Close()
 
 	for iter.SeekGE(preFixHeight); iter.Valid(); iter.Next() {
@@ -145,7 +149,11 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		return data
 	}
 
-	iter, _ = s.checkpointDb.NewIter(options)
+	iter, err = s.checkpointDb.NewIter(options)
+	if err != nil {
+		s.logger.Log().Err(err).Str("key", key.String()).Msg("error creating iterator")
+		return nil
+	}
 	defer iter.Close()
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
