@@ -103,7 +103,7 @@ type typeResult struct {
 	Balance string `json:"balance"`
 }
 
-type results struct {
+type apiResults struct {
 	Results []api_result `json:"results"`
 }
 
@@ -178,7 +178,7 @@ func (m APIServer) ResourceByType(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	p, _ := json.Marshal(results{Results: res})
+	p, _ := json.Marshal(apiResults{Results: res})
 	w.Write(p)
 
 }
@@ -209,7 +209,7 @@ func (m APIServer) AddressBalanceHistory(w http.ResponseWriter, r *http.Request)
 	}
 
 	result := m.storage.Latest().Index().BalanceHistoryByAddress(address, t, height)
-	response := results{}
+	response := apiResults{}
 	response.Results = make([]api_result, 0)
 	for _, v := range result {
 		history := balanceHistory{
