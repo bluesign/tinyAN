@@ -155,21 +155,21 @@ func (d *DebugAPI) traceBlock(
 	height uint64,
 	_ *tracers.TraceConfig) ([]*txTraceResult, error) {
 
-	respC := make(chan TraceResponse)
+	//respC := make(chan TraceResponse)
 
-	d.pool.Do(func() {
+	/*d.pool.Do(func() {
 		// Compute your response
 		computedResponse, err := d.traceBlockInner(height)
 		respC <- TraceResponse{Trace: computedResponse, Error: err}
-	})
+	})*/
 
-	resp := <-respC
+	resp, err := d.traceBlockInner(height)
 
-	if resp.Error != nil {
-		return nil, resp.Error
+	if err != nil {
+		return nil, err
 	}
 
-	return resp.Trace, nil
+	return resp, nil
 }
 
 var emptyChecksum = [4]byte{0, 0, 0, 0}
