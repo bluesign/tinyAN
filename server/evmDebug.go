@@ -221,6 +221,8 @@ func (d *DebugAPI) traceBlockInner(
 		switch v := tx.(type) {
 
 		case models.DirectCall:
+			fmt.Println("DirectCall")
+			fmt.Println(v.DirectCall.Type)
 			res, err = rbv.DirectCall(v.DirectCall)
 
 		case models.TransactionCall:
