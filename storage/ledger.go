@@ -118,6 +118,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	var k []byte
 
 	iter, _ := s.ledgerDb.NewIter(options)
+	defer iter.Close()
 
 	for iter.SeekGE(preFixHeight); iter.Valid(); iter.Next() {
 		k = iter.Key()
@@ -129,8 +130,7 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		if len(k)-len(prefix) > 8 {
 			continue
 		}
-		//found the key
-		defer iter.Close()
+
 		var data []byte
 		v, err := iter.ValueAndErr()
 		if err != nil {
@@ -144,13 +144,9 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		}
 		return data
 	}
-	err := iter.Close()
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error closing iterator")
-		return nil
-	}
 
 	iter, _ = s.checkpointDb.NewIter(options)
+	defer iter.Close()
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
 		k = iter.Key()
@@ -162,8 +158,6 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 		if len(k)-len(prefix) > 8 {
 			continue
 		}
-		//found the key
-		defer iter.Close()
 
 		var data []byte
 		v, err := iter.ValueAndErr()
@@ -178,11 +172,6 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			return nil
 		}
 		return data
-	}
-	err = iter.Close()
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error closing iterator")
-		return nil
 	}
 
 	return nil
