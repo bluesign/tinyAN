@@ -266,7 +266,7 @@ func (d *DebugAPI) traceBlockInner(
 			results[i] = &txTraceResult{TxHash: tx.Receipt.TxHash, Result: txTrace}
 		}
 		//check checksum
-		if !bytes.Equal(res.StateChangeCommitment[:4], tx.Checksum[:]) {
+		if tx.Checksum != nil && !bytes.Equal(res.StateChangeCommitment[:4], tx.Checksum[:]) {
 			fmt.Println("checksum failed")
 		}
 	}

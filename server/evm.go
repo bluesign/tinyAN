@@ -177,7 +177,7 @@ type TransactionWithReceipt struct {
 	Transaction      models.Transaction
 	Receipt          models.Receipt
 	PrecompiledCalls []byte
-	Checksum         [4]byte
+	Checksum         *[4]byte
 }
 
 func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithReceipt, error) {
@@ -254,7 +254,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 				Transaction:      tx,
 				Receipt:          *receipt,
 				PrecompiledCalls: payload.PrecompiledCalls,
-				Checksum:         payload.StateUpdateChecksum,
+				Checksum:         &payload.StateUpdateChecksum,
 			}
 
 		}
