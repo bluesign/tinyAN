@@ -7,7 +7,6 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
 	"github.com/onflow/cadence/runtime"
-	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
@@ -621,9 +620,9 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	snapshot := a.store.LedgerSnapshot(block.Height)
 
 	proc := fvm.Transaction(tx, 0)
-	debugger := interpreter.NewDebugger()
+	//debugger := interpreter.NewDebugger()
 
-	context := fvm.NewContext(
+	fvmContext := fvm.NewContext(
 		fvm.WithBlockHeader(block),
 		fvm.WithBlocks(a.store),
 		fvm.WithCadenceLogging(true),
@@ -634,7 +633,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			reusableRuntime.NewReusableCadenceRuntimePool(
 				0,
 				runtime.Config{
-					Debugger:           debugger,
 					TracingEnabled:     false,
 					AttachmentsEnabled: true,
 				},
@@ -647,7 +645,9 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	if err != nil {
 		panic(err)
 	}
-	executor := proc.NewExecutor(context, txnState)
+
+	executor := proc.NewExecutor(fvmContext, txnState)
+
 	err = fvm.Run(executor)
 	/*
 		var wg sync.WaitGroup

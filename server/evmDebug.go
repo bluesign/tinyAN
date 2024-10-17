@@ -4,11 +4,22 @@ import (
 	"context"
 	"fmt"
 	"github.com/goccy/go-json"
+	"github.com/onflow/cadence"
+	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
+	"github.com/onflow/flow-go/fvm"
+	"github.com/onflow/flow-go/fvm/environment"
+	"github.com/onflow/flow-go/fvm/evm"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
+	"github.com/onflow/flow-go/fvm/evm/handler"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
+	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
+	fvmStorage "github.com/onflow/flow-go/fvm/storage"
+	fvmState "github.com/onflow/flow-go/fvm/storage/state"
+	"github.com/onflow/flow-go/fvm/systemcontracts"
+	"github.com/onflow/flow-go/fvm/tracing"
 	"github.com/onflow/flow-go/model/flow"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -56,6 +67,27 @@ type DebugAPI struct {
 	logger zerolog.Logger
 	api    *APINamespace
 	pool   *Pool
+}
+
+type Environment struct {
+	cadenceHeight uint64
+	snapshot      FVMStorageSnapshot
+}
+
+func (d *Environment) GetCurrentBlockHeight() (uint64, error) {
+	return d.cadenceHeight, nil
+}
+
+func (d *Environment) GetBlockAtHeight(height uint64) (runtime.Block, bool, error) {
+	panic("shouldn't be called")
+}
+
+func (d *Environment) Invoke(spec environment.ContractFunctionSpec, arguments []cadence.Value) (cadence.Value, error) {
+	panic("shouldn't be called")
+}
+
+func (d *Environment) ReadRandom(bytes []byte) error {
+	panic("implement me")
 }
 
 func NewDebugApi(api *APINamespace) *DebugAPI {
@@ -182,6 +214,12 @@ func (d *DebugAPI) traceBlockInner(
 	if err != nil {
 		return nil, err
 	}
+
+	blockHeader, err := d.api.storage.GetBlockByHeight(height)
+	if err != nil {
+		return nil, err
+	}
+
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
@@ -195,11 +233,43 @@ func (d *DebugAPI) traceBlockInner(
 
 	results := make([]*txTraceResult, len(transactions))
 
+	fvmContext := fvm.NewContext(
+		fvm.WithBlockHeader(blockHeader),
+		fvm.WithBlocks(d.api.storage),
+		fvm.WithCadenceLogging(true),
+		fvm.WithAuthorizationChecksEnabled(false),
+		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
+		fvm.WithEVMEnabled(true),
+		fvm.WithReusableCadenceRuntimePool(
+			reusableRuntime.NewReusableCadenceRuntimePool(
+				0,
+				runtime.Config{
+					TracingEnabled:     false,
+					AttachmentsEnabled: true,
+				},
+			),
+		),
+	)
+
+	blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, nil)
+	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+	if err != nil {
+		panic(err)
+	}
+	env := environment.NewTransactionEnvironment(
+		tracing.NewMockTracerSpan(),
+		fvmContext.EnvironmentParams,
+		txnState)
+
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
 
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
+
+		sc := systemcontracts.SystemContractsForChain(flow.Mainnet)
+		randomBeaconAddress := sc.RandomBeaconHistory.Address
+		addressAllocator := handler.NewAddressAllocator()
 
 		blockContext := evmTypes.BlockContext{
 			ChainID:                evmTypes.FlowEVMMainNetChainID,
@@ -215,6 +285,12 @@ func (d *DebugAPI) traceBlockInner(
 				return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
 			},
 			Tracer: tracer.TxTracer(),
+			ExtraPrecompiledContracts: PreparePrecompiledContracts(
+				evm.ContractAccountAddress(flow.Mainnet),
+				randomBeaconAddress,
+				addressAllocator,
+				env,
+			),
 		}
 		rbv, err := emulator.NewBlockView(blockContext)
 
