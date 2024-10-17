@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/api"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
+	"github.com/onflow/flow-go/fvm/environment"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	"github.com/onflow/flow-go/fvm/evm/emulator/state"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
@@ -28,7 +28,6 @@ import (
 	"math/big"
 	"sort"
 	"strings"
-	"sync"
 )
 
 var (
@@ -357,15 +356,11 @@ func (a *APINamespace) SendRawTransaction(
 type ViewOnlyLedger struct {
 	snapshot storage.FVMStorageSnapshot
 	writes   map[flow.RegisterID]flow.RegisterValue
-	Counter  uint64
-	mu       sync.Mutex
 }
 
 func NewViewOnlyLedger(snapshot storage.FVMStorageSnapshot) *ViewOnlyLedger {
 	return &ViewOnlyLedger{
 		snapshot: snapshot,
-		Counter:  0x1000000000000000,
-		mu:       sync.Mutex{},
 		writes:   make(map[flow.RegisterID]flow.RegisterValue),
 	}
 }
@@ -375,8 +370,6 @@ func (v *ViewOnlyLedger) GetValue(owner, key []byte) ([]byte, error) {
 		Owner: string(owner),
 		Key:   string(key),
 	}
-	v.mu.Lock()
-	defer v.mu.Unlock()
 	if value, ok := v.writes[reg]; ok {
 		return value, nil
 	}
@@ -388,8 +381,6 @@ func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 		Owner: string(owner),
 		Key:   string(key),
 	}
-	v.mu.Lock()
-	defer v.mu.Unlock()
 	v.writes[reg] = value
 	return nil
 }
@@ -402,14 +393,35 @@ func (v *ViewOnlyLedger) ValueExists(owner, key []byte) (exists bool, err error)
 	return len(value) > 0, nil
 }
 
-func (v *ViewOnlyLedger) AllocateSlabIndex(_ []byte) (atree.SlabIndex, error) {
-	//we allocate fake slab index here
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	slabIndex := atree.SlabIndex{}
-	binary.BigEndian.PutUint64(slabIndex[:], v.Counter)
-	v.Counter = v.Counter + 1
-	return slabIndex, nil
+func (v *ViewOnlyLedger) GetPendingWrites() map[flow.RegisterID]flow.RegisterValue {
+	return v.writes
+}
+
+func (v *ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error) {
+	statusBytes, err := v.GetValue(owner, []byte(flow.AccountStatusKey))
+	if err != nil {
+		return atree.SlabIndex{}, err
+	}
+	if len(statusBytes) == 0 {
+		return atree.SlabIndex{}, fmt.Errorf("state for account not found")
+	}
+
+	status, err := environment.AccountStatusFromBytes(statusBytes)
+	if err != nil {
+		return atree.SlabIndex{}, err
+	}
+
+	// get and increment the index
+	index := status.SlabIndex()
+	newIndexBytes := index.Next()
+
+	// update the storageIndex bytes
+	status.SetStorageIndex(newIndexBytes)
+	err = v.SetValue(owner, []byte(flow.AccountStatusKey), status.ToBytes())
+	if err != nil {
+		return atree.SlabIndex{}, err
+	}
+	return index, nil
 }
 
 var _ atree.Ledger = (*ViewOnlyLedger)(nil)

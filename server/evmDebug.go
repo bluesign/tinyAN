@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/goccy/go-json"
@@ -186,7 +187,10 @@ func (d *DebugAPI) traceBlockInner(
 
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
-	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
+	snapAfter := d.api.storage.LedgerSnapshot(cadenceHeight)
+
+	roView := NewViewOnlyLedger(snap)
+	emulator := emulator2.NewEmulator(roView, base)
 
 	transactions, err := d.api.blockTransactions(height)
 	if err != nil {
@@ -261,6 +265,19 @@ func (d *DebugAPI) traceBlockInner(
 			results[i] = &txTraceResult{TxHash: tx.Receipt.TxHash, Result: txTrace}
 		}
 
+	}
+
+	//check changes
+	for k, v := range roView.GetPendingWrites() {
+
+		nextValue, _ := snapAfter.Get(k)
+
+		if bytes.Compare(v, nextValue) != 0 {
+			fmt.Println("key", k)
+			fmt.Println("value", v)
+			fmt.Println("nextValue", nextValue)
+			panic("wrong state change")
+		}
 	}
 
 	return results, nil
