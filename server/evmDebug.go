@@ -290,9 +290,9 @@ func (d *DebugAPI) traceBlockInner(
 			return nil, evmTypes.ErrUnexpectedEmptyResult
 		}*/
 
-		txTrace := tracer.GetResultByTxHash(receipts[i].TxHash)
+		txTrace, ok := tracer.ResultsByTxID[receipts[i].TxHash]
 
-		if err != nil {
+		if !ok {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: map[string]string{}, Error: err.Error()}
 		} else {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: txTrace}

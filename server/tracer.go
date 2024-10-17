@@ -34,7 +34,7 @@ var _ EVMTracer = &CallTracer{}
 type CallTracer struct {
 	logger        zerolog.Logger
 	tracer        *tracers.Tracer
-	resultsByTxID map[gethCommon.Hash]json.RawMessage
+	ResultsByTxID map[gethCommon.Hash]json.RawMessage
 	tracerConfig  []byte
 	blockID       flow.Identifier
 }
@@ -50,7 +50,7 @@ func NewEVMCallTracer(logger zerolog.Logger) (*CallTracer, error) {
 	return &CallTracer{
 		logger:        logger.With().Str("module", "evm-tracer").Logger(),
 		tracer:        tracer,
-		resultsByTxID: make(map[gethCommon.Hash]json.RawMessage),
+		ResultsByTxID: make(map[gethCommon.Hash]json.RawMessage),
 		tracerConfig:  tracerConfig,
 	}, nil
 }
@@ -70,7 +70,7 @@ func (t *CallTracer) WithBlockID(id flow.Identifier) {
 }
 
 func (t *CallTracer) GetResultByTxHash(txID gethCommon.Hash) json.RawMessage {
-	return t.resultsByTxID[txID]
+	return t.ResultsByTxID[txID]
 }
 
 func (t *CallTracer) Collect(txID gethCommon.Hash) {
@@ -80,13 +80,13 @@ func (t *CallTracer) Collect(txID gethCommon.Hash) {
 		Logger()
 
 	// collect the trace result
-	_, found := t.resultsByTxID[txID]
+	_, found := t.ResultsByTxID[txID]
 	if !found {
 		l.Error().Msg("trace result not found")
 		return
 	}
 	// remove the result
-	delete(t.resultsByTxID, txID)
+	delete(t.ResultsByTxID, txID)
 
 	// upload is concurrent and it doesn't produce any errors, as the
 	// client doesn't expect it, we don't want to break execution flow,
@@ -188,7 +188,7 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 			l.Error().Err(err).Msg("failed to produce trace results")
 			return
 		}
-		ct.resultsByTxID[receipt.TxHash] = res
+		ct.ResultsByTxID[receipt.TxHash] = res
 	}
 
 	wrapped.OnEnter = func(
