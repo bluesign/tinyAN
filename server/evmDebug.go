@@ -235,9 +235,7 @@ func (d *DebugAPI) traceBlockInner(
 	*/
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
-
-		if tx.Hash().String() == "0xad983918d138de85975a2bd462931e1bcea9f5ff38a6f6b100bc62c50a7e11c1" ||
-			tx.Hash().String() == "0xecd43386e11406f8c9790cab422a82c70c85d3f546465adfd27775cfe2ad28d1" {
+		if height == 1835895 || height == 1835865 {
 			fmt.Println("Found tx")
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: json.RawMessage(dummy_1)}
 			continue
