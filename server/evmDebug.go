@@ -290,7 +290,6 @@ func (d *DebugAPI) traceBlockInner(
 		if failed {
 			fmt.Println("traceBlockInner", height)
 			fmt.Println("cadenceHeight", cadenceHeight)
-			panic("failed")
 		}
 	}
 
