@@ -13,10 +13,10 @@ import (
 	"math/big"
 )
 
-func DecodeTransactionEvent(i int, event cadence.Event) (models.Transaction, *models.Receipt, error) {
+func DecodeTransactionEvent(i int, event cadence.Event) (models.Transaction, *models.Receipt, []byte, error) {
 	txEvent, err := events.DecodeTransactionEventPayload(event)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to Cadence decode transaction event [%s]: %w", event.String(), err)
+		return nil, nil, []byte{}, fmt.Errorf("failed to Cadence decode transaction event [%s]: %w", event.String(), err)
 	}
 
 	gethReceipt := &gethTypes.Receipt{
@@ -32,7 +32,7 @@ func DecodeTransactionEvent(i int, event cadence.Event) (models.Transaction, *mo
 	if len(txEvent.Logs) > 0 {
 		err = rlp.Decode(bytes.NewReader(txEvent.Logs), &gethReceipt.Logs)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to RLP-decode logs: %w", err)
+			return nil, nil, []byte{}, fmt.Errorf("failed to RLP-decode logs: %w", err)
 		}
 	}
 
@@ -57,17 +57,17 @@ func DecodeTransactionEvent(i int, event cadence.Event) (models.Transaction, *mo
 	if txEvent.TransactionType == types.DirectCallTxType {
 		directCall, err := types.DirectCallFromEncoded(txEvent.Payload)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to RLP-decode direct call [%x]: %w", txEvent.Payload, err)
+			return nil, nil, []byte{}, fmt.Errorf("failed to RLP-decode direct call [%x]: %w", txEvent.Payload, err)
 		}
 		tx = models.DirectCall{DirectCall: directCall}
 	} else {
 		gethTx := &gethTypes.Transaction{}
 		if err := gethTx.UnmarshalBinary(txEvent.Payload); err != nil {
-			return nil, nil, fmt.Errorf("failed to RLP-decode transaction [%x]: %w", txEvent.Payload, err)
+			return nil, nil, []byte{}, fmt.Errorf("failed to RLP-decode transaction [%x]: %w", txEvent.Payload, err)
 		}
 		receipt.EffectiveGasPrice = gethTx.EffectiveGasTipValue(nil)
 		tx = models.TransactionCall{Transaction: gethTx}
 	}
 
-	return tx, receipt, nil
+	return tx, receipt, txEvent.PrecompiledCalls, nil
 }

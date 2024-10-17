@@ -174,7 +174,13 @@ func (a *APINamespace) blockNumberOrHashToHeight(blockNumberOrHash rpc.BlockNumb
 
 }
 
-func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transaction, []*models.Receipt, error) {
+type TransactionWithReceipt struct {
+	Transaction      models.Transaction
+	Receipt          models.Receipt
+	PrecompiledCalls []byte
+}
+
+func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithReceipt, error) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -184,17 +190,17 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
@@ -206,8 +212,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 		return cadenceEvents[i].EventIndex < cadenceEvents[j].EventIndex
 	})
 
-	receipts := make([]*models.Receipt, len(cadenceEvents))
-	transactions := make([]models.Transaction, len(cadenceEvents))
+	transactions := make([]TransactionWithReceipt, len(cadenceEvents))
 
 	logIndex := uint(0)
 	cumulativeGasUsed := uint64(0)
@@ -217,41 +222,44 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]models.Transacti
 			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 			if err != nil {
 				fmt.Println(err)
-				return nil, nil, err
+				return nil, err
 			}
 
 			event, ok := eventDecoded.(cadence.Event)
 			if !ok {
 				fmt.Println(err)
-				return nil, nil, errors.New("failed to decode event")
+				return nil, errors.New("failed to decode event")
 			}
-			tx, receipt, err := storage.DecodeTransactionEvent(i, event)
+			tx, receipt, calls, err := storage.DecodeTransactionEvent(i, event)
 			if err != nil {
 				fmt.Println(err)
-				return nil, nil, err
+				return nil, err
 			}
-			transactions[receipt.TransactionIndex] = tx
-			receipts[receipt.TransactionIndex] = receipt
+
+			cumulativeGasUsed += receipt.GasUsed
+			receipt.CumulativeGasUsed = cumulativeGasUsed
+
+			receipt.BlockHash, _ = block.Hash()
+
+			for _, log := range receipt.Logs {
+				log.Index = logIndex
+				log.BlockNumber = block.Height
+				log.TxHash = receipt.TxHash
+				log.TxIndex = receipt.TransactionIndex
+				log.BlockHash = receipt.BlockHash
+				logIndex++
+			}
+
+			transactions[i] = TransactionWithReceipt{
+				Transaction:      tx,
+				Receipt:          *receipt,
+				PrecompiledCalls: calls,
+			}
+
 		}
 	}
 
-	for _, receipt := range receipts {
-		cumulativeGasUsed += receipt.GasUsed
-		receipt.CumulativeGasUsed = cumulativeGasUsed
-
-		receipt.BlockHash, _ = block.Hash()
-
-		for _, log := range receipt.Logs {
-			log.Index = logIndex
-			log.BlockNumber = block.Height
-			log.TxHash = receipt.TxHash
-			log.TxIndex = receipt.TransactionIndex
-			log.BlockHash = receipt.BlockHash
-			logIndex++
-		}
-	}
-
-	return transactions, receipts, nil
+	return transactions, nil
 }
 
 // GetBlockByNumber returns the requested canonical block.
@@ -298,7 +306,7 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 
-	transactions, receipts, err := a.blockTransactions(height)
+	transactions, err := a.blockTransactions(height)
 	if err != nil {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
@@ -309,14 +317,14 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 	if transactions != nil && len(transactions) > 0 {
 		totalGasUsed := hexutil.Uint64(0)
 		logs := make([]*types.Log, 0)
-		for i, tx := range transactions {
-			receipt := receipts[i]
+		for _, tx := range transactions {
+			receipt := tx.Receipt
 			transactionHashes[receipt.TransactionIndex] = receipt.TxHash
-			txResult, _ := api.NewTransactionResult(tx, *receipt, EVMMainnetChainID)
+			txResult, _ := api.NewTransactionResult(tx.Transaction, tx.Receipt, EVMMainnetChainID)
 			transactionResults[receipt.TransactionIndex] = txResult
 			totalGasUsed += hexutil.Uint64(receipt.GasUsed)
 			logs = append(logs, receipt.Logs...)
-			blockSize += tx.Size()
+			blockSize += tx.Transaction.Size()
 		}
 		blockResponse.GasUsed = totalGasUsed
 		blockResponse.LogsBloom = types.LogsBloom(logs)
@@ -477,15 +485,15 @@ func (a *APINamespace) GetTransactionByHash(
 		fmt.Println(err)
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-	transactions, receipts, err := a.blockTransactions(block.Height)
+	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-	for i, tx := range transactions {
-		if tx.Hash() == hash {
-			receipt := receipts[i]
+	for _, tx := range transactions {
+		if tx.Transaction.Hash() == hash {
+			receipt := tx.Receipt
 			receipt.BlockHash, _ = block.Hash()
-			return api.NewTransactionResult(tx, *receipts[i], EVMMainnetChainID)
+			return api.NewTransactionResult(tx.Transaction, tx.Receipt, EVMMainnetChainID)
 		}
 	}
 	return handleError[*api.Transaction](errs.ErrEntityNotFound)
@@ -507,7 +515,7 @@ func (a *APINamespace) GetTransactionByBlockHashAndIndex(
 		fmt.Println(err)
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-	transactions, receipts, err := a.blockTransactions(block.Height)
+	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
@@ -516,9 +524,9 @@ func (a *APINamespace) GetTransactionByBlockHashAndIndex(
 	if txIndex >= len(transactions) {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-	receipt := receipts[txIndex]
+	receipt := transactions[txIndex].Receipt
 	receipt.BlockHash, _ = block.Hash()
-	return api.NewTransactionResult(transactions[txIndex], *receipts[txIndex], EVMMainnetChainID)
+	return api.NewTransactionResult(transactions[txIndex].Transaction, receipt, EVMMainnetChainID)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction
@@ -544,7 +552,7 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 		fmt.Println(err)
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
-	transactions, receipts, err := a.blockTransactions(block.Height)
+	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*api.Transaction](errs.ErrInternal)
 	}
@@ -553,9 +561,9 @@ func (a *APINamespace) GetTransactionByBlockNumberAndIndex(
 	if txIndex >= len(transactions) {
 		return handleError[*api.Transaction](errs.ErrEntityNotFound)
 	}
-	receipt := receipts[txIndex]
+	receipt := transactions[txIndex].Receipt
 	receipt.BlockHash, _ = block.Hash()
-	return api.NewTransactionResult(transactions[txIndex], *receipts[txIndex], EVMMainnetChainID)
+	return api.NewTransactionResult(transactions[txIndex].Transaction, receipt, EVMMainnetChainID)
 }
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
@@ -574,18 +582,18 @@ func (a *APINamespace) GetTransactionReceipt(
 		fmt.Println(err)
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
-	transactions, receipts, err := a.blockTransactions(block.Height)
+	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
 	cumulativeGasUsed := uint64(0)
-	for i, tx := range transactions {
-		cumulativeGasUsed += receipts[i].GasUsed
-		if tx.Hash() == hash {
-			receipt := receipts[i]
+	for _, tx := range transactions {
+		cumulativeGasUsed += tx.Receipt.GasUsed
+		if tx.Transaction.Hash() == hash {
+			receipt := tx.Receipt
 			receipt.BlockHash, _ = block.Hash()
 			receipt.CumulativeGasUsed = cumulativeGasUsed
-			txReceipt, err := api.MarshalReceipt(receipt, tx)
+			txReceipt, err := api.MarshalReceipt(&receipt, tx.Transaction)
 			if err != nil {
 				return handleError[map[string]interface{}](errs.ErrInternal)
 			}
@@ -628,14 +636,14 @@ func (a *APINamespace) GetBlockReceipts(
 	if err != nil {
 		return handleError[[]map[string]interface{}](errs.ErrInternal)
 	}
-	transactions, receipts, err := a.blockTransactions(block.Height)
+	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[[]map[string]interface{}](errs.ErrInternal)
 	}
 
 	result := make([]map[string]interface{}, len(transactions))
 	for i, tx := range transactions {
-		txReceipt, err := api.MarshalReceipt(receipts[i], tx)
+		txReceipt, err := api.MarshalReceipt(&tx.Receipt, tx.Transaction)
 		if err != nil {
 			return handleError[[]map[string]interface{}](errs.ErrInternal)
 		}
@@ -679,7 +687,7 @@ func (a *APINamespace) GetBlockTransactionCountByNumber(
 		return handleError[*hexutil.Uint](errs.ErrInternal)
 	}
 
-	transactions, _, err := a.blockTransactions(block.Height)
+	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		return handleError[*hexutil.Uint](errs.ErrInternal)
 	}

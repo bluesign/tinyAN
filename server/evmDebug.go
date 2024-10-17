@@ -8,6 +8,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
+	"github.com/onflow/flow-go/fvm/evm/precompiles"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/flow-go/model/flow"
 	gethCommon "github.com/onflow/go-ethereum/common"
@@ -185,16 +186,11 @@ func (d *DebugAPI) traceBlockInner(
 		return nil, err
 	}
 
-	/*blockHeader, err := d.api.storage.GetBlockByHeight(cadenceHeight)
-	if err != nil {
-		return nil, err
-	}*/
-
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
 
-	transactions, receipts, err := d.api.blockTransactions(height)
+	transactions, receipts, calls, err := d.api.blockTransactions(height)
 	if err != nil {
 		return nil, err
 	}
@@ -202,50 +198,16 @@ func (d *DebugAPI) traceBlockInner(
 	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
 
 	results := make([]*txTraceResult, len(transactions))
-	/*
-		fvmContext := fvm.NewContext(
-			fvm.WithBlockHeader(blockHeader),
-			fvm.WithBlocks(d.api.storage),
-			fvm.WithCadenceLogging(true),
-			fvm.WithAuthorizationChecksEnabled(false),
-			fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
-			fvm.WithEVMEnabled(true),
-			fvm.WithReusableCadenceRuntimePool(
-				reusableRuntime.NewReusableCadenceRuntimePool(
-					0,
-					runtime.Config{
-						TracingEnabled:     false,
-						AttachmentsEnabled: true,
-					},
-				),
-			),
-			//fvm.WithEntropyProvider(emulator),
-		)
-	*/
-	//blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, nil)
-	//txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
-	//if err != nil {
-	//	panic(err)
-	//}
 
-	/*env := environment.NewTransactionEnvironment(
-	tracing.NewMockTracerSpan(),
-	fvmContext.EnvironmentParams,
-	txnState)
-	*/
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
-		if height == 1835895 || height == 1835865 {
+		/*if height == 1835895 || height == 1835865 {
 			fmt.Println("Found tx")
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: json.RawMessage(dummy_1)}
 			continue
-		}
+		}*/
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
-
-		//	sc := systemcontracts.SystemContractsForChain(flow.Mainnet)
-		//	randomBeaconAddress := sc.RandomBeaconHistory.Address
-		//	addressAllocator := handler.NewAddressAllocator()
 
 		blockContext := evmTypes.BlockContext{
 			ChainID:                evmTypes.FlowEVMMainNetChainID,
@@ -261,12 +223,13 @@ func (d *DebugAPI) traceBlockInner(
 				return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
 			},
 			Tracer: tracer.TxTracer(),
-			/*ExtraPrecompiledContracts: PreparePrecompiledContracts(
-				evm.ContractAccountAddress(flow.Mainnet),
-				randomBeaconAddress,
-				addressAllocator,
-				env,
-			),*/
+		}
+		if calls[i] != nil {
+			pcs, err := evmTypes.AggregatedPrecompileCallsFromEncoded(calls[i])
+			if err != nil {
+				return nil, fmt.Errorf("error decoding precompiled calls [%x]: %w", calls[i], err)
+			}
+			blockContext.ExtraPrecompiledContracts = precompiles.AggregatedPrecompiledCallsToPrecompiledContracts(pcs)
 		}
 		rbv, err := emulator.NewBlockView(blockContext)
 
@@ -292,9 +255,9 @@ func (d *DebugAPI) traceBlockInner(
 			return nil, err
 		}
 
-		/*if res == nil { // safety check for result
+		if res == nil { // safety check for result
 			return nil, evmTypes.ErrUnexpectedEmptyResult
-		}*/
+		}
 
 		txTrace, ok := tracer.ResultsByTxID[receipts[i].TxHash]
 
