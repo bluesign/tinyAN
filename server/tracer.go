@@ -50,7 +50,7 @@ func NewEVMCallTracer(logger zerolog.Logger) (*CallTracer, error) {
 		logger:        logger.With().Str("module", "evm-tracer").Logger(),
 		tracer:        tracer,
 		ResultsByTxID: make(map[gethCommon.Hash]json.RawMessage),
-		tracerConfig:  tracerConfig,
+		tracerConfig:  json.RawMessage(tracerConfig),
 	}, nil
 }
 
