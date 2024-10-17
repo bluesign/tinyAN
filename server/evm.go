@@ -177,6 +177,7 @@ type TransactionWithReceipt struct {
 	Transaction      models.Transaction
 	Receipt          models.Receipt
 	PrecompiledCalls []byte
+	Checksum         [4]byte
 }
 
 func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithReceipt, error) {
@@ -229,7 +230,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 				fmt.Println(err)
 				return nil, errors.New("failed to decode event")
 			}
-			tx, receipt, calls, err := storage.DecodeTransactionEvent(i, event)
+			tx, receipt, payload, err := storage.DecodeTransactionEvent(i, event)
 			if err != nil {
 				fmt.Println(err)
 				return nil, err
@@ -252,7 +253,8 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 			transactions[i] = TransactionWithReceipt{
 				Transaction:      tx,
 				Receipt:          *receipt,
-				PrecompiledCalls: calls,
+				PrecompiledCalls: payload.PrecompiledCalls,
+				Checksum:         payload.StateUpdateChecksum,
 			}
 
 		}
