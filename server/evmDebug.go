@@ -284,7 +284,6 @@ func (d *DebugAPI) traceBlockInner(
 			panic("wrong state change")
 		}
 
-		panic("denix")
 	}
 
 	return results, nil
