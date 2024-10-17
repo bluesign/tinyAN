@@ -9,8 +9,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/models"
 	sdk "github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go/access"
-	storage2 "github.com/onflow/flow-go/fvm/storage"
-	fvmState "github.com/onflow/flow-go/fvm/storage/state"
+	"github.com/onflow/flow-go/fvm/storage/snapshot"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module/executiondatasync/execution_data"
 	flowStorage "github.com/onflow/flow-go/storage"
@@ -96,12 +95,10 @@ func (s *HeightBasedStorage) GetLatestBlock() (*flow.Header, error) {
 	return storage.Protocol().GetBlockByHeight(storage.LastBlocksHeight())
 }
 
-func (s *HeightBasedStorage) LedgerSnapshot(height uint64) storage2.Transaction {
+func (s *HeightBasedStorage) LedgerSnapshot(height uint64) snapshot.StorageSnapshot {
 	storage := s.StorageForHeight(height)
 	snap := storage.ledger.StorageSnapshot(height)
-	blockDatabase := storage2.NewBlockDatabase(snap, 0, nil)
-	txnState, _ := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
-	return txnState
+	return snap
 }
 
 func (s *HeightBasedStorage) ByHeightFrom(height uint64, header *flow.Header) (*flow.Header, error) {

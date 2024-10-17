@@ -7,7 +7,6 @@ import (
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
-	"github.com/onflow/flow-go/fvm/evm/debug"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
 	"github.com/onflow/flow-go/model/flow"
@@ -66,18 +65,6 @@ func NewDebugApi(api *APINamespace) *DebugAPI {
 		pool:   NewPool(),
 	}
 }
-
-type EVMTraceListener struct {
-	Data map[string]json.RawMessage
-}
-
-// Upload implements debug.Uploader.
-func (e *EVMTraceListener) Upload(id string, data json.RawMessage) error {
-	e.Data[id] = data
-	return nil
-}
-
-var _ debug.Uploader = &EVMTraceListener{}
 
 func (d *DebugAPI) TraceBlockByNumber(
 	ctx context.Context,
@@ -160,9 +147,9 @@ type TraceResponse struct {
 }
 
 func (d *DebugAPI) traceBlock(
-	ctx context.Context,
+	_ context.Context,
 	height uint64,
-	cfg *tracers.TraceConfig) ([]*txTraceResult, error) {
+	_ *tracers.TraceConfig) ([]*txTraceResult, error) {
 
 	respC := make(chan TraceResponse)
 
@@ -185,7 +172,6 @@ func (d *DebugAPI) traceBlockInner(
 	height uint64,
 ) ([]*txTraceResult, error) {
 
-	fmt.Println(height)
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
@@ -196,9 +182,7 @@ func (d *DebugAPI) traceBlockInner(
 	}
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
-
-	led := NewViewOnlyLedger(snap)
-	emulator := emulator2.NewEmulator(led, base)
+	emulator := emulator2.NewEmulator(NewViewOnlyLedger(snap), base)
 
 	transactions, receipts, err := d.api.blockTransactions(height)
 	if err != nil {
@@ -303,23 +287,23 @@ func (s *Web3API) Sha3(input hexutil.Bytes) hexutil.Bytes {
 
 type TxPool struct{}
 
-type content struct {
+type Content struct {
 	Pending any `json:"pending"`
 	Queued  any `json:"queued"`
 }
 
-func emptyPool() content {
-	return content{
+func emptyPool() Content {
+	return Content{
 		Pending: struct{}{},
 		Queued:  struct{}{},
 	}
 }
 
-func (s *TxPool) Content() content {
+func (s *TxPool) Content() Content {
 	return emptyPool()
 }
 
-func (s *TxPool) ContentFrom(addr common.Address) content {
+func (s *TxPool) ContentFrom(_ common.Address) Content {
 	return emptyPool()
 }
 
@@ -330,6 +314,6 @@ func (s *TxPool) Status() map[string]hexutil.Uint {
 	}
 }
 
-func (s *TxPool) Inspect() content {
+func (s *TxPool) Inspect() Content {
 	return emptyPool()
 }
