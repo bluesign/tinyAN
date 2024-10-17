@@ -418,6 +418,8 @@ func (v *ViewOnlyLedger) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error
 	index := status.SlabIndex()
 	newIndexBytes := index.Next()
 
+	fmt.Println("newIndexBytes", hex.EncodeToString(newIndexBytes))
+
 	// update the storageIndex bytes
 	status.SetStorageIndex(newIndexBytes)
 	err = v.SetValue(owner, []byte(flow.AccountStatusKey), status.ToBytes())
