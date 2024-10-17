@@ -144,18 +144,16 @@ func (s *ProtocolStorage) CollectionsAtBlock(blockId flow.Identifier) (result []
 	prefix := makePrefix(codeCollectionAtBlock, blockId)
 	options := &pebble.IterOptions{}
 	iter, _ := s.protocolDB.NewIter(options)
+	defer iter.Close()
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
 		_, err := iter.ValueAndErr()
 		if err != nil {
 			break
 		}
-		fmt.Println(iter.Key())
-
 		if !bytes.HasPrefix(iter.Key(), prefix) {
 			break
 		}
-		fmt.Println(iter.Key())
 		id, _ := flow.ByteSliceToId(iter.Key()[37:])
 		result = append(result, id)
 	}
@@ -166,6 +164,7 @@ func (s *ProtocolStorage) TransactionsAtCollection(collectionId flow.Identifier)
 	prefix := makePrefix(codeTransactionAtCollection, collectionId)
 	options := &pebble.IterOptions{}
 	iter, _ := s.protocolDB.NewIter(options)
+	defer iter.Close()
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
 		_, err := iter.ValueAndErr()
@@ -228,6 +227,7 @@ func (s *ProtocolStorage) EventsByName(blockId flow.Identifier, eventType string
 	options := &pebble.IterOptions{}
 	iter, _ := s.protocolDB.NewIter(options)
 	eventTypeReversed := reverse(eventType)
+	defer iter.Close()
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
 		if !bytes.HasPrefix(iter.Key(), prefix) {
@@ -251,6 +251,7 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 	prefix := makePrefix(codeEvent, blockId, collectionId, transactionId)
 	options := &pebble.IterOptions{}
 	iter, _ := s.protocolDB.NewIter(options)
+	defer iter.Close()
 
 	for iter.SeekGE(prefix); iter.Valid(); iter.Next() {
 		if !bytes.HasPrefix(iter.Key(), prefix) {
@@ -265,7 +266,6 @@ func (s *ProtocolStorage) Events(blockId flow.Identifier, collectionId flow.Iden
 
 		result = append(result, event)
 	}
-	fmt.Println(result)
 	return result
 }
 
