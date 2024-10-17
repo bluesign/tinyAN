@@ -145,7 +145,10 @@ func (d *DebugAPI) traceBlock(
 		return nil, err
 	}
 
-	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
+	tracer, err := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
+	if err != nil {
+		return nil, err
+	}
 
 	results := make([]*txTraceResult, len(transactions))
 
@@ -178,7 +181,9 @@ func (d *DebugAPI) traceBlock(
 			blockContext.ExtraPrecompiledContracts = precompiles.AggregatedPrecompiledCallsToPrecompiledContracts(pcs)
 		}
 		rbv, err := emulator.NewBlockView(blockContext)
-
+		if err != nil {
+			return nil, err
+		}
 		switch v := tx.Transaction.(type) {
 
 		case models.DirectCall:
