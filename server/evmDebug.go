@@ -123,21 +123,6 @@ func (d *DebugAPI) traceBlock(
 	height uint64,
 	_ *tracers.TraceConfig) ([]*txTraceResult, error) {
 
-	resp, err := d.traceBlockInner(height)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-var emptyChecksum = [4]byte{0, 0, 0, 0}
-
-func (d *DebugAPI) traceBlockInner(
-	height uint64,
-) ([]*txTraceResult, error) {
-
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 
 	if err != nil {
