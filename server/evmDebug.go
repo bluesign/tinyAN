@@ -269,8 +269,10 @@ func (d *DebugAPI) traceBlockInner(
 		if res == nil {
 			fmt.Println("res is nil")
 		}
+
 		if res.StateChangeCommitment == nil {
 			fmt.Println("res.StateChangeCommitment is nil")
+			fmt.Println(res.VMError)
 		}
 		//check checksum
 		if !bytes.Equal(tx.Checksum[:], emptyChecksum[:]) && !bytes.Equal(res.StateChangeCommitment[:4], tx.Checksum[:]) {
