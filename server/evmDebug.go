@@ -227,6 +227,7 @@ func (d *DebugAPI) traceBlockInner(
 				},
 			),
 		),
+		//fvm.WithEntropyProvider(emulator),
 	)
 
 	blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, nil)
