@@ -381,6 +381,9 @@ func (v *ViewOnlyLedger) SetValue(owner, key, value []byte) (err error) {
 		Owner: string(owner),
 		Key:   string(key),
 	}
+	if hex.EncodeToString(value) == "000000000000df59cf00000000000047d8000000010000000000000002" {
+		panic("d")
+	}
 	v.writes[reg] = value
 	return nil
 }
