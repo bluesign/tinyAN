@@ -268,19 +268,24 @@ func (d *DebugAPI) traceBlockInner(
 	}
 
 	//check changes
+	failed := false
 	for k, v := range roView.GetPendingWrites() {
+
 		nextValue, _ := snapAfter.Get(k)
 
 		if bytes.Compare(v, nextValue) != 0 {
-			fmt.Println("traceBlockInner", height)
-			fmt.Println("cadenceHeight", cadenceHeight)
+			failed = true
 
 			fmt.Println("key", k)
 			fmt.Println("value", hex.EncodeToString(v))
 			fmt.Println("nextValue", hex.EncodeToString(nextValue))
-			panic("wrong state change")
 		}
 
+		if failed {
+			fmt.Println("traceBlockInner", height)
+			fmt.Println("cadenceHeight", cadenceHeight)
+			panic("failed")
+		}
 	}
 
 	return results, nil
