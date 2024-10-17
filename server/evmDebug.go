@@ -8,9 +8,7 @@ import (
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
-	"github.com/onflow/flow-go/fvm/evm/handler"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
-	"github.com/onflow/flow-go/fvm/systemcontracts"
 	"github.com/onflow/flow-go/model/flow"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -185,10 +183,10 @@ func (d *DebugAPI) traceBlockInner(
 		return nil, err
 	}
 
-	blockHeader, err := d.api.storage.GetBlockByHeight(cadenceHeight)
+	/*blockHeader, err := d.api.storage.GetBlockByHeight(cadenceHeight)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
@@ -239,9 +237,9 @@ func (d *DebugAPI) traceBlockInner(
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
 
-		sc := systemcontracts.SystemContractsForChain(flow.Mainnet)
-		randomBeaconAddress := sc.RandomBeaconHistory.Address
-		addressAllocator := handler.NewAddressAllocator()
+		//	sc := systemcontracts.SystemContractsForChain(flow.Mainnet)
+		//	randomBeaconAddress := sc.RandomBeaconHistory.Address
+		//	addressAllocator := handler.NewAddressAllocator()
 
 		blockContext := evmTypes.BlockContext{
 			ChainID:                evmTypes.FlowEVMMainNetChainID,
