@@ -193,7 +193,7 @@ func (d *DebugAPI) traceBlockInner(
 		return nil, err
 	}
 
-	blockHeader, err := d.api.storage.GetBlockByHeight(height)
+	blockHeader, err := d.api.storage.GetBlockByHeight(cadenceHeight)
 	if err != nil {
 		return nil, err
 	}
