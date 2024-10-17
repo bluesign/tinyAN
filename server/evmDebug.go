@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/goccy/go-json"
-	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
@@ -67,27 +66,6 @@ type DebugAPI struct {
 	logger zerolog.Logger
 	api    *APINamespace
 	pool   *Pool
-}
-
-type Environment struct {
-	cadenceHeight uint64
-	snapshot      FVMStorageSnapshot
-}
-
-func (d *Environment) GetCurrentBlockHeight() (uint64, error) {
-	return d.cadenceHeight, nil
-}
-
-func (d *Environment) GetBlockAtHeight(height uint64) (runtime.Block, bool, error) {
-	panic("shouldn't be called")
-}
-
-func (d *Environment) Invoke(spec environment.ContractFunctionSpec, arguments []cadence.Value) (cadence.Value, error) {
-	panic("shouldn't be called")
-}
-
-func (d *Environment) ReadRandom(bytes []byte) error {
-	panic("implement me")
 }
 
 func NewDebugApi(api *APINamespace) *DebugAPI {
