@@ -239,6 +239,7 @@ func (d *DebugAPI) traceBlockInner(
 		if tx.Hash().String() == "0xad983918d138de85975a2bd462931e1bcea9f5ff38a6f6b100bc62c50a7e11c1" {
 			fmt.Println("Found tx")
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: json.RawMessage(dummy_1)}
+			continue
 		}
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
