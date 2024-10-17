@@ -40,9 +40,8 @@ type CallTracer struct {
 }
 
 func NewEVMCallTracer(logger zerolog.Logger) (*CallTracer, error) {
-	tracerConfig := json.RawMessage(tracerConfig)
 
-	tracer, err := tracers.DefaultDirectory.New(tracerName, &tracers.Context{}, tracerConfig)
+	tracer, err := tracers.DefaultDirectory.New(tracerName, &tracers.Context{}, json.RawMessage(tracerConfig))
 	if err != nil {
 		return nil, err
 	}

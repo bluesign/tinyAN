@@ -142,11 +142,14 @@ func (d *DebugAPI) traceBlock(
 
 	transactions, err := d.api.blockTransactions(height)
 	if err != nil {
+		fmt.Println(err)
+
 		return nil, err
 	}
 
 	tracer, err := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
