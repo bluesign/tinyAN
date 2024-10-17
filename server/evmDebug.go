@@ -22,6 +22,7 @@ import (
 	"github.com/rs/zerolog"
 	"math/big"
 	"os"
+	"strings"
 )
 
 type Pool struct {
@@ -271,6 +272,9 @@ func (d *DebugAPI) traceBlockInner(
 	failed := false
 	for k, v := range roView.GetPendingWrites() {
 
+		if !strings.Contains(k.String(), "/$") {
+			continue
+		}
 		nextValue, _ := snapAfter.Get(k)
 
 		if bytes.Compare(v, nextValue) != 0 {
