@@ -174,9 +174,8 @@ func (d *DebugAPI) traceBlockInner(
 	height uint64,
 ) ([]*txTraceResult, error) {
 
-	fmt.Println("traceBlockInner", height)
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
-	fmt.Println("cadenceHeight", cadenceHeight)
+
 	if err != nil {
 		return nil, err
 	}
@@ -269,6 +268,8 @@ func (d *DebugAPI) traceBlockInner(
 
 	//check changes
 	for k, v := range roView.GetPendingWrites() {
+		fmt.Println("traceBlockInner", height)
+		fmt.Println("cadenceHeight", cadenceHeight)
 
 		fmt.Println("key", k.String())
 		fmt.Println("value", len(v))
@@ -281,6 +282,8 @@ func (d *DebugAPI) traceBlockInner(
 			fmt.Println("nextValue", nextValue)
 			panic("wrong state change")
 		}
+
+		panic("denix")
 	}
 
 	return results, nil
