@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/onflow/cadence/runtime/common"
@@ -278,8 +279,8 @@ func (d *DebugAPI) traceBlockInner(
 		if bytes.Compare(v, nextValue) != 0 {
 
 			fmt.Println("key", k)
-			fmt.Println("value", v)
-			fmt.Println("nextValue", nextValue)
+			fmt.Println("value", hex.EncodeToString(v))
+			fmt.Println("nextValue", hex.EncodeToString(nextValue))
 			panic("wrong state change")
 		}
 
