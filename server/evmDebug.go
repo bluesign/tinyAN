@@ -217,6 +217,8 @@ func (d *DebugAPI) traceBlock(
 
 		if res.StateChangeCommitment == nil {
 			fmt.Println("res.StateChangeCommitment is nil")
+			fmt.Println(res.TxHash)
+			fmt.Println(res.Receipt().BlockNumber)
 			fmt.Println(txTrace)
 			fmt.Println(res.VMError)
 		}
