@@ -4,21 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/goccy/go-json"
-	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	errs "github.com/onflow/flow-evm-gateway/models/errors"
-	"github.com/onflow/flow-go/fvm"
-	"github.com/onflow/flow-go/fvm/environment"
-	"github.com/onflow/flow-go/fvm/evm"
 	emulator2 "github.com/onflow/flow-go/fvm/evm/emulator"
 	"github.com/onflow/flow-go/fvm/evm/handler"
 	evmTypes "github.com/onflow/flow-go/fvm/evm/types"
-	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
-	fvmStorage "github.com/onflow/flow-go/fvm/storage"
-	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/fvm/systemcontracts"
-	"github.com/onflow/flow-go/fvm/tracing"
 	"github.com/onflow/flow-go/model/flow"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/onflow/go-ethereum/common/hexutil"
@@ -210,36 +202,37 @@ func (d *DebugAPI) traceBlockInner(
 	tracer, _ := NewEVMCallTracer(zerolog.New(os.Stdout).With().Timestamp().Logger())
 
 	results := make([]*txTraceResult, len(transactions))
-
-	fvmContext := fvm.NewContext(
-		fvm.WithBlockHeader(blockHeader),
-		fvm.WithBlocks(d.api.storage),
-		fvm.WithCadenceLogging(true),
-		fvm.WithAuthorizationChecksEnabled(false),
-		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
-		fvm.WithEVMEnabled(true),
-		fvm.WithReusableCadenceRuntimePool(
-			reusableRuntime.NewReusableCadenceRuntimePool(
-				0,
-				runtime.Config{
-					TracingEnabled:     false,
-					AttachmentsEnabled: true,
-				},
+	/*
+		fvmContext := fvm.NewContext(
+			fvm.WithBlockHeader(blockHeader),
+			fvm.WithBlocks(d.api.storage),
+			fvm.WithCadenceLogging(true),
+			fvm.WithAuthorizationChecksEnabled(false),
+			fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
+			fvm.WithEVMEnabled(true),
+			fvm.WithReusableCadenceRuntimePool(
+				reusableRuntime.NewReusableCadenceRuntimePool(
+					0,
+					runtime.Config{
+						TracingEnabled:     false,
+						AttachmentsEnabled: true,
+					},
+				),
 			),
-		),
-		//fvm.WithEntropyProvider(emulator),
-	)
+			//fvm.WithEntropyProvider(emulator),
+		)
+	*/
+	//blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, nil)
+	//txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+	//if err != nil {
+	//	panic(err)
+	//}
 
-	blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, nil)
-	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
-	if err != nil {
-		panic(err)
-	}
-	env := environment.NewTransactionEnvironment(
-		tracing.NewMockTracerSpan(),
-		fvmContext.EnvironmentParams,
-		txnState)
-
+	/*env := environment.NewTransactionEnvironment(
+	tracing.NewMockTracerSpan(),
+	fvmContext.EnvironmentParams,
+	txnState)
+	*/
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
 
@@ -264,12 +257,12 @@ func (d *DebugAPI) traceBlockInner(
 				return gethCommon.BytesToHash(crypto.Keccak256([]byte(new(big.Int).SetUint64(n).String())))
 			},
 			Tracer: tracer.TxTracer(),
-			ExtraPrecompiledContracts: PreparePrecompiledContracts(
+			/*ExtraPrecompiledContracts: PreparePrecompiledContracts(
 				evm.ContractAccountAddress(flow.Mainnet),
 				randomBeaconAddress,
 				addressAllocator,
 				env,
-			),
+			),*/
 		}
 		rbv, err := emulator.NewBlockView(blockContext)
 
@@ -300,7 +293,7 @@ func (d *DebugAPI) traceBlockInner(
 		txTrace := tracer.GetResultByTxHash(receipts[i].TxHash)
 
 		if err != nil {
-			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Error: err.Error()}
+			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: map[string]string{}, Error: err.Error()}
 		} else {
 			results[i] = &txTraceResult{TxHash: receipts[i].TxHash, Result: txTrace}
 		}
