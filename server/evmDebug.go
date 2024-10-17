@@ -282,6 +282,7 @@ func (d *DebugAPI) traceBlockInner(
 
 		totalGasUsed += res.GasConsumed
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 
