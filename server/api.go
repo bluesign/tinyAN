@@ -58,6 +58,7 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 
 	//ws := rpcServer.WebsocketHandler([]string{"*"}).ServeHTTP
 	router.Handle("/", rpcServer)
+	router.Handle("/", rpcServer.WebsocketHandler([]string{"*"}))
 
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
