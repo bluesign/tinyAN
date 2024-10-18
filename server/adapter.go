@@ -273,6 +273,31 @@ func (a *AccessAdapter) GetTransactionResult(
 	*access.TransactionResult,
 	error,
 ) {
+	txCached, ok := a.txCache.Get(id)
+	if ok {
+		errorMessage := ""
+		statusCode := uint(0)
+		if txCached.Output.Err != nil {
+			statusCode = 1
+			errorMessage = txCached.Output.Err.Error()
+		}
+		events := txCached.Output.Events
+		for _, event := range events {
+			events = append(events, event)
+		}
+		result := &access.TransactionResult{
+			Status:        flowgo.TransactionStatusSealed,
+			StatusCode:    statusCode,
+			Events:        events,
+			ErrorMessage:  errorMessage,
+			BlockID:       txCached.BlockID,
+			TransactionID: txCached.Transaction.ID(),
+			CollectionID:  txCached.BlockID,
+			BlockHeight:   txCached.BlockHeight,
+		}
+		return result, nil
+	}
+
 	result, err := a.store.GetTransactionResult(id)
 	if err != nil {
 		return nil, convertError(err, codes.Internal)
