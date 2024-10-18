@@ -52,18 +52,18 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 		fmt.Println("error getting entropy seed")
 		return nil
 	}
-	_, err = e.store.GetBlockByHeight(block.Height + 1)
+	next, err := e.store.GetBlockByHeight(block.Height + 1)
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 		return nil
 	}
 	packer := model.SigDataPacker{}
-	sigData, err := packer.Decode(block.ParentVoterSigData)
+	sigData, err := packer.Decode(next.ParentVoterSigData)
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 		return nil
 	}
-	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(sigData.ReconstructedRandomBeaconSig))
+	fmt.Println("beacon:", hex.EncodeToString(sigData.ReconstructedRandomBeaconSig))
 	return EntropyProvider{seed: sigData.ReconstructedRandomBeaconSig, error: err}
 }
 
