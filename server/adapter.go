@@ -740,6 +740,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, invocation *interpreter.Invocation) {
 			fmt.Println("function invocation")
 			fmt.Println(invocation.Self)
+			fmt.Println(invocation)
 			fmt.Println(invocation.Arguments)
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
