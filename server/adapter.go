@@ -785,9 +785,9 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			}
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(inter *interpreter.Interpreter, result interpreter.Value) {
-			if lastLocation == "f233dcee88fe0abe.FungibleToken" {
+			/*if lastLocation == "f233dcee88fe0abe.FungibleToken" {
 				return
-			}
+			}*/
 			depth = len(inter.CallStack())
 			padding := strings.Repeat("  ", depth)
 			fmt.Println(fmt.Sprintf("%s- %s", padding, result.String()))
