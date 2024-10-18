@@ -49,7 +49,11 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 	}
-	return EntropyProvider{seed: block.ParentVoterSigData, error: err}
+	prev, err := e.store.GetBlockByHeight(block.Height - 1)
+	if err != nil {
+		fmt.Println("error getting entropy seed")
+	}
+	return EntropyProvider{seed: prev.ParentVoterSigData, error: err}
 }
 
 var _ access.API = &AccessAdapter{}
