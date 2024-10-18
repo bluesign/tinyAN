@@ -744,8 +744,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			invoked, ok := function.(*ast.InvocationExpression)
 
 			if ok {
-				fmt.Println(invoked.InvokedExpression)
-				fmt.Println(invocation.TypeParameterTypes.Len())
+
 				args := make([]string, len(invocation.Arguments))
 				for i, arg := range invocation.Arguments {
 					args[i] = arg.String()
@@ -768,8 +767,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			}
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
-			fmt.Println("invoked function return")
-			fmt.Println("\t" + result.String())
+			fmt.Println("-- " + result.String())
 		}
 
 		debugger.Continue()
