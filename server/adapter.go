@@ -772,7 +772,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					return
 				}
 
-				cadenceTrace.WriteString(fmt.Sprintf("%s%s%s%s(%s)",
+				cadenceTrace.WriteString(fmt.Sprintf("%s%s%s%s(%s)\n",
 					locationPrefix,
 					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
@@ -792,7 +792,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			}
 			depth = len(inter.CallStack())
 			padding := strings.Repeat("  ", depth)
-			cadenceTrace.WriteString(fmt.Sprintf("%s- %s", padding, result.String()))
+			cadenceTrace.WriteString(fmt.Sprintf("%s- %s\n", padding, result.String()))
 		}
 
 		debugger.Continue()
