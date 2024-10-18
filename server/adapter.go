@@ -759,7 +759,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					invoked.InvokedExpression,
 					strings.Join(types, ", "),
 					strings.Join(args, ", "),
-				)
+				))
 			}
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
