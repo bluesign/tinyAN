@@ -66,7 +66,7 @@ func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage) 
 	executor := &ScriptExecutor{
 		logger: logger,
 	}
-	executor.Setup(store, "flow-mainnet")
+	executor.Setup(store, store, "flow-mainnet")
 
 	cache, _ := lru.New[flowgo.Identifier, TemporaryTransactionResult](1000)
 	return &AccessAdapter{

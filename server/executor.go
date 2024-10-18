@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/flow-go/engine/execution/computation/query"
 	"github.com/onflow/flow-go/fvm"
@@ -41,7 +42,7 @@ func (e *ScriptExecutor) ChainID() flow.ChainID {
 	return e.chainID
 }
 
-func (e *ScriptExecutor) Setup(blocks FVMBlocks, chainID string) error {
+func (e *ScriptExecutor) Setup(blocks FVMBlocks, store *storage.HeightBasedStorage, chainID string) error {
 	e.chainID = flow.ChainID(chainID)
 	e.blocks = blocks
 
@@ -79,7 +80,9 @@ func (e *ScriptExecutor) Setup(blocks FVMBlocks, chainID string) error {
 		vm,
 		vmCtx,
 		derivedChainData,
-		&EntropyProviderPerBlockProvider{},
+		&EntropyProviderPerBlockProvider{
+			store: store,
+		},
 	)
 
 	return nil
