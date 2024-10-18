@@ -738,11 +738,11 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		stop := debugger.Pause()
 		depth := debugger.CurrentActivation(stop.Interpreter).Depth
 		fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
+		lastLocation := ""
 
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
 			invoked, ok := function.(*ast.InvocationExpression)
 
-			lastLocation := ""
 			if ok {
 				depth = len(inter.CallStack())
 
