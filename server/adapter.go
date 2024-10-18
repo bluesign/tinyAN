@@ -740,7 +740,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
 
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
-			fmt.Println("function invocation")
 			invoked, ok := function.(*ast.InvocationExpression)
 
 			if ok {
