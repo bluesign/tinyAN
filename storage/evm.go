@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/binary"
 	"fmt"
 	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-evm-gateway/models"
@@ -86,23 +85,6 @@ func (s *EVMStorage) Close() {
 	}
 }
 
-func (s *EVMStorage) LastHeight() uint64 {
-	height, closer, err := s.evmDB.Get(makePrefix(codeLastHeight))
-	if err != nil {
-		return 0
-	}
-	v := binary.BigEndian.Uint64(height)
-	_ = closer.Close()
-	return v
-}
-
-func (s *EVMStorage) SaveLastHeight(batch *pebble.Batch, height uint64) error {
-	return s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMLastHeight),
-		b(height),
-	)
-}
-
 func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 	batch := s.evmDB.NewBatch()
 	defer batch.Commit(pebble.Sync)
@@ -156,28 +138,6 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 		s.logger.Log().Err(err).Msg("error saving cadence height by evm height")
 	}
 
-	//save block data
-	block := &EVMBlock{
-		Block:        evmEvents.Block(),
-		Transactions: make([][]byte, len(evmEvents.Transactions())),
-		Receipts:     evmEvents.Receipts(),
-	}
-
-	for i, tx := range evmEvents.Transactions() {
-		block.Transactions[i], err = tx.MarshalBinary()
-		if err != nil {
-			s.logger.Log().Err(err).Msg("error marshalling transaction")
-			panic(err)
-		}
-	}
-
-	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMBlock, evmEvents.Block().Height),
-		block,
-	)
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving evm block")
-	}
 	err = s.SaveProgress(batch, evmEvents.Block().Height)
 
 	if err != nil {
