@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/golang-lru/v2"
 	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/flow-go/access"
+	"github.com/onflow/flow-go/consensus/hotstuff/model"
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
 	"github.com/onflow/flow-go/fvm"
@@ -49,19 +50,21 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 	block, err := e.store.GetBlockById(blockID)
 	if err != nil {
 		fmt.Println("error getting entropy seed")
+		return nil
 	}
 	next, err := e.store.GetBlockByHeight(block.Height + 1)
 	if err != nil {
 		fmt.Println("error getting entropy seed")
+		return nil
 	}
-	beacon := [48]byte{}
-	if len(next.ParentVoterSigData) > 48 {
-		beacon = [48]byte(next.ParentVoterSigData[len(next.ParentVoterSigData)-48 : len(next.ParentVoterSigData)])
-		fmt.Println("beacon", hex.EncodeToString(beacon[:]))
+	packer := model.SigDataPacker{}
+	sigData, err := packer.Decode(next.ParentVoterSigData)
+	if err != nil {
+		fmt.Println("error getting entropy seed")
+		return nil
 	}
-
-	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(beacon[:]))
-	return EntropyProvider{seed: beacon[:], error: err}
+	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(sigData.ReconstructedRandomBeaconSig))
+	return EntropyProvider{seed: sigData.ReconstructedRandomBeaconSig, error: err}
 }
 
 var _ access.API = &AccessAdapter{}
