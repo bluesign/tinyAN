@@ -50,8 +50,13 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 	}
-	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(block.ParentVoterSigData))
-	return EntropyProvider{seed: block.ParentVoterSigData, error: err}
+	beacon := block.ParentVoterSigData
+	if len(beacon) > 96 {
+		beacon = block.ParentVoterSigData[len(block.ParentVoterSigData)-96:]
+	}
+
+	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(beacon))
+	return EntropyProvider{seed: beacon, error: err}
 }
 
 var _ access.API = &AccessAdapter{}
