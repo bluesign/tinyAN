@@ -733,7 +733,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	func() {
 		stop := debugger.Pause()
 		depth := debugger.CurrentActivation(stop.Interpreter).Depth
-		fmt.Println(stop.Statement.ElementType().String())
+		fmt.Println(stop.Statement.ElementType().String(), stop.Statement)
 
 		debugger.RequestPause()
 		debugger.Continue()
@@ -741,7 +741,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			select {
 			case d := <-debugger.Stops():
 				depth = debugger.CurrentActivation(d.Interpreter).Depth
-				fmt.Println(depth, d.Statement.ElementType().String())
+				fmt.Println(depth, d.Statement.ElementType().String(), d.Statement)
 
 				debugger.RequestPause()
 				debugger.Continue()
