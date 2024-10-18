@@ -754,8 +754,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					types = append(types, value.QualifiedString())
 				}
 				invocation.TypeParameterTypes.Foreach(f)
+				fmt.Println(inter.Location.String())
 
-				fmt.Println(function.StartPosition())
 				fmt.Println(fmt.Sprintf("%s+ %s%s(%s)",
 					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
