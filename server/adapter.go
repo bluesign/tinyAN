@@ -734,7 +734,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	func() {
 		stop := debugger.Pause()
-		depth := debugger.CurrentActivation(d.Interpreter).Depth
+		depth := debugger.CurrentActivation(stop.Interpreter).Depth
 		fmt.Println(stop.Statement.ElementType().String())
 
 		debugger.RequestPause()
