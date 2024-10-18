@@ -8,6 +8,7 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
 	"github.com/onflow/cadence/runtime"
+	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/consensus/hotstuff/model"
@@ -737,7 +738,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		depth := debugger.CurrentActivation(stop.Interpreter).Depth
 		fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
 
-		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, function interpreter.FunctionValue, invocation *interpreter.Invocation) {
+		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
 			fmt.Println("function invocation")
 			fmt.Println(debugger.CurrentActivation(invocation.Interpreter))
 			fmt.Println(function)

@@ -230,4 +230,4 @@ require (
 
 //replace github.com/onflow/flow-go => ../flow-go
 
-replace github.com/onflow/cadence => github.com/bluesign/cadence v0.18.1-0.20241018112533-bca4538a4c3c
+replace github.com/onflow/cadence => github.com/bluesign/cadence v0.18.1-0.20241018115446-364e6f4e4675
