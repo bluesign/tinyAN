@@ -747,7 +747,10 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				case *ast.ExpressionStatement:
 					exp := v.Expression.(ast.Expression)
 					fmt.Println("expression", exp)
-					fmt.Println(exp.ElementType())
+					switch inner := exp.(type) {
+					case *ast.InvocationExpression:
+						fmt.Println("invocation", inner)
+					}
 
 				}
 				debugger.RequestPause()
