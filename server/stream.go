@@ -81,6 +81,14 @@ func NewStreamAPI(
 
 // NewHeads send a notification each time a new block is appended to the chain.
 func (s *StreamAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err, ok := r.(error)
+			if !ok {
+				err = fmt.Errorf("panic: %v", r)
+			}
+		}
+	}()
 	return newSubscription(
 		ctx,
 		s.dataProvider.blocksPublisher,
