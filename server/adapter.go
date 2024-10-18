@@ -737,11 +737,11 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		depth := debugger.CurrentActivation(stop.Interpreter).Depth
 		fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
 
-		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, invocation *interpreter.Invocation) {
+		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, function interpreter.FunctionValue, invocation *interpreter.Invocation) {
 			fmt.Println("function invocation")
-			fmt.Println(invocation)
-			fmt.Println(invocation)
+			fmt.Println(function)
 			fmt.Println(invocation.Arguments)
+			fmt.Println(invocation.TypeParameterTypes)
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
 			fmt.Println("invoked function return")
