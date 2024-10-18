@@ -743,7 +743,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			invoked, ok := function.(*ast.InvocationExpression)
 
 			if ok {
-				print(len(inter.CallStack()))
+				depth = len(inter.CallStack())
+
 				args := make([]string, len(invocation.Arguments))
 				for i, arg := range invocation.Arguments {
 					args[i] = arg.String()
@@ -753,7 +754,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					types = append(types, value.QualifiedString())
 				}
 				invocation.TypeParameterTypes.Foreach(f)
-				fmt.Println(fmt.Sprintf("+ %s%s(%s)",
+				fmt.Println(fmt.Sprintf("%s+ %s%s(%s)",
+					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
 					func() string {
 						if len(types) == 0 {
@@ -765,8 +767,10 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				))
 			}
 		}
-		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
-			fmt.Println("-- " + result.String())
+		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(inter *interpreter.Interpreter, result interpreter.Value) {
+			depth = len(inter.CallStack())
+			padding := strings.Repeat("  ", depth)
+			fmt.Println(fmt.Sprintf("%s-- %s", padding, result.String()))
 		}
 
 		debugger.Continue()
