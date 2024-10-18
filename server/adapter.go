@@ -8,7 +8,6 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
 	"github.com/onflow/cadence/runtime"
-	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/consensus/hotstuff/model"
@@ -750,29 +749,29 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 		debugger.RequestPause()
 		debugger.Continue()
-/*		for {
-			select {
-			case d := <-debugger.Stops():
-				depth = debugger.CurrentActivation(d.Interpreter).Depth
-				fmt.Println(depth, d.Statement.ElementType().String(), d.Statement)
-				switch v := d.Statement.(type) {
-				case *ast.ExpressionStatement:
-					exp := v.Expression.(ast.Expression)
-					fmt.Println("expression", exp)
-					switch inner := exp.(type) {
-					case *ast.InvocationExpression:
-						fmt.Println("invocation", inner.InvokedExpression, inner.TypeArguments, inner.Arguments)
+		/*		for {
+				select {
+				case d := <-debugger.Stops():
+					depth = debugger.CurrentActivation(d.Interpreter).Depth
+					fmt.Println(depth, d.Statement.ElementType().String(), d.Statement)
+					switch v := d.Statement.(type) {
+					case *ast.ExpressionStatement:
+						exp := v.Expression.(ast.Expression)
+						fmt.Println("expression", exp)
+						switch inner := exp.(type) {
+						case *ast.InvocationExpression:
+							fmt.Println("invocation", inner.InvokedExpression, inner.TypeArguments, inner.Arguments)
+
+						}
 
 					}
-
+					debugger.RequestPause()
+					debugger.Continue()
+				case <-afterCh:
+					return
 				}
-				debugger.RequestPause()
-				debugger.Continue()
-			case <-afterCh:
-				return
-			}
-		}
-	}()*/
+			}*/
+	}()
 
 	wg.Wait()
 
