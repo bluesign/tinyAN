@@ -757,7 +757,12 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				invocation.TypeParameterTypes.Foreach(f)
 				fmt.Println(fmt.Sprintf("+ %s%s(%s)",
 					invoked.InvokedExpression,
-					strings.Join(types, ", "),
+					func() string {
+						if len(types) == 0 {
+							return ""
+						}
+						return fmt.Sprintf("<%s>", strings.Join(types, ", "))
+					},
 					strings.Join(args, ", "),
 				))
 			}
