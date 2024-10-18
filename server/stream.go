@@ -25,14 +25,17 @@ type DataProvider struct {
 }
 
 func (d *DataProvider) OnHeightChanged(number uint64) {
-	block, err := d.api.blockFromBlockStorage(number)
+	block, err := d.api.blockFromBlockStorage(number - 1)
 	if err != nil {
+		fmt.Println("1")
 		fmt.Println(err)
 		return
 	}
 
-	transactions, err := d.api.blockTransactions(number)
+	transactions, err := d.api.blockTransactions(number - 1)
 	if err != nil {
+		fmt.Println("2")
+
 		fmt.Println(err)
 		return
 	}
