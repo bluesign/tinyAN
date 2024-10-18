@@ -769,7 +769,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
 			fmt.Println("invoked function return")
-			fmt.Println(result)
+			fmt.Println("\t" + result.String())
 		}
 
 		debugger.Continue()
