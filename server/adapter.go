@@ -632,12 +632,14 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	proc := fvm.Transaction(tx, 0)
 	//debugger := interpreter.NewDebugger()
 
+	var entropyProvider = &EntropyProviderPerBlockProvider{
+		store: a.store,
+	}
+
 	fvmContext := fvm.NewContext(
 		fvm.WithBlockHeader(block),
 		fvm.WithBlocks(a.store),
-		fvm.WithEntropyProvider(&EntropyProviderPerBlockProvider{
-			store: a.store,
-		}),
+		fvm.WithEntropyProvider(entropyProvider.AtBlockID(block.ID())),
 		fvm.WithCadenceLogging(true),
 		fvm.WithAuthorizationChecksEnabled(false),
 		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
