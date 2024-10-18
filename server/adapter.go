@@ -52,7 +52,7 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 	}
 	var beacon [96]byte = [96]byte{}
 	if len(block.ParentVoterSigData) > 96 {
-		beacon = block.ParentVoterSigData[len(block.ParentVoterSigData)-96:]
+		beacon = [96]byte(block.ParentVoterSigData[len(block.ParentVoterSigData)-96:])
 		fmt.Println("beacon", hex.EncodeToString(beacon))
 	}
 
