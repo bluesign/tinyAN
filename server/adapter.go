@@ -748,28 +748,28 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		}
 
 		debugger.Continue()
-		/*		for {
-				select {
-				case d := <-debugger.Stops():
-					depth = debugger.CurrentActivation(d.Interpreter).Depth
-					fmt.Println(depth, d.Statement.ElementType().String(), d.Statement)
-					switch v := d.Statement.(type) {
-					case *ast.ExpressionStatement:
-						exp := v.Expression.(ast.Expression)
-						fmt.Println("expression", exp)
-						switch inner := exp.(type) {
-						case *ast.InvocationExpression:
-							fmt.Println("invocation", inner.InvokedExpression, inner.TypeArguments, inner.Arguments)
+		for {
+			select {
+			/*case d := <-debugger.Stops():
+			depth = debugger.CurrentActivation(d.Interpreter).Depth
+			fmt.Println(depth, d.Statement.ElementType().String(), d.Statement)
+			switch v := d.Statement.(type) {
+			case *ast.ExpressionStatement:
+				exp := v.Expression.(ast.Expression)
+				fmt.Println("expression", exp)
+				switch inner := exp.(type) {
+				case *ast.InvocationExpression:
+					fmt.Println("invocation", inner.InvokedExpression, inner.TypeArguments, inner.Arguments)
 
-						}
-
-					}
-					debugger.RequestPause()
-					debugger.Continue()
-				case <-afterCh:
-					return
 				}
-			}*/
+
+			}
+			debugger.RequestPause()
+			debugger.Continue()*/
+			case <-afterCh:
+				return
+			}
+		}
 	}()
 
 	wg.Wait()
