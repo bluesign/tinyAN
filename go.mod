@@ -12,7 +12,7 @@ require (
 	github.com/goccy/go-json v0.10.2
 	github.com/gorilla/mux v1.8.1
 	github.com/klauspost/compress v1.17.4
-	github.com/onflow/atree v0.8.0-rc.6
+	github.com/onflow/atree v0.8.0
 	github.com/onflow/cadence v1.0.0
 	github.com/onflow/flow-evm-gateway v0.36.4
 	github.com/onflow/flow-go v0.38.0-preview.0.0.20241008203826-efd21c18b187
@@ -230,4 +230,4 @@ require (
 
 //replace github.com/onflow/flow-go => ../flow-go
 
-//replace github.com/onflow/cadence => ../cadence
+replace github.com/onflow/cadence => github.com/bluesign/cadence v0.18.1-0.20241018110318-9c60152a92b2

@@ -736,7 +736,16 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	func() {
 		stop := debugger.Pause()
 		depth := debugger.CurrentActivation(stop.Interpreter).Depth
-		fmt.Println(stop.Statement.ElementType().String(), stop.Statement)
+		fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
+
+		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, invocation *interpreter.Invocation) {
+			fmt.Println("function invocation")
+			fmt.Println(invocation)
+		}
+		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
+			fmt.Println("invoked function return")
+			fmt.Println(result)
+		}
 
 		debugger.RequestPause()
 		debugger.Continue()
