@@ -847,7 +847,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	tx.Script = []byte(fmt.Sprintf("%s\n\nLogs\n\n%s", string(tx.Script), logs))
 	tx.Script = []byte(fmt.Sprintf("%s\n\nComputation Details\n\n%v", string(tx.Script), output.ComputationIntensities))
-	tx.Script = []byte(fmt.Sprintf("%s\n\nCadence Trace\n\n%v", string(tx.Script), cadenceTrace))
+	tx.Script = []byte(fmt.Sprintf("%s\n\nCadence Trace\n\n%v", string(tx.Script), cadenceTrace.String()))
 
 	stateChanges := ""
 	for _, v := range blockResources {
