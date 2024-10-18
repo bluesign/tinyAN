@@ -702,6 +702,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			reusableRuntime.NewReusableCadenceRuntimePool(
 				0,
 				runtime.Config{
+					Debugger:           debugger,
 					TracingEnabled:     false,
 					AttachmentsEnabled: true,
 				},
@@ -719,7 +720,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	debugger.RequestPause()
 
 	afterCh := make(chan struct{})
 	go func() {
