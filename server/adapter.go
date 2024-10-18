@@ -740,11 +740,12 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
 			fmt.Println("function invocation")
-			fmt.Println(debugger.CurrentActivation(invocation.Interpreter))
-			fmt.Println(function)
-			fmt.Println(invocation.Self)
-			fmt.Println(invocation.Arguments)
-			fmt.Println(invocation.TypeParameterTypes)
+			invoked, ok := function.(*ast.InvocationExpression)
+			if ok {
+				fmt.Println(invoked.InvokedExpression)
+				fmt.Println(invocation.TypeParameterTypes)
+				fmt.Println(invocation.Arguments)
+			}
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
 			fmt.Println("invoked function return")
