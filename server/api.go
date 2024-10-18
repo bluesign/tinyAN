@@ -53,7 +53,7 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	rpcServer.RegisterName("net", &NetAPI{})
 	rpcServer.RegisterName("web3", &Web3API{})
 	rpcServer.RegisterName("txpool", &TxPool{})
-	rpcServer.RegisterName("stream", &StreamAPI{dataProvider: dataProvider})
+	rpcServer.RegisterName("eth", &StreamAPI{dataProvider: dataProvider})
 
 	router.HandleFunc("/", rpcServer.WebsocketHandler([]string{"*"}).ServeHTTP)
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
