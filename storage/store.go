@@ -251,7 +251,7 @@ func NewSporkStorage(spork string, accessURL string, startHeight uint64, endHeig
 	protocol, _ := NewProtocolStorage(spork, startHeight)
 	ledger, _ := NewLedgerStorage(spork, startHeight)
 	index, _ := NewIndexStorage(spork, startHeight, ledger)
-	evm, _ := NewEVMStorage(spork, startHeight, nil)
+	evm, _ := NewEVMStorage(spork, startHeight)
 
 	return &SporkStorage{
 		startHeight:    startHeight,
