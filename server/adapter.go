@@ -661,10 +661,23 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		Str("txID", tx.ID().String()).
 		Msg(`✉️   Transaction simulated`)
 
-	block, err := a.store.GetBlockById(tx.ReferenceBlockID)
+	var block *flowgo.Header
+	var err error
+
+	//check if exists on network
+	existing, err := a.store.GetTransactionResult(tx.ID())
 	if err != nil {
-		return err
+		block, err = a.store.GetBlockById(tx.ReferenceBlockID)
+		if err != nil {
+			return err
+		}
+	} else {
+		block, err = a.store.GetBlockById(existing.BlockID)
+		if err != nil {
+			return err
+		}
 	}
+
 	snapshot := a.store.LedgerSnapshot(block.Height)
 
 	proc := fvm.Transaction(tx, 0)
