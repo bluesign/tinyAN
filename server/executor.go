@@ -24,7 +24,7 @@ type FVMStorageSnapshot interface {
 
 type Executor interface {
 	ChainID() flow.ChainID
-	Setup(blocks FVMBlocks, chainID string) error
+	Setup(blocks FVMBlocks, store *storage.HeightBasedStorage, chainID string) error
 	ExecuteScript(context.Context, []byte, [][]byte, uint64, FVMStorageSnapshot) ([]byte, error)
 	GetAccount(context.Context, []byte, uint64, FVMStorageSnapshot) (*flow.Account, error)
 }
