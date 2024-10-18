@@ -53,6 +53,7 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 	beacon := block.ParentVoterSigData
 	if len(beacon) > 96 {
 		beacon = block.ParentVoterSigData[len(block.ParentVoterSigData)-96:]
+		fmt.Println("beacon", hex.EncodeToString(beacon))
 	}
 
 	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(beacon))
