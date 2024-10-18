@@ -760,8 +760,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				if lastLocation != inter.Location.String() {
 					//fmt.Println("not same", lastLocation, inter.Location.String())
 					lastLocation = inter.Location.String()
-					if strings.Contains(inter.Location.String(), ".") {
-						locationPrefix = fmt.Sprintf("%s%s.", strings.Repeat("  ", depth), inter.Location.String())
+					if strings.Contains(inter.Location.String(), "+") {
+						locationPrefix = fmt.Sprintf("%s+%s.", strings.Repeat("  ", depth), inter.Location.String())
 					}
 
 				}
@@ -770,7 +770,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					return
 				}
 
-				fmt.Println(fmt.Sprintf("%s%s+ %s%s(%s)",
+				fmt.Println(fmt.Sprintf("%s%s%s%s(%s)",
 					locationPrefix,
 					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
