@@ -3,10 +3,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/onflow/flow-evm-gateway/models"
 	"github.com/onflow/flow-go/engine/access/rest/routes"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module"
 	"github.com/onflow/flow-go/module/metrics"
+	gethTypes "github.com/onflow/go-ethereum/core/types"
 	"github.com/onflow/go-ethereum/rpc"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -35,12 +37,23 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	}
 
 	rpcServer := rpc.NewServer()
+
 	apiEth := &APINamespace{storage: storage}
+	dataProvider := &DataProvider{
+		api:                   apiEth,
+		store:                 storage,
+		blocksPublisher:       &models.Publisher[*models.Block]{},
+		transactionsPublisher: &models.Publisher[*gethTypes.Transaction]{},
+		logsPublisher:         &models.Publisher[[]*gethTypes.Log]{},
+	}
+	storage.Latest().EVM().OnHeightChanged = dataProvider.OnHeightChanged
+
 	rpcServer.RegisterName("eth", apiEth)
 	rpcServer.RegisterName("debug", NewDebugApi(apiEth))
 	rpcServer.RegisterName("net", &NetAPI{})
 	rpcServer.RegisterName("web3", &Web3API{})
 	rpcServer.RegisterName("txpool", &TxPool{})
+	rpcServer.RegisterName("stream", &StreamAPI{dataProvider: dataProvider})
 
 	router.HandleFunc("/", rpcServer.ServeHTTP)
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)

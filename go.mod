@@ -15,7 +15,7 @@ require (
 	github.com/klauspost/compress v1.17.4
 	github.com/onflow/atree v0.8.0
 	github.com/onflow/cadence v1.0.0
-	github.com/onflow/flow-evm-gateway v0.36.4
+	github.com/onflow/flow-evm-gateway v0.36.5
 	github.com/onflow/flow-go v0.38.0-preview.0.0.20241008203826-efd21c18b187
 	github.com/onflow/flow-go-sdk v1.0.0
 	github.com/onflow/flow/protobuf/go/flow v0.4.7
@@ -23,7 +23,7 @@ require (
 	github.com/psiemens/sconfig v0.1.0
 	github.com/rivo/tview v0.0.0-20240921122403-a64fc48d7654
 	github.com/rs/cors v1.8.0
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 	google.golang.org/grpc v1.63.2

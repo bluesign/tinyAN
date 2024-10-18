@@ -31,10 +31,11 @@ type EVMHeightLookup interface {
 }
 
 type EVMStorage struct {
-	logger      zerolog.Logger
-	startHeight uint64
-	evmDB       *pebble.DB
-	codec       *Codec
+	logger          zerolog.Logger
+	startHeight     uint64
+	evmDB           *pebble.DB
+	codec           *Codec
+	OnHeightChanged func(uint64)
 }
 
 type EVMBlock struct {
@@ -55,6 +56,9 @@ func NewEVMStorage(spork string, startHeight uint64) (*EVMStorage, error) {
 }
 
 func (s *EVMStorage) SaveProgress(batch *pebble.Batch, height uint64) error {
+	if s.OnHeightChanged != nil {
+		s.OnHeightChanged(height)
+	}
 	return s.codec.MarshalAndSet(batch, b(keyProgress), height)
 }
 
