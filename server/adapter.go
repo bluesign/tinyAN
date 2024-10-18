@@ -754,12 +754,17 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				f := func(key *sema.TypeParameter, value sema.Type) {
 					types = append(types, value.QualifiedString())
 				}
+
 				invocation.TypeParameterTypes.Foreach(f)
 				locationPrefix := ""
 				if lastLocation != inter.Location.String() {
 					//fmt.Println("not same", lastLocation, inter.Location.String())
 					lastLocation = inter.Location.String()
 					locationPrefix = fmt.Sprintf("%s[%s]\n", strings.Repeat("  ", depth), inter.Location.String())
+				}
+
+				if lastLocation == "f233dcee88fe0abe.FungibleToken" {
+					return
 				}
 
 				fmt.Println(fmt.Sprintf("%s%s+ %s%s(%s)",
