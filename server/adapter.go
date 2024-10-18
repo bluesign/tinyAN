@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/status"
 	"strings"
 	"sync"
+	"time"
 )
 
 type TemporaryTransactionResult struct {
@@ -675,6 +676,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		if err != nil {
 			return err
 		}
+		time.Sleep(1 * time.Second)
 	} else {
 		block, err = a.store.GetBlockById(existing.BlockID)
 		if err != nil {
