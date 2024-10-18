@@ -760,7 +760,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				if lastLocation != inter.Location.String() {
 					//fmt.Println("not same", lastLocation, inter.Location.String())
 					lastLocation = inter.Location.String()
-					if strings.HasPrefix(inter.Location.String(), "A.") {
+					if strings.Contains(inter.Location.String(), ".") {
 						locationPrefix = fmt.Sprintf("%s%s.", strings.Repeat("  ", depth), inter.Location.String())
 					}
 
