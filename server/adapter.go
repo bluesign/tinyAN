@@ -761,7 +761,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					locationPrefix = fmt.Sprintf("%s[%s]\n", strings.Repeat("  ", depth), inter.Location.String())
 				}
 
-				fmt.Println(fmt.Sprintf("%s[%s]\n%s+ %s%s(%s)",
+				fmt.Println(fmt.Sprintf("%s%s+ %s%s(%s)",
 					locationPrefix,
 					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
