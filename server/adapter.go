@@ -10,6 +10,7 @@ import (
 	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/runtime/ast"
 	"github.com/onflow/cadence/runtime/interpreter"
+	"github.com/onflow/cadence/runtime/sema"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/consensus/hotstuff/model"
 	"github.com/onflow/flow-go/engine/access/subscription"
@@ -741,10 +742,24 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(_ *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
 			fmt.Println("function invocation")
 			invoked, ok := function.(*ast.InvocationExpression)
+
 			if ok {
 				fmt.Println(invoked.InvokedExpression)
-				fmt.Println(invocation.TypeParameterTypes)
-				fmt.Println(invocation.Arguments)
+				fmt.Println(invocation.TypeParameterTypes.Len())
+				args := make([]string, len(invocation.Arguments))
+				for i, arg := range invocation.Arguments {
+					args[i] = arg.String()
+				}
+				types := make([]string, 0)
+				f := func(key *sema.TypeParameter, value sema.Type) {
+					types = append(types, value.String())
+				}
+				invocation.TypeParameterTypes.Foreach(f)
+				fmt.Println(fmt.Sprintf("+ %s%s(%s)",
+					invoked.InvokedExpression,
+					strings.Join(types, ", "),
+					strings.Join(args, ", "),
+				)
 			}
 		}
 		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(_ *interpreter.Interpreter, result interpreter.Value) {
