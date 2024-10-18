@@ -752,7 +752,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 				}
 				types := make([]string, 0)
 				f := func(key *sema.TypeParameter, value sema.Type) {
-					types = append(types, value.String())
+					types = append(types, value.QualifiedString())
 				}
 				invocation.TypeParameterTypes.Foreach(f)
 				fmt.Println(fmt.Sprintf("+ %s%s(%s)",
@@ -762,7 +762,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 							return ""
 						}
 						return fmt.Sprintf("<%s>", strings.Join(types, ", "))
-					},
+					}(),
 					strings.Join(args, ", "),
 				))
 			}
