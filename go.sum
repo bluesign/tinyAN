@@ -1070,8 +1070,8 @@ github.com/bits-and-blooms/bitset v1.5.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edY
 github.com/bits-and-blooms/bitset v1.7.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/bits-and-blooms/bitset v1.10.0 h1:ePXTeiPEazB5+opbv5fr8umg2R/1NlzgDsyepwsSr88=
 github.com/bits-and-blooms/bitset v1.10.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
-github.com/bluesign/cadence v0.18.1-0.20241018110318-9c60152a92b2 h1:H10v7+hoSF3w2/yMRDBu3Gvjm4PvF8MuqNE8/7gbIfs=
-github.com/bluesign/cadence v0.18.1-0.20241018110318-9c60152a92b2/go.mod h1:fJxxOAp1wnWDfOHT8GOc1ypsU0RR5E3z51AhG8Yf5jg=
+github.com/bluesign/cadence v0.18.1-0.20241018112533-bca4538a4c3c h1:fKos/Jf1LJeCTmibKK8Gs442WSM13QuEP30pZjiskjY=
+github.com/bluesign/cadence v0.18.1-0.20241018112533-bca4538a4c3c/go.mod h1:fJxxOAp1wnWDfOHT8GOc1ypsU0RR5E3z51AhG8Yf5jg=
 github.com/bmizerany/pat v0.0.0-20170815010413-6226ea591a40/go.mod h1:8rLXio+WjiTceGBHIoTvn60HIbs7Hm7bcHjyrSqYB9c=
 github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=

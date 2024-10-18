@@ -11,6 +11,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.7.1
 	github.com/goccy/go-json v0.10.2
 	github.com/gorilla/mux v1.8.1
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/klauspost/compress v1.17.4
 	github.com/onflow/atree v0.8.0
 	github.com/onflow/cadence v1.0.0
@@ -97,7 +98,6 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
-	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.3.0 // indirect
@@ -230,4 +230,4 @@ require (
 
 //replace github.com/onflow/flow-go => ../flow-go
 
-replace github.com/onflow/cadence => github.com/bluesign/cadence v0.18.1-0.20241018110318-9c60152a92b2
+replace github.com/onflow/cadence => github.com/bluesign/cadence v0.18.1-0.20241018112533-bca4538a4c3c
