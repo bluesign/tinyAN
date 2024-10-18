@@ -46,6 +46,7 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 		transactionsPublisher: models.NewPublisher[*gethTypes.Transaction](),
 		logsPublisher:         models.NewPublisher[[]*gethTypes.Log](),
 	}
+
 	storage.Latest().EVM().OnHeightChanged = dataProvider.OnHeightChanged
 
 	rpcServer.RegisterName("eth", apiEth)
@@ -55,7 +56,9 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	rpcServer.RegisterName("txpool", &TxPool{})
 	rpcServer.RegisterName("eth", &StreamAPI{dataProvider: dataProvider})
 
-	router.HandleFunc("/", rpcServer.WebsocketHandler([]string{"*"}).ServeHTTP)
+	//ws := rpcServer.WebsocketHandler([]string{"*"}).ServeHTTP
+	router.Handle("/", rpcServer)
+
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
 	router.HandleFunc("/api/ownerOfUuid", r.OwnerOfUuid)
