@@ -790,7 +790,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			}
 			depth = len(inter.CallStack())
 			padding := strings.Repeat("  ", depth)
-			fmt.Println(fmt.Sprintf("%s-- %s", padding, result.String()))
+			fmt.Println(fmt.Sprintf("%s- %s", padding, result.String()))
 		}
 
 		debugger.Continue()
