@@ -742,6 +742,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
 			invoked, ok := function.(*ast.InvocationExpression)
 
+			lastLocation := ""
 			if ok {
 				depth = len(inter.CallStack())
 
@@ -754,10 +755,14 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					types = append(types, value.QualifiedString())
 				}
 				invocation.TypeParameterTypes.Foreach(f)
+				locationPrefix := ""
+				if lastLocation != inter.Location.String() {
+					lastLocation = inter.Location.String()
+					locationPrefix = fmt.Sprintf("%s[%s]\n", strings.Repeat("  ", depth), inter.Location.String())
+				}
 
 				fmt.Println(fmt.Sprintf("%s[%s]\n%s+ %s%s(%s)",
-					strings.Repeat("  ", depth),
-					inter.Location.String(),
+					locationPrefix,
 					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
 					func() string {
