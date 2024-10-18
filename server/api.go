@@ -55,7 +55,7 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	rpcServer.RegisterName("txpool", &TxPool{})
 	rpcServer.RegisterName("stream", &StreamAPI{dataProvider: dataProvider})
 
-	router.HandleFunc("/", rpcServer.ServeHTTP)
+	router.HandleFunc("/", rpcServer.WebsocketHandler([]string{"*"}).ServeHTTP)
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
 	router.HandleFunc("/api/ownerOfUuid", r.OwnerOfUuid)
