@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/bluesign/tinyAN/indexer"
 	"github.com/bluesign/tinyAN/storage"
@@ -49,11 +50,8 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 	}
-	next, err := e.store.GetBlockByHeight(block.Height + 1)
-	if err != nil {
-		fmt.Println("error getting entropy seed")
-	}
-	return EntropyProvider{seed: next.ParentVoterSigData, error: err}
+	fmt.Println("block.ParentVoterSigData", hex.EncodeToString(block.ParentVoterSigData))
+	return EntropyProvider{seed: block.ParentVoterSigData, error: err}
 }
 
 var _ access.API = &AccessAdapter{}
