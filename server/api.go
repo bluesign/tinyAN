@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/bluesign/tinyAN/storage"
+	"github.com/gorilla/mux"
 	"github.com/onflow/flow-evm-gateway/models"
 	"github.com/onflow/flow-go/engine/access/rest/routes"
 	"github.com/onflow/flow-go/model/flow"
@@ -14,9 +16,6 @@ import (
 	"github.com/rs/zerolog"
 	"net"
 	"net/http"
-
-	"github.com/bluesign/tinyAN/storage"
-	"github.com/gorilla/mux"
 )
 
 type APIServer struct {
@@ -56,9 +55,8 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	rpcServer.RegisterName("txpool", &TxPool{})
 	rpcServer.RegisterName("eth", &StreamAPI{dataProvider: dataProvider})
 
-	//ws := rpcServer.WebsocketHandler([]string{"*"}).ServeHTTP
+	router.Headers("Upgrade", "websocket").Handler(rpcServer.WebsocketHandler([]string{"*"}))
 	router.Handle("/", rpcServer)
-	router.Handle("/", rpcServer.WebsocketHandler([]string{"*"}))
 
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
