@@ -42,9 +42,9 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 	dataProvider := &DataProvider{
 		api:                   apiEth,
 		store:                 storage,
-		blocksPublisher:       &models.Publisher[*models.Block]{},
-		transactionsPublisher: &models.Publisher[*gethTypes.Transaction]{},
-		logsPublisher:         &models.Publisher[[]*gethTypes.Log]{},
+		blocksPublisher:       models.NewPublisher[*models.Block](),
+		transactionsPublisher: models.NewPublisher[*gethTypes.Transaction](),
+		logsPublisher:         models.NewPublisher[[]*gethTypes.Log](),
 	}
 	storage.Latest().EVM().OnHeightChanged = dataProvider.OnHeightChanged
 
