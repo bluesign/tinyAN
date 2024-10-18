@@ -734,10 +734,12 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		afterCh <- struct{}{}
 	}()
 
+	cadenceTrace := strings.Builder{}
 	func() {
+
 		stop := debugger.Pause()
 		depth := debugger.CurrentActivation(stop.Interpreter).Depth
-		fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
+		//fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
 		lastLocation := ""
 
 		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
@@ -770,7 +772,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					return
 				}
 
-				fmt.Println(fmt.Sprintf("%s%s%s%s(%s)",
+				cadenceTrace.WriteString(fmt.Sprintf("%s%s%s%s(%s)",
 					locationPrefix,
 					strings.Repeat("  ", depth),
 					invoked.InvokedExpression,
@@ -790,7 +792,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			}
 			depth = len(inter.CallStack())
 			padding := strings.Repeat("  ", depth)
-			fmt.Println(fmt.Sprintf("%s- %s", padding, result.String()))
+			cadenceTrace.WriteString(fmt.Sprintf("%s- %s", padding, result.String()))
 		}
 
 		debugger.Continue()
@@ -845,6 +847,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	tx.Script = []byte(fmt.Sprintf("%s\n\nLogs\n\n%s", string(tx.Script), logs))
 	tx.Script = []byte(fmt.Sprintf("%s\n\nComputation Details\n\n%v", string(tx.Script), output.ComputationIntensities))
+	tx.Script = []byte(fmt.Sprintf("%s\n\nCadence Trace\n\n%v", string(tx.Script), cadenceTrace))
 
 	stateChanges := ""
 	for _, v := range blockResources {
