@@ -52,7 +52,7 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 		fmt.Println("error getting entropy seed")
 		return nil
 	}
-	_, err := e.store.GetBlockByHeight(block.Height + 1)
+	_, err = e.store.GetBlockByHeight(block.Height + 1)
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 		return nil
