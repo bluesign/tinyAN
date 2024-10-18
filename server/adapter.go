@@ -749,7 +749,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 					fmt.Println("expression", exp)
 					switch inner := exp.(type) {
 					case *ast.InvocationExpression:
-						fmt.Println("invocation", inner)
+						fmt.Println("invocation", inner.InvokedExpression, inner.TypeArguments, inner.Arguments)
+
 					}
 
 				}
