@@ -87,6 +87,7 @@ func (s *StreamAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 			if !ok {
 				err = fmt.Errorf("panic: %v", r)
 			}
+			fmt.Println(err)
 		}
 	}()
 	return newSubscription(
