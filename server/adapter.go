@@ -717,8 +717,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	executor := proc.NewExecutor(fvmContext, txnState)
 
-	err = fvm.Run(executor)
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	debugger.RequestPause()
