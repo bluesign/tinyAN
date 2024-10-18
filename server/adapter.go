@@ -32,14 +32,24 @@ type TemporaryTransactionResult struct {
 
 type EntropyProviderPerBlockProvider struct {
 	// AtBlockID returns an entropy provider at the given block ID.
+	store *storage.HeightBasedStorage
 }
 
-func (e *EntropyProviderPerBlockProvider) RandomSource() ([]byte, error) {
-	return []byte{42}, nil
+type EntropyProvider struct {
+	seed  []byte
+	error error
+}
+
+func (e EntropyProvider) RandomSource() ([]byte, error) {
+	return e.seed, e.error
 }
 
 func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) environment.EntropyProvider {
-	return e
+	block, err := e.store.GetBlockById(blockID)
+	if err != nil {
+		fmt.Println("error getting entropy seed")
+	}
+	return EntropyProvider{seed: block.ParentVoterSigData, error: err}
 }
 
 var _ access.API = &AccessAdapter{}
@@ -625,6 +635,9 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	fvmContext := fvm.NewContext(
 		fvm.WithBlockHeader(block),
 		fvm.WithBlocks(a.store),
+		fvm.WithEntropyProvider(&EntropyProviderPerBlockProvider{
+			store: a.store,
+		}),
 		fvm.WithCadenceLogging(true),
 		fvm.WithAuthorizationChecksEnabled(false),
 		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
