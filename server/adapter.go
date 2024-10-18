@@ -282,9 +282,7 @@ func (a *AccessAdapter) GetTransactionResult(
 			errorMessage = txCached.Output.Err.Error()
 		}
 		events := txCached.Output.Events
-		for _, event := range events {
-			events = append(events, event)
-		}
+
 		result := &access.TransactionResult{
 			Status:        flowgo.TransactionStatusSealed,
 			StatusCode:    statusCode,
