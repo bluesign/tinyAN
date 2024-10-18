@@ -27,7 +27,6 @@ import (
 	"google.golang.org/grpc/status"
 	"strings"
 	"sync"
-	"time"
 )
 
 type TemporaryTransactionResult struct {
@@ -673,11 +672,10 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	//TODO: check if expired transaction
 	existing, err := a.store.GetTransactionResult(tx.ID())
 	if err != nil {
-		block, err = a.store.GetBlockById(tx.ReferenceBlockID)
+		block, err = a.store.GetBlockByHeight(a.store.Latest().LastBlocksHeight() - 2)
 		if err != nil {
 			return err
 		}
-		time.Sleep(3 * time.Second)
 	} else {
 		block, err = a.store.GetBlockById(existing.BlockID)
 		if err != nil {
