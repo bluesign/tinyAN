@@ -58,7 +58,7 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 						return
 					}
 					fmt.Println("Reconnecting to BlockFollower", subBlock.Err())
-					time.Sleep(5 * time.Second)
+					time.Sleep(1 * time.Second)
 					reconnect = true
 					break
 				}
