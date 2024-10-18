@@ -747,7 +747,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 			fmt.Println(result)
 		}
 
-		debugger.RequestPause()
 		debugger.Continue()
 		/*		for {
 				select {
