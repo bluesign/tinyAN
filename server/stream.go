@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/flow-evm-gateway/api"
+	"github.com/onflow/go-ethereum/core/types"
 	"math/big"
 
 	"github.com/onflow/flow-evm-gateway/models"
@@ -100,6 +101,29 @@ func (s *StreamAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 					return err
 				}
 
+				transactions, err := s.dataProvider.api.blockTransactions(block.Height)
+				if err != nil {
+					return err
+				}
+
+				transactionResults := make([]*api.Transaction, len(transactions))
+				transactionHashes := make([]common.Hash, len(transactions))
+				logs := make([]*gethTypes.Log, 0)
+				blockSize := uint64(0)
+				totalGasUsed := hexutil.Uint64(0)
+
+				if transactions != nil && len(transactions) > 0 {
+					for _, tx := range transactions {
+						receipt := tx.Receipt
+						transactionHashes[receipt.TransactionIndex] = receipt.TxHash
+						txResult, _ := api.NewTransactionResult(tx.Transaction, tx.Receipt, EVMMainnetChainID)
+						transactionResults[receipt.TransactionIndex] = txResult
+						totalGasUsed += hexutil.Uint64(receipt.GasUsed)
+						logs = append(logs, receipt.Logs...)
+						blockSize += tx.Transaction.Size()
+					}
+				}
+
 				return notifier.Notify(sub.ID, &api.Block{
 					Hash:          h,
 					Number:        hexutil.Uint64(block.Height),
@@ -111,6 +135,8 @@ func (s *StreamAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 					Nonce:         gethTypes.BlockNonce{0x1},
 					Timestamp:     hexutil.Uint64(block.Timestamp),
 					BaseFeePerGas: hexutil.Big(*big.NewInt(0)),
+					LogsBloom:     types.LogsBloom(logs),
+					GasUsed:       totalGasUsed,
 				})
 			}
 		},
