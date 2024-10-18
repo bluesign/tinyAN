@@ -8,6 +8,7 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
 	"github.com/onflow/cadence/runtime"
+	"github.com/onflow/cadence/runtime/interpreter"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/consensus/hotstuff/model"
 	"github.com/onflow/flow-go/engine/access/subscription"
@@ -23,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strings"
+	"sync"
 )
 
 type TemporaryTransactionResult struct {
@@ -665,6 +667,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	var err error
 
 	//check if exists on network
+	//TODO: check if expired transaction
 	existing, err := a.store.GetTransactionResult(tx.ID())
 	if err != nil {
 		block, err = a.store.GetBlockById(tx.ReferenceBlockID)
@@ -681,7 +684,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	snapshot := a.store.LedgerSnapshot(block.Height)
 
 	proc := fvm.Transaction(tx, 0)
-	//debugger := interpreter.NewDebugger()
+	debugger := interpreter.NewDebugger()
 
 	var entropyProvider = &EntropyProviderPerBlockProvider{
 		store: a.store,
@@ -715,41 +718,43 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	executor := proc.NewExecutor(fvmContext, txnState)
 
 	err = fvm.Run(executor)
-	/*
-		var wg sync.WaitGroup
-		wg.Add(1)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	debugger.RequestPause()
+
+	afterCh := make(chan struct{})
+	go func() {
+		defer wg.Done()
+		fmt.Println("before run")
+		err = fvm.Run(executor)
+		fmt.Println("after run")
+		afterCh <- struct{}{}
+	}()
+
+	func() {
+		stop := debugger.Pause()
+		depth := debugger.CurrentActivation(d.Interpreter).Depth
+		fmt.Println(stop.Statement.ElementType().String())
+
 		debugger.RequestPause()
+		debugger.Continue()
+		for {
+			select {
+			case d := <-debugger.Stops():
+				depth = debugger.CurrentActivation(d.Interpreter).Depth
+				fmt.Println(depth, d.Statement.ElementType().String())
 
-
-		afterCh := make(chan struct{})
-		go func() {
-			defer wg.Done()
-			fmt.Println("before run")
-			err = fvm.Run(executor)
-			fmt.Println("after run")
-			afterCh <- struct{}{}
-		}()
-
-
-		func() {
-			stop := debugger.Pause()
-			fmt.Println(stop.Statement.ElementType().String())
-
-			debugger.RequestPause()
-			debugger.Continue()
-			for {
-				select {
-				case d := <-debugger.Stops():
-					debugger.RequestPause()
-					debugger.Continue()
-				case <-afterCh:
-					return
-				}
+				debugger.RequestPause()
+				debugger.Continue()
+			case <-afterCh:
+				return
 			}
-		}()
+		}
+	}()
 
-		wg.Wait()
-	*/
+	wg.Wait()
+
 	if err != nil {
 		return err
 	}
