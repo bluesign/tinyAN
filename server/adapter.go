@@ -58,7 +58,7 @@ func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) e
 		return nil
 	}
 	packer := model.SigDataPacker{}
-	sigData, err := packer.Decode(next.ParentVoterSigData)
+	sigData, err := packer.Decode(block.ParentVoterSigData)
 	if err != nil {
 		fmt.Println("error getting entropy seed")
 		return nil
