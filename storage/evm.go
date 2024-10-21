@@ -122,6 +122,7 @@ func (s *EVMStorage) FixBroken() {
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error saving cadence height by evm height")
 	}
+	batch.Commit(pebble.Sync)
 
 }
 
