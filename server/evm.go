@@ -621,6 +621,8 @@ func (a *APINamespace) GetTransactionReceipt(
 	cadenceHeight, err := a.storage.CadenceBlockHeightForTransactionHash(hash)
 
 	if err != nil {
+		fmt.Println(err)
+
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
 	}
 
@@ -629,8 +631,11 @@ func (a *APINamespace) GetTransactionReceipt(
 		fmt.Println(err)
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
+
 	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
+		fmt.Println(err)
+
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
 	cumulativeGasUsed := uint64(0)
