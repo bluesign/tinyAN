@@ -198,11 +198,6 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 		return nil, err
 	}
 
-	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
-	if err != nil {
-		return nil, err
-	}
-
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		return nil, err
@@ -222,7 +217,14 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 	current := startCadenceHeight
 	transactionIndex := 0
+	fmt.Println("start", startCadenceHeight, "end", endCadenceHeight)
 	for current <= endCadenceHeight {
+
+		cadenceBlockId, err := a.storage.GetBlockIdByHeight(current)
+		if err != nil {
+			return nil, err
+		}
+
 		cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
 
 		sort.Slice(cadenceEvents, func(i, j int) bool {
