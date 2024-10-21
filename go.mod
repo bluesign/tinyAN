@@ -14,9 +14,9 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/klauspost/compress v1.17.4
 	github.com/onflow/atree v0.8.0
-	github.com/onflow/cadence v1.0.0
+	github.com/onflow/cadence v1.0.1
 	github.com/onflow/flow-evm-gateway v0.36.5
-	github.com/onflow/flow-go v0.38.0-preview.0.0.20241008203826-efd21c18b187
+	github.com/onflow/flow-go v0.38.0-preview.0.0.20241018182217-691a06491957
 	github.com/onflow/flow-go-sdk v1.0.0
 	github.com/onflow/flow/protobuf/go/flow v0.4.7
 	github.com/onflow/go-ethereum v1.14.7
