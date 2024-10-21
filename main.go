@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/bluesign/tinyAN/ui"
 	"log"
 	"time"
 
@@ -74,9 +75,9 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		},
 	)
 
-	workers.TestMissing(store.Latest(), 88226267, 88226268, chain)
+	//workers.TestMissing(store.Latest(), 88226267, 88226268, chain)
 
-	/*ui.MainUI(store)
+	ui.MainUI(store)
 	if true {
 		return
 	}*/
