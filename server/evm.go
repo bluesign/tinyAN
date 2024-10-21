@@ -542,6 +542,7 @@ func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64
 
 	data, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
