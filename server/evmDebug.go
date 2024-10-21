@@ -146,6 +146,7 @@ func (d *DebugAPI) traceBlock(
 
 	block, err := d.api.blockFromBlockStorage(height)
 	if err != nil {
+		fmt.Println("block not found")
 		return nil, err
 	}
 
