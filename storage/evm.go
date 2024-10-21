@@ -3,8 +3,8 @@ package storage
 import (
 	"fmt"
 	"github.com/cockroachdb/pebble"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/onflow/flow-evm-gateway/models"
+	"github.com/onflow/go-ethereum/common"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/rs/zerolog"
 	"os"
@@ -88,7 +88,7 @@ func (s *EVMStorage) Close() {
 
 func (s *EVMStorage) FixBroken() {
 
-	evmBlockHash := common.HexToHash("0x0")
+	evmBlockHash := common.HexToHash("0x2bf9011cada49d26aeba1f8893ff6f609c798c44126d521e2dd97f31665357db")
 	batch := s.NewBatch()
 	//insert evm block
 	err := s.codec.MarshalAndSet(batch,
