@@ -554,6 +554,7 @@ func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64
 
 func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
+	fmt.Println(height, cadenceHeight, err)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
