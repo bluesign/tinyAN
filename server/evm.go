@@ -250,15 +250,15 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 				}
 				event, ok := eventDecoded.(cadence.Event)
 
-				if startCadenceHeight != endCadenceHeight {
-					fmt.Println(eventRaw.TransactionID)
-					fmt.Println(event.SearchFieldByName("hash").String())
-				}
 				if !ok {
 					fmt.Println(err)
 					return nil, errors.New("failed to decode event")
 				}
 				tx, receipt, payload, err := storage.DecodeTransactionEvent(transactionIndex, event)
+				if startCadenceHeight != endCadenceHeight {
+					fmt.Println(current)
+					fmt.Println(tx.Hash())
+				}
 				if err != nil {
 					fmt.Println(err)
 					return nil, err
