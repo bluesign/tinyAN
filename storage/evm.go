@@ -93,7 +93,7 @@ func (s *EVMStorage) FixBroken() {
 	//insert evm block
 	err := s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMBlockIDToCadenceHeight, evmBlockHash),
-		uint64(86718310),
+		uint64(86718842),
 	)
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error saving evm block id to cadence height")
@@ -108,7 +108,7 @@ func (s *EVMStorage) FixBroken() {
 	}
 
 	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMHeightByCadenceHeight, uint64(86718310)),
+		makePrefix(codeEVMHeightByCadenceHeight, uint64(86718842)),
 		uint64(714157),
 	)
 	if err != nil {
@@ -117,7 +117,7 @@ func (s *EVMStorage) FixBroken() {
 
 	err = s.codec.MarshalAndSet(batch,
 		makePrefix(codeEVMCadenceHeightByEVMHeight, uint64(714157)),
-		uint64(86718310),
+		uint64(86718842),
 	)
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error saving cadence height by evm height")
