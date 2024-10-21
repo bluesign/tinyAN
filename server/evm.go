@@ -188,6 +188,11 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 		}
 	}()
 
+	prevCadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight - 1)
+	if blockHeight != 0 && err != nil {
+		return nil, err
+	}
+
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
 		return nil, err
@@ -203,61 +208,75 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 		return nil, err
 	}
 
-	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+	transactions := make([]TransactionWithReceipt, 0)
 
-	sort.Slice(cadenceEvents, func(i, j int) bool {
-		if cadenceEvents[i].TransactionIndex != cadenceEvents[j].TransactionIndex {
-			return cadenceEvents[i].TransactionIndex < cadenceEvents[j].TransactionIndex
+	startCadenceHeight := prevCadenceHeight + 1
+	if blockHeight == 0 {
+		startCadenceHeight = cadenceHeight
+	}
+	endCadenceHeight := cadenceHeight
+
+	if startCadenceHeight != endCadenceHeight {
+		fmt.Println("has gap")
+	}
+
+	current := startCadenceHeight
+	for current <= endCadenceHeight {
+		cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+
+		sort.Slice(cadenceEvents, func(i, j int) bool {
+			if cadenceEvents[i].TransactionIndex != cadenceEvents[j].TransactionIndex {
+				return cadenceEvents[i].TransactionIndex < cadenceEvents[j].TransactionIndex
+			}
+			return cadenceEvents[i].EventIndex < cadenceEvents[j].EventIndex
+		})
+
+		logIndex := uint(0)
+		cumulativeGasUsed := uint64(0)
+
+		if cadenceEvents != nil && len(cadenceEvents) > 0 {
+			for _, eventRaw := range cadenceEvents {
+				eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
+				if err != nil {
+					fmt.Println(err)
+					return nil, err
+				}
+
+				event, ok := eventDecoded.(cadence.Event)
+				if !ok {
+					fmt.Println(err)
+					return nil, errors.New("failed to decode event")
+				}
+				tx, receipt, payload, err := storage.DecodeTransactionEvent(i, event)
+				if err != nil {
+					fmt.Println(err)
+					return nil, err
+				}
+
+				cumulativeGasUsed += receipt.GasUsed
+				receipt.CumulativeGasUsed = cumulativeGasUsed
+
+				receipt.BlockHash, _ = block.Hash()
+
+				for _, log := range receipt.Logs {
+					log.Index = logIndex
+					log.BlockNumber = block.Height
+					log.TxHash = receipt.TxHash
+					log.TxIndex = receipt.TransactionIndex
+					log.BlockHash = receipt.BlockHash
+					logIndex++
+				}
+
+				transactions = append(transactions, TransactionWithReceipt{
+					Transaction:      tx,
+					Receipt:          *receipt,
+					PrecompiledCalls: payload.PrecompiledCalls,
+					Checksum:         payload.StateUpdateChecksum,
+				})
+
+			}
 		}
-		return cadenceEvents[i].EventIndex < cadenceEvents[j].EventIndex
-	})
 
-	transactions := make([]TransactionWithReceipt, len(cadenceEvents))
-
-	logIndex := uint(0)
-	cumulativeGasUsed := uint64(0)
-
-	if cadenceEvents != nil && len(cadenceEvents) > 0 {
-		for i, eventRaw := range cadenceEvents {
-			eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
-			if err != nil {
-				fmt.Println(err)
-				return nil, err
-			}
-
-			event, ok := eventDecoded.(cadence.Event)
-			if !ok {
-				fmt.Println(err)
-				return nil, errors.New("failed to decode event")
-			}
-			tx, receipt, payload, err := storage.DecodeTransactionEvent(i, event)
-			if err != nil {
-				fmt.Println(err)
-				return nil, err
-			}
-
-			cumulativeGasUsed += receipt.GasUsed
-			receipt.CumulativeGasUsed = cumulativeGasUsed
-
-			receipt.BlockHash, _ = block.Hash()
-
-			for _, log := range receipt.Logs {
-				log.Index = logIndex
-				log.BlockNumber = block.Height
-				log.TxHash = receipt.TxHash
-				log.TxIndex = receipt.TransactionIndex
-				log.BlockHash = receipt.BlockHash
-				logIndex++
-			}
-
-			transactions[i] = TransactionWithReceipt{
-				Transaction:      tx,
-				Receipt:          *receipt,
-				PrecompiledCalls: payload.PrecompiledCalls,
-				Checksum:         payload.StateUpdateChecksum,
-			}
-
-		}
 	}
 
 	return transactions, nil
