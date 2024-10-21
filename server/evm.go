@@ -655,7 +655,7 @@ func (a *APINamespace) GetTransactionReceipt(
 			return txReceipt, nil
 		}
 	}
-
+	fmt.Println("should not come here")
 	return handleError[map[string]interface{}](errs.ErrInternal)
 
 }
