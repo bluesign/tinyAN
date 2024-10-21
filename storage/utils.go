@@ -15,7 +15,7 @@ var (
 
 // config is taken from https://github.com/onflow/flow-archive/blob/c75ac6cde86f2be2425e1058146c98eb7b01c872/service/storage2/config/config.go#L10
 
-var defaultPebbleOptions = &pebble.Options{
+var defaultPebbleOptions = pebble.Options{
 	FormatMajorVersion: pebble.FormatNewest,
 
 	// Soft and hard limits on read amplificaction of L0 respectfully.
@@ -61,7 +61,7 @@ func MustOpenPebbleDB(path string) *pebble.DB {
 	opts.FlushSplitBytes = opts.Levels[0].TargetFileSize
 	opts.EnsureDefaults()
 
-	db, err := pebble.Open(path, defaultPebbleOptions)
+	db, err := pebble.Open(path, &opts)
 	if err != nil {
 		panic(fmt.Errorf("error opening db: %w", err))
 	}
