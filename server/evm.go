@@ -31,8 +31,9 @@ import (
 )
 
 var (
-	EVMMainnetChainID        = big.NewInt(747)
-	BlockStoreLatestBlockKey = "LatestBlock"
+	EVMMainnetChainID                = big.NewInt(747)
+	BlockStoreLatestBlockKey         = "LatestBlock"
+	BlockStoreLatestBlockProposalKey = "LatestBlockProposal"
 )
 
 const maxFeeHistoryBlockCount = 1024
@@ -518,6 +519,22 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 	snap := a.storage.LedgerSnapshot(cadenceHeight)
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	return state.NewBaseView(NewViewOnlyLedger(snap), base)
+}
+
+func (a *APINamespace) blockProposalFromCadenceHeight(cadenceHeight uint64) (*evmTypes.BlockProposal, error) {
+	base, _ := flow.StringToAddress("d421a63faae318f9")
+	store := a.storage.StorageForHeight(cadenceHeight)
+	snap := store.Ledger().StorageSnapshot(cadenceHeight)
+
+	data, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockProposalKey))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+	return evmTypes.NewBlockProposalFromBytes(data)
+
 }
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {

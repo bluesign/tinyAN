@@ -143,6 +143,9 @@ func (d *DebugAPI) traceBlock(
 	fmt.Println("cadenceHeight", cadenceHeight)
 	fmt.Println("block", block.Height)
 
+	blockProposalFromCadenceHeight, err := d.api.blockProposalFromCadenceHeight(cadenceHeight - 1)
+	fmt.Println(blockProposalFromCadenceHeight.TxHashes)
+
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
 	snapAfter := d.api.storage.LedgerSnapshot(cadenceHeight)
