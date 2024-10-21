@@ -213,6 +213,9 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 	if startCadenceHeight != endCadenceHeight {
 		fmt.Println("has gap")
+		fmt.Println("startCadenceHeight", startCadenceHeight)
+		fmt.Println("endCadenceHeight", endCadenceHeight)
+
 	}
 
 	current := startCadenceHeight
