@@ -137,16 +137,14 @@ func (d *DebugAPI) traceBlock(
 	}
 	parentCadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height - 1)
 	if err != nil {
-		return nil, err
+		fmt.Println("empty parentCadenceHeight", height)
+		return []*txTraceResult{}, nil
 	}
 
 	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("traceBlock", height)
-	fmt.Println("cadenceHeight", cadenceHeight)
-	fmt.Println("block", block.Height)
 
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(parentCadenceHeight) // 1 prev block
