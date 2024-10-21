@@ -256,8 +256,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 				}
 				tx, receipt, payload, err := storage.DecodeTransactionEvent(transactionIndex, event)
 				if startCadenceHeight != endCadenceHeight {
-					fmt.Println(current)
-					fmt.Println(tx.Hash())
+					fmt.Println(fmt.Sprintf("\"%s\": %d, \n", tx.Hash(), current))
 				}
 				if err != nil {
 					fmt.Println(err)
