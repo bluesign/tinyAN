@@ -240,7 +240,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 	}()
 
 	prevCadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight - 1)
-	if blockHeight != 0 && err != nil {
+	if blockHeight > 1 && err != nil {
 		return nil, err
 	}
 
@@ -257,7 +257,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 	transactions := make([]TransactionWithReceipt, 0)
 
 	startCadenceHeight := prevCadenceHeight + 1
-	if blockHeight == 0 {
+	if blockHeight <= 1 {
 		startCadenceHeight = cadenceHeight
 	}
 	endCadenceHeight := cadenceHeight
