@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/cockroachdb/pebble"
-	"github.com/cockroachdb/pebble/bloom"
 	"github.com/onflow/flow-go/model/flow"
 	gethCommon "github.com/onflow/go-ethereum/common"
 )
@@ -36,7 +35,7 @@ var defaultPebbleOptions = pebble.Options{
 }
 
 func MustOpenPebbleDB(path string) *pebble.DB {
-	opts := defaultPebbleOptions
+	/*opts := defaultPebbleOptions
 	for i := 0; i < len(opts.Levels); i++ {
 		l := &opts.Levels[i]
 		// The default is 4KiB (uncompressed), which is too small
@@ -60,8 +59,8 @@ func MustOpenPebbleDB(path string) *pebble.DB {
 
 	opts.FlushSplitBytes = opts.Levels[0].TargetFileSize
 	opts.EnsureDefaults()
-
-	db, err := pebble.Open(path, &opts)
+	*/
+	db, err := pebble.Open(path, &defaultPebbleOptions)
 	if err != nil {
 		panic(fmt.Errorf("error opening db: %w", err))
 	}
