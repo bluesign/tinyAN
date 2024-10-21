@@ -251,7 +251,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 				event, ok := eventDecoded.(cadence.Event)
 
 				if startCadenceHeight != endCadenceHeight {
-					fmt.Println(event)
+					fmt.Println(eventRaw.TransactionID)
 
 				}
 				if !ok {
