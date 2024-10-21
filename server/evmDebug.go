@@ -131,6 +131,9 @@ func (d *DebugAPI) traceBlock(
 	height uint64,
 	_ *tracers.TraceConfig) ([]*txTraceResult, error) {
 
+	if height == 0 {
+		return []*txTraceResult{}, nil
+	}
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	if err != nil {
 		return nil, err
