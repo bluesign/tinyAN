@@ -144,7 +144,7 @@ func (d *DebugAPI) traceBlock(
 		return []*txTraceResult{}, nil
 	}
 
-	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
+	block, err := d.api.blockFromBlockStorage(height)
 	if err != nil {
 		return nil, err
 	}

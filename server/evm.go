@@ -306,9 +306,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 					return nil, errors.New("failed to decode event")
 				}
 				tx, receipt, payload, err := storage.DecodeTransactionEvent(transactionIndex, event)
-				/*if startCadenceHeight != endCadenceHeight {
-					fmt.Println(fmt.Sprintf("\"%s\": %d, \n", tx.Hash(), current))
-				}*/
+
 				if err != nil {
 					fmt.Println(err)
 					return nil, err
@@ -699,13 +697,13 @@ func (a *APINamespace) GetTransactionReceipt(
 		fmt.Println(err)
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
-	fmt.Println("block", block.Height)
+
 	transactions, err := a.blockTransactions(block.Height)
 	if err != nil {
 		fmt.Println(err)
-
 		return handleError[map[string]interface{}](errs.ErrInternal)
 	}
+
 	cumulativeGasUsed := uint64(0)
 	for _, tx := range transactions {
 		cumulativeGasUsed += tx.Receipt.GasUsed
