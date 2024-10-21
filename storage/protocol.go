@@ -302,6 +302,37 @@ func (s *ProtocolStorage) SaveBlock(header *flow.Header) error {
 	return nil
 }
 
+func (s *ProtocolStorage) SaveBlockWithoutProgress(header *flow.Header) error {
+	batch := s.protocolDB.NewBatch()
+	defer batch.Commit(pebble.Sync)
+
+	id := header.ID()
+	height := header.Height
+
+	if err := s.codec.MarshalAndSet(batch,
+		makePrefix(codeBlockHeightByID, id),
+		b(height),
+	); err != nil {
+		return err
+	}
+
+	if err := s.codec.MarshalAndSet(batch,
+		makePrefix(codeBlockByHeight, height),
+		header,
+	); err != nil {
+		return err
+	}
+
+	if err := s.codec.MarshalAndSet(batch,
+		makePrefix(codeBlockIdByHeight, height),
+		header.ID(),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *ProtocolStorage) GetBlockHeightByID(id flow.Identifier) (uint64, error) {
 	s.logger.Log().Msgf("GetBlockHeightByID %s", id.String())
 

@@ -74,6 +74,8 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		},
 	)
 
+	workers.TestMissing(store.Latest(), 88226267, 88226268, chain)
+
 	/*ui.MainUI(store)
 	if true {
 		return
