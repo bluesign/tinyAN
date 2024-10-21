@@ -16,6 +16,8 @@ const maxTopics = 4
 // The maximum number of addresses allowed
 const maxAddresses = 6
 
+const maxRange = 1000
+
 // FilterCriteria for log filtering.
 // Address of the contract emitting the log.
 // Topics that match the log topics, following the format:
@@ -67,6 +69,14 @@ func NewRangeFilter(
 			errs.ErrInvalid,
 			start,
 			end,
+		)
+	}
+
+	if end-start > maxRange {
+		return nil, fmt.Errorf(
+			"%w: range exceeds maximum allowed range of %d",
+			errs.ErrInvalid,
+			maxRange,
 		)
 	}
 
