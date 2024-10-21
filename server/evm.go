@@ -383,35 +383,35 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 
 	blockBytes, err := block.ToBytes()
 	if err != nil {
-		fmt.Println(err)
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 
 	transactions, err := a.blockTransactions(height)
-	if err != nil {
-		fmt.Println(err)
-
+	if err != nil && height > 0 {
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 
 	transactionResults := make([]*api.Transaction, len(transactions))
 	transactionHashes := make([]common.Hash, len(transactions))
 
-	if transactions != nil && len(transactions) > 0 {
-		totalGasUsed := hexutil.Uint64(0)
-		logs := make([]*types.Log, 0)
-		for _, tx := range transactions {
-			receipt := tx.Receipt
-			transactionHashes[receipt.TransactionIndex] = receipt.TxHash
-			txResult, _ := api.NewTransactionResult(tx.Transaction, tx.Receipt, EVMMainnetChainID)
-			transactionResults[receipt.TransactionIndex] = txResult
-			totalGasUsed += hexutil.Uint64(receipt.GasUsed)
-			logs = append(logs, receipt.Logs...)
-			blockSize += tx.Transaction.Size()
+	if height > 0 {
+
+		if transactions != nil && len(transactions) > 0 {
+			totalGasUsed := hexutil.Uint64(0)
+			logs := make([]*types.Log, 0)
+			for _, tx := range transactions {
+				receipt := tx.Receipt
+				transactionHashes[receipt.TransactionIndex] = receipt.TxHash
+				txResult, _ := api.NewTransactionResult(tx.Transaction, tx.Receipt, EVMMainnetChainID)
+				transactionResults[receipt.TransactionIndex] = txResult
+				totalGasUsed += hexutil.Uint64(receipt.GasUsed)
+				logs = append(logs, receipt.Logs...)
+				blockSize += tx.Transaction.Size()
+			}
+			blockResponse.GasUsed = totalGasUsed
+			blockResponse.LogsBloom = types.LogsBloom(logs)
 		}
-		blockResponse.GasUsed = totalGasUsed
-		blockResponse.LogsBloom = types.LogsBloom(logs)
 	}
 	blockResponse.Size = hexutil.Uint64(rlp.ListSize(blockSize))
 
