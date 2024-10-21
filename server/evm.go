@@ -383,12 +383,15 @@ func (a *APINamespace) GetBlockByNumber(_ context.Context, blockNumber rpc.Block
 
 	blockBytes, err := block.ToBytes()
 	if err != nil {
+		fmt.Println(err)
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 	blockSize := rlp.ListSize(uint64(len(blockBytes)))
 
 	transactions, err := a.blockTransactions(height)
 	if err != nil {
+		fmt.Println(err)
+
 		return handleError[*api.Block](errs.ErrInternal)
 	}
 
@@ -553,9 +556,11 @@ func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64
 }
 
 func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
+
 	if height == 0 {
 		return evmTypes.GenesisBlock(flow.Mainnet), nil
 	}
+
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
 
 	if err != nil {
