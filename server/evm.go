@@ -553,7 +553,11 @@ func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64
 }
 
 func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
+	if height == 0 {
+		return evmTypes.GenesisBlock(flow.Mainnet), nil
+	}
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(height)
+
 	if err != nil {
 		fmt.Println(height, cadenceHeight, err)
 		return nil, err
