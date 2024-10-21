@@ -212,12 +212,12 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 	endCadenceHeight := cadenceHeight
 
 	if startCadenceHeight != endCadenceHeight {
-		fmt.Println("has gap")
+		/*fmt.Println("has gap")
 		fmt.Println("prevCadenceHeight", prevCadenceHeight)
 		fmt.Println("cadenceHeight", cadenceHeight)
 		fmt.Println("startCadenceHeight", startCadenceHeight)
 		fmt.Println("endCadenceHeight", endCadenceHeight)
-		fmt.Println("blockHeight", blockHeight)
+		fmt.Println("blockHeight", blockHeight)*/
 	}
 
 	current := startCadenceHeight
@@ -623,6 +623,7 @@ func (a *APINamespace) GetTransactionReceipt(
 	if err != nil {
 		return handleError[map[string]interface{}](errs.ErrEntityNotFound)
 	}
+
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
 		fmt.Println(err)
