@@ -207,12 +207,14 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 	startCadenceHeight := prevCadenceHeight + 1
 	if blockHeight == 0 {
+
 		startCadenceHeight = cadenceHeight
 	}
 	endCadenceHeight := cadenceHeight
 
 	if startCadenceHeight != endCadenceHeight {
 		fmt.Println("has gap")
+		fmt.Println("prevCadenceHeight", prevCadenceHeight)
 		fmt.Println("startCadenceHeight", startCadenceHeight)
 		fmt.Println("endCadenceHeight", endCadenceHeight)
 		fmt.Println("blockHeight", blockHeight)
