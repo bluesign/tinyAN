@@ -99,6 +99,8 @@ func (d *DebugAPI) TraceTransaction(
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
 
+	fmt.Println(tx)
+
 	blockHeight := tx.Receipt.BlockNumber
 
 	block, err := d.api.blockFromBlockStorage(blockHeight.Uint64())
