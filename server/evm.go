@@ -280,6 +280,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 		cadenceBlockId, err := a.storage.GetBlockIdByHeight(current)
 		if err != nil {
+			fmt.Println("f4")
 			return nil, err
 		}
 
@@ -299,6 +300,8 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 			for _, eventRaw := range cadenceEvents {
 				eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
 				if err != nil {
+					fmt.Println("f5")
+
 					fmt.Println(err)
 					return nil, err
 				}
@@ -311,6 +314,8 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 				tx, receipt, payload, err := storage.DecodeTransactionEvent(transactionIndex, event)
 
 				if err != nil {
+					fmt.Println("f6")
+
 					fmt.Println(err)
 					return nil, err
 				}
