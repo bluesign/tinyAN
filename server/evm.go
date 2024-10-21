@@ -280,6 +280,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 		cadenceBlockId, err := a.storage.GetBlockIdByHeight(current)
 		if err != nil {
+			fmt.Println(current)
 			fmt.Println("f4")
 			return nil, err
 		}
