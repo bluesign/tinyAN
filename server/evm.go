@@ -473,16 +473,37 @@ func (a *APINamespace) baseViewForEVMHeight(height uint64) (*state.BaseView, err
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	store := a.storage.StorageForHeight(cadenceHeight)
-	snap := store.Ledger().StorageSnapshot(cadenceHeight)
+	snap := store.Ledger().StorageSnapshot(cadenceHeight - 1)
 
-	data, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
+	previousBlockData, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
 	if err != nil {
 		return nil, err
 	}
-	if len(data) == 0 {
+
+	if len(previousBlockData) == 0 {
 		return evmTypes.GenesisBlock(flow.Mainnet), nil
 	}
-	return evmTypes.NewBlockFromBytes(data)
+
+	previousBlock, err := evmTypes.NewBlockFromBytes(previousBlockData)
+	if err != nil {
+		return nil, err
+	}
+
+	cadenceTargetHeight, err := a.storage.CadenceHeightFromEVMHeight(previousBlock.Height + 1)
+	if err != nil {
+		return nil, err
+	}
+	snap = store.Ledger().StorageSnapshot(cadenceTargetHeight)
+	blockData, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(blockData) == 0 {
+		return evmTypes.GenesisBlock(flow.Mainnet), nil
+	}
+
+	return evmTypes.NewBlockFromBytes(blockData)
 }
 
 func (a *APINamespace) blockFromBlockStorage(height uint64) (*evmTypes.Block, error) {
