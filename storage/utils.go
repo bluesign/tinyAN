@@ -35,6 +35,7 @@ var defaultPebbleOptions = pebble.Options{
 }
 
 func MustOpenPebbleDB(path string) *pebble.DB {
+	//TODO: check this with new run
 	/*opts := defaultPebbleOptions
 	for i := 0; i < len(opts.Levels); i++ {
 		l := &opts.Levels[i]

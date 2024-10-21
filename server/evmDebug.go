@@ -126,10 +126,13 @@ func (d *DebugAPI) traceBlock(
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
+		fmt.Println("2")
+		fmt.Println(err)
 		return nil, err
 	}
 
