@@ -81,7 +81,7 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 					log.Fatalf("failed to process block data: %v", err)
 				}
 				height = height + 1
-				if endHeight > 0 && height > endHeight {
+				if endHeight > 0 && height >= endHeight {
 					fmt.Println("End height reached")
 					fmt.Println("Last height", height)
 					return
