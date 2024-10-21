@@ -99,8 +99,6 @@ func (d *DebugAPI) TraceTransaction(
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
 
-	fmt.Println(tx)
-
 	blockHeight := tx.Receipt.BlockNumber
 
 	block, err := d.api.blockFromBlockStorage(blockHeight.Uint64())
@@ -135,23 +133,15 @@ func (d *DebugAPI) traceBlock(
 
 	cadenceHeight, err := d.api.storage.StorageForEVMHeight(height).EVM().CadenceHeightFromEVMHeight(height)
 	if err != nil {
-		fmt.Println("1")
-		fmt.Println(height)
-		fmt.Println(cadenceHeight)
-
-		fmt.Println(err)
 		return nil, err
 	}
 	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
-		fmt.Println("2")
-		fmt.Println(height)
-
-		fmt.Println(cadenceHeight)
-
-		fmt.Println(err)
 		return nil, err
 	}
+	fmt.Println("traceBlock", height)
+	fmt.Println("cadenceHeight", cadenceHeight)
+	fmt.Println("block", block.Height)
 
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 	snap := d.api.storage.LedgerSnapshot(cadenceHeight - 1)
