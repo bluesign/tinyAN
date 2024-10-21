@@ -252,7 +252,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 				if startCadenceHeight != endCadenceHeight {
 					fmt.Println(eventRaw.TransactionID)
-
+					fmt.Println(event.SearchFieldByName("hash").String())
 				}
 				if !ok {
 					fmt.Println(err)
