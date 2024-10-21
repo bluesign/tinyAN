@@ -241,16 +241,19 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 	prevCadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight - 1)
 	if blockHeight > 1 && err != nil {
+		fmt.Println("f1")
 		return nil, err
 	}
 
 	cadenceHeight, err := a.storage.CadenceHeightFromEVMHeight(blockHeight)
 	if err != nil {
+		fmt.Println("f2")
 		return nil, err
 	}
 
 	block, err := a.blockFromBlockStorageByCadenceHeight(cadenceHeight)
 	if err != nil {
+		fmt.Println("f3")
 		return nil, err
 	}
 
