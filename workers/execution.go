@@ -79,6 +79,8 @@ func UpdateExecution(store *storage.SporkStorage, chain flow.Chain) {
 					}
 					height = height + 1
 					if endHeight > 0 && height >= endHeight {
+						fmt.Println("End height reached")
+						fmt.Println("Last height", height)
 						return
 					}
 				}
