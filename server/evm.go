@@ -647,6 +647,8 @@ func (a *APINamespace) GetTransactionReceipt(
 			receipt.CumulativeGasUsed = cumulativeGasUsed
 			txReceipt, err := api.MarshalReceipt(&receipt, tx.Transaction)
 			if err != nil {
+				fmt.Println(err)
+
 				return handleError[map[string]interface{}](errs.ErrInternal)
 			}
 
