@@ -180,6 +180,56 @@ type TransactionWithReceipt struct {
 	Checksum         [4]byte
 }
 
+func (a *APINamespace) evmTransactionsAtCadenceHeight(cadenceHeight uint64) (map[common.Hash]TransactionWithReceipt, error) {
+	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
+	if err != nil {
+		return nil, err
+	}
+	transactions := make(map[common.Hash]TransactionWithReceipt)
+
+	cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+
+	sort.Slice(cadenceEvents, func(i, j int) bool {
+		if cadenceEvents[i].TransactionIndex != cadenceEvents[j].TransactionIndex {
+			return cadenceEvents[i].TransactionIndex < cadenceEvents[j].TransactionIndex
+		}
+		return cadenceEvents[i].EventIndex < cadenceEvents[j].EventIndex
+	})
+
+	if cadenceEvents == nil || len(cadenceEvents) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+
+	transactionIndex := 0
+	for _, eventRaw := range cadenceEvents {
+		eventDecoded, err := ccf.Decode(nil, eventRaw.Payload)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		event, ok := eventDecoded.(cadence.Event)
+
+		if !ok {
+			fmt.Println(err)
+			return nil, errors.New("failed to decode event")
+		}
+		tx, receipt, payload, err := storage.DecodeTransactionEvent(transactionIndex, event)
+		if err != nil {
+			return nil, err
+		}
+		transactions[tx.Hash()] = TransactionWithReceipt{
+			Transaction:      tx,
+			Receipt:          *receipt,
+			PrecompiledCalls: payload.PrecompiledCalls,
+			Checksum:         payload.StateUpdateChecksum,
+		}
+
+		transactionIndex = transactionIndex + 1
+	}
+	return nil, fmt.Errorf("not found")
+
+}
+
 func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithReceipt, error) {
 
 	defer func() {
@@ -229,7 +279,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 			return nil, err
 		}
 
-		cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
+		cadenceEvents := a.storage.StorageForHeight(current).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
 
 		sort.Slice(cadenceEvents, func(i, j int) bool {
 			if cadenceEvents[i].TransactionIndex != cadenceEvents[j].TransactionIndex {

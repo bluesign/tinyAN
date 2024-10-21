@@ -89,11 +89,19 @@ func (d *DebugAPI) TraceTransaction(
 
 	cadenceHeight, err := d.api.storage.CadenceBlockHeightForTransactionHash(txId)
 
+	transactions, err := d.api.evmTransactionsAtCadenceHeight(cadenceHeight)
 	if err != nil {
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
 
-	block, err := d.api.blockFromBlockStorageByCadenceHeight(cadenceHeight)
+	tx, found := transactions[txId]
+	if !found {
+		return handleError[json.RawMessage](errs.ErrEntityNotFound)
+	}
+
+	blockHeight := tx.Receipt.BlockNumber
+
+	block, err := d.api.blockFromBlockStorage(blockHeight.Uint64())
 	if err != nil {
 		return handleError[json.RawMessage](errs.ErrInternal)
 	}
