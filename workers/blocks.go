@@ -115,7 +115,7 @@ func TestMissing(store *storage.SporkStorage, height uint64, endHeight uint64, c
 		if err != nil {
 			log.Fatalf("could not block follower client: %v", err)
 		}
-		subBlock, err := blockFollower.SubscribeBlockData(ctxBlocks, height)
+		subBlock, err := blockFollower.SubscribeBlockData(ctxBlocks, height-1)
 
 		if err != nil {
 			log.Fatalf("could not subscribe to block data: %v", err)
