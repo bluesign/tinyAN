@@ -248,9 +248,12 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 					fmt.Println(err)
 					return nil, err
 				}
-
 				event, ok := eventDecoded.(cadence.Event)
-				fmt.Println(event)
+
+				if startCadenceHeight != endCadenceHeight {
+					fmt.Println(event)
+
+				}
 				if !ok {
 					fmt.Println(err)
 					return nil, errors.New("failed to decode event")
