@@ -99,49 +99,52 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 		}
 	}
 
-	evmBlockHash, err := evmEvents.Block().Hash()
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error getting evm block hash")
-		panic(err) //shouldn't happen
-	}
+	if evmEvents.Block() != nil {
+		evmBlockHash, err := evmEvents.Block().Hash()
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error getting evm block hash")
+			panic(err) //shouldn't happen
+		}
 
-	//insert evm block
-	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMBlockIDToCadenceHeight, evmBlockHash),
-		evmEvents.CadenceHeight(),
-	)
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving evm block id to cadence height")
-	}
+		//insert evm block
+		err = s.codec.MarshalAndSet(batch,
+			makePrefix(codeEVMBlockIDToCadenceHeight, evmBlockHash),
+			evmEvents.CadenceHeight(),
+		)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error saving evm block id to cadence height")
+		}
 
-	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMBlockIDToEVMHeight, evmBlockHash),
-		evmEvents.Block().Height,
-	)
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving evm block id to evm height")
-	}
+		err = s.codec.MarshalAndSet(batch,
+			makePrefix(codeEVMBlockIDToEVMHeight, evmBlockHash),
+			evmEvents.Block().Height,
+		)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error saving evm block id to evm height")
+		}
 
-	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMHeightByCadenceHeight, evmEvents.CadenceHeight()),
-		evmEvents.Block().Height,
-	)
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving evm height by cadence height")
-	}
+		err = s.codec.MarshalAndSet(batch,
+			makePrefix(codeEVMHeightByCadenceHeight, evmEvents.CadenceHeight()),
+			evmEvents.Block().Height,
+		)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error saving evm height by cadence height")
+		}
 
-	err = s.codec.MarshalAndSet(batch,
-		makePrefix(codeEVMCadenceHeightByEVMHeight, evmEvents.Block().Height),
-		evmEvents.CadenceHeight(),
-	)
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving cadence height by evm height")
-	}
+		err = s.codec.MarshalAndSet(batch,
+			makePrefix(codeEVMCadenceHeightByEVMHeight, evmEvents.Block().Height),
+			evmEvents.CadenceHeight(),
+		)
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error saving cadence height by evm height")
+		}
 
-	err = s.SaveProgress(batch, evmEvents.Block().Height)
+		err = s.SaveProgress(batch, evmEvents.Block().Height)
 
-	if err != nil {
-		s.logger.Log().Err(err).Msg("error saving evm progress")
+		if err != nil {
+			s.logger.Log().Err(err).Msg("error saving evm progress")
+		}
+
 	}
 
 	return nil
