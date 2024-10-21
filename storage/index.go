@@ -33,7 +33,7 @@ type IndexStorage struct {
 }
 
 func NewIndexStorage(spork string, startHeight uint64, ledger *LedgerStorage) (*IndexStorage, error) {
-	indexDb := MustOpenPebbleDB(fmt.Sprintf("db/Index_%s", spork))
+	indexDb := MustOpenPebbleDB(fmt.Sprintf("db/%s/index", spork))
 
 	return &IndexStorage{
 		startHeight: startHeight,

@@ -35,7 +35,7 @@ type ProtocolStorage struct {
 }
 
 func NewProtocolStorage(spork string, startHeight uint64) (*ProtocolStorage, error) {
-	protocolDb := MustOpenPebbleDB(fmt.Sprintf("db/Protocol_%s", spork))
+	protocolDb := MustOpenPebbleDB(fmt.Sprintf("db/%s/protocol", spork))
 
 	return &ProtocolStorage{
 		startHeight: startHeight,

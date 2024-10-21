@@ -27,8 +27,8 @@ type LedgerStorage struct {
 }
 
 func NewLedgerStorage(spork string, startHeight uint64) (*LedgerStorage, error) {
-	checkpointDb := MustOpenPebbleDB(fmt.Sprintf("db/Checkpoint_%s", spork))
-	ledgerDb := MustOpenPebbleDB(fmt.Sprintf("db/Ledger_%s", spork))
+	checkpointDb := MustOpenPebbleDB(fmt.Sprintf("db/%s/checkpoint", spork))
+	ledgerDb := MustOpenPebbleDB(fmt.Sprintf("db/%s/ledger", spork))
 
 	return &LedgerStorage{
 		startHeight:  startHeight,

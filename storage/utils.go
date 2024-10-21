@@ -13,6 +13,8 @@ var (
 	codeBinary byte = 0xFF
 )
 
+// config is taken from https://github.com/onflow/flow-archive/blob/c75ac6cde86f2be2425e1058146c98eb7b01c872/service/storage2/config/config.go#L10
+
 var defaultPebbleOptions = &pebble.Options{
 	FormatMajorVersion: pebble.FormatNewest,
 
