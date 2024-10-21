@@ -217,7 +217,6 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 
 	current := startCadenceHeight
 	transactionIndex := 0
-	fmt.Println("start", startCadenceHeight, "end", endCadenceHeight)
 	for current <= endCadenceHeight {
 
 		cadenceBlockId, err := a.storage.GetBlockIdByHeight(current)
