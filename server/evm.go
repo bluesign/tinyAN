@@ -277,7 +277,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 					PrecompiledCalls: payload.PrecompiledCalls,
 					Checksum:         payload.StateUpdateChecksum,
 				})
-
+				current = current + 1
 			}
 		}
 
