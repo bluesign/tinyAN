@@ -700,6 +700,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		fvm.WithAuthorizationChecksEnabled(false),
 		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
 		fvm.WithEVMEnabled(true),
+		fvm.WithMemoryLimit(2*1024*1024*1024), //2GB
+		fvm.WithComputationLimit(10_000),      //100k
 		fvm.WithReusableCadenceRuntimePool(
 			reusableRuntime.NewReusableCadenceRuntimePool(
 				0,

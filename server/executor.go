@@ -59,10 +59,10 @@ func (e *ScriptExecutor) Setup(blocks FVMBlocks, store *storage.HeightBasedStora
 				},
 			),
 		),
-
 		fvm.WithBlocks(e.blocks),
 		fvm.WithChain(e.chainID.Chain()),
-		fvm.WithComputationLimit(100_000_000),
+		fvm.WithComputationLimit(100_000),           //100k
+		fvm.WithMemoryLimit(2 * 1024 * 1024 * 1024), //2GB
 		fvm.WithEVMEnabled(true),
 	}
 
