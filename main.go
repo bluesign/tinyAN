@@ -82,6 +82,8 @@ func StartExecute(cmd *cobra.Command, args []string) {
 	//bootstrap
 	store.Sync()
 
+	store.StorageForEVMHeight(714157).EVM().FixBroken()
+
 	access := server.NewAccessAdapter(zerolog.Logger{}, store)
 
 	//start grpc server

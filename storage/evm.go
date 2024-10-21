@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"github.com/cockroachdb/pebble"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/onflow/flow-evm-gateway/models"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/rs/zerolog"
@@ -83,6 +84,45 @@ func (s *EVMStorage) Close() {
 	if err != nil {
 		s.logger.Log().Err(err).Msg("error closing database")
 	}
+}
+
+func (s *EVMStorage) FixBroken() {
+
+	evmBlockHash := common.HexToHash("0x0")
+	batch := s.NewBatch()
+	//insert evm block
+	err := s.codec.MarshalAndSet(batch,
+		makePrefix(codeEVMBlockIDToCadenceHeight, evmBlockHash),
+		uint64(86718310),
+	)
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error saving evm block id to cadence height")
+	}
+
+	err = s.codec.MarshalAndSet(batch,
+		makePrefix(codeEVMBlockIDToEVMHeight, evmBlockHash),
+		uint64(714157),
+	)
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error saving evm block id to evm height")
+	}
+
+	err = s.codec.MarshalAndSet(batch,
+		makePrefix(codeEVMHeightByCadenceHeight, uint64(86718310)),
+		uint64(714157),
+	)
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error saving evm height by cadence height")
+	}
+
+	err = s.codec.MarshalAndSet(batch,
+		makePrefix(codeEVMCadenceHeightByEVMHeight, uint64(714157)),
+		uint64(86718310),
+	)
+	if err != nil {
+		s.logger.Log().Err(err).Msg("error saving cadence height by evm height")
+	}
+
 }
 
 func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
