@@ -159,7 +159,7 @@ func (d *DebugAPI) traceBlock(
 
 	transactions, err := d.api.blockTransactions(height)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("transactions not found", err)
 
 		return nil, err
 	}
