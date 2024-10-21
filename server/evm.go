@@ -221,6 +221,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 	}
 
 	current := startCadenceHeight
+	transactionIndex := 0
 	for current <= endCadenceHeight {
 		cadenceEvents := a.storage.StorageForHeight(cadenceHeight).Protocol().EventsByName(cadenceBlockId, "A.e467b9dd11fa00df.EVM.TransactionExecuted")
 
@@ -247,11 +248,12 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 					fmt.Println(err)
 					return nil, errors.New("failed to decode event")
 				}
-				tx, receipt, payload, err := storage.DecodeTransactionEvent(i, event)
+				tx, receipt, payload, err := storage.DecodeTransactionEvent(transactionIndex, event)
 				if err != nil {
 					fmt.Println(err)
 					return nil, err
 				}
+				transactionIndex = transactionIndex + 1
 
 				cumulativeGasUsed += receipt.GasUsed
 				receipt.CumulativeGasUsed = cumulativeGasUsed
