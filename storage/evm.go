@@ -145,6 +145,9 @@ func (s *EVMStorage) SaveBlock(evmEvents *models.CadenceEvents) error {
 			s.logger.Log().Err(err).Msg("error saving evm progress")
 		}
 
+	} else {
+		fmt.Println("empty block")
+		s.logger.Log().Msgf("empty block at height: %d", evmEvents.CadenceHeight())
 	}
 
 	return nil
