@@ -281,6 +281,7 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 		cadenceBlockId, err := a.storage.GetBlockIdByHeight(current)
 		if err != nil {
 			fmt.Println(current)
+			fmt.Println(startCadenceHeight)
 			fmt.Println("f4")
 			return nil, err
 		}
@@ -549,7 +550,11 @@ func (a *APINamespace) blockProposalFromCadenceHeight(cadenceHeight uint64) (*ev
 
 func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64) (*evmTypes.Block, error) {
 	base, _ := flow.StringToAddress("d421a63faae318f9")
+
 	store := a.storage.StorageForHeight(cadenceHeight)
+	if store.StartHeight() == cadenceHeight {
+		cadenceHeight = cadenceHeight + 1
+	}
 	snap := store.Ledger().StorageSnapshot(cadenceHeight)
 
 	data, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
