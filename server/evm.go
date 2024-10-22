@@ -277,6 +277,11 @@ func (a *APINamespace) blockTransactions(blockHeight uint64) ([]TransactionWithR
 	current := startCadenceHeight
 	transactionIndex := 0
 	for current <= endCadenceHeight {
+		spork := a.storage.StorageForHeight(current)
+		if spork.StartHeight() == current {
+			current = current + 1
+			continue
+		}
 
 		cadenceBlockId, err := a.storage.GetBlockIdByHeight(current)
 		if err != nil {
@@ -552,9 +557,7 @@ func (a *APINamespace) blockFromBlockStorageByCadenceHeight(cadenceHeight uint64
 	base, _ := flow.StringToAddress("d421a63faae318f9")
 
 	store := a.storage.StorageForHeight(cadenceHeight)
-	if store.StartHeight() == cadenceHeight {
-		cadenceHeight = cadenceHeight + 1
-	}
+
 	snap := store.Ledger().StorageSnapshot(cadenceHeight)
 
 	data, err := snap.Get(flow.NewRegisterID(base, BlockStoreLatestBlockKey))
