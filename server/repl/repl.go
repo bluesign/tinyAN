@@ -120,6 +120,8 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 	if err != nil {
 		panic(err)
 	}
+	fvmContext.TxId = flowgo.ZeroID
+	fvmContext.TxBody = flowgo.NewTransactionBody()
 
 	env := environment.NewTransactionEnvironment(
 		tracing.NewMockTracerSpan(),
