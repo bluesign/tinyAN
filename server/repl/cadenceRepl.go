@@ -338,11 +338,9 @@ func (r *REPL) Accept(code []byte, eval bool) (inputIsComplete bool, err error) 
 
 			var expressionType sema.Type
 			expressionStatement, isExpression := statement.(*ast.ExpressionStatement)
-			fmt.Println(isExpression)
 			if isExpression {
 
 				expressionType = r.checker.VisitExpression(expressionStatement.Expression, expressionStatement, nil)
-				fmt.Println(expressionType)
 				if !eval && expressionType != sema.InvalidType {
 					r.onExpressionType(expressionType)
 				}

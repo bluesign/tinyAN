@@ -164,7 +164,7 @@ func (consoleREPL *ConsoleREPL) onError(err error, location common.Location, cod
 }
 
 func (consoleREPL *ConsoleREPL) onResult(value interpreter.Value) {
-	fmt.Println(colorizeValue(value))
+	consoleREPL.out.WriteString(colorizeValue(value) + "\n")
 }
 
 func (consoleREPL *ConsoleREPL) handleCommand(command string) {
