@@ -30,6 +30,7 @@ type APIServer struct {
 }
 
 func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chain, storage *storage.HeightBasedStorage) *APIServer {
+
 	ssh.Handle(func(s ssh.Session) {
 		replx, err := repl.NewConsoleREPL(storage, s)
 		fmt.Println("repl", replx)
@@ -39,7 +40,7 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 		}
 		replx.Run()
 	})
-
+	go ssh.ListenAndServe(":2222", nil)
 	var restCollector module.RestMetrics = metrics.NewNoopCollector()
 	builder := routes.NewRouterBuilder(logger, restCollector).AddRestRoutes(adapter, chain)
 	router := builder.Build()
