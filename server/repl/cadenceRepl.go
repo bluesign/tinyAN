@@ -21,7 +21,6 @@ package repl
 import (
 	"bytes"
 	"fmt"
-	"github.com/onflow/atree"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
@@ -63,7 +62,6 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	}
 
 	storage := runtime.NewStorage(runtimeInterface, runtimeInterface)
-	storage.Retrieve(atree.SlabID{})
 	environment := runtime.NewScriptInterpreterEnvironment(config)
 	environment.Configure(
 		runtimeInterface,
@@ -117,7 +115,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 	fmt.Println("executing empty code")
 	//execute empty code
-	go environment.Interpret(common.ScriptLocation{}, program, Interpret)
+	go environment.Interpret(checker.Location, program, Interpret)
 	fmt.Println("executed empty code")
 
 	for {
