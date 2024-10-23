@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"fmt"
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/gliderlabs/ssh"
 	"io"
@@ -58,6 +59,8 @@ func sizeWatcher(p *PosixParser) {
 		return
 	}
 
+	fmt.Println("pty", pty)
+
 	p.w = 80 //pty.Window.Width
 	p.h = 40 //pty.Window.Height
 
@@ -81,6 +84,8 @@ func NewStandardInputParser(session ssh.Session) *PosixParser {
 	p := &PosixParser{
 		session: session,
 		reader:  session,
+		w:       80,
+		h:       40,
 	}
 	go sizeWatcher(p)
 	return p
