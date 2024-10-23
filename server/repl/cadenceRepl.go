@@ -130,7 +130,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 				checker.Location,
 				debuggerInterpreter.SharedState,
 			)
-
+			inter.SharedState.Config.Storage = storage
 			return &REPL{
 				inter:        inter,
 				environment:  environment,
