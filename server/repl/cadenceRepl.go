@@ -21,6 +21,7 @@ package repl
 import (
 	"bytes"
 	"fmt"
+	"github.com/onflow/atree"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
@@ -62,7 +63,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	}
 
 	storage := runtime.NewStorage(runtimeInterface, runtimeInterface)
-
+	storage.Retrieve(atree.SlabID{})
 	environment := runtime.NewScriptInterpreterEnvironment(config)
 	environment.Configure(
 		runtimeInterface,
@@ -75,7 +76,6 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	rv = rv.Elem()                       // deref *rpc.Client
 	rv = rv.FieldByName("CheckerConfig") // get "codec" field from rpc.Client
 	checkerConfig := rv.Interface().(*sema.Config)
-
 	checkerConfig.AccessCheckMode = sema.AccessCheckModeNotSpecifiedUnrestricted
 
 	checker, err := sema.NewChecker(
@@ -127,14 +127,14 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 			fmt.Println("got interpreter")
 
-			/*inter, _ := interpreter.NewInterpreterWithSharedState(
+			inter, _ := interpreter.NewInterpreterWithSharedState(
 				interpreter.ProgramFromChecker(checker),
 				checker.Location,
 				debuggerInterpreter.SharedState,
-			)*/
+			)
 
 			return &REPL{
-				inter:        debuggerInterpreter,
+				inter:        inter,
 				environment:  environment,
 				debugger:     debugger,
 				checker:      checker,
