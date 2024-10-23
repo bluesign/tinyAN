@@ -55,7 +55,7 @@ func sizeWatcher(p *PosixParser) {
 	if !ok {
 		log.Println("Failed to get pty")
 		p.w = 80
-		p.h = 20
+		p.h = 40
 		return
 	}
 
@@ -67,7 +67,7 @@ func sizeWatcher(p *PosixParser) {
 	for {
 		select {
 		case <-changes:
-			fmt.Println("changes", pty)
+			fmt.Println("changes", pty.Window.Width, pty.Window.Height)
 			p.w = pty.Window.Width
 			p.h = pty.Window.Height
 
