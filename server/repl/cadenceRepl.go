@@ -127,14 +127,14 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 			fmt.Println("got interpreter")
 
-			inter, _ := interpreter.NewInterpreterWithSharedState(
+			/*inter, _ := interpreter.NewInterpreterWithSharedState(
 				interpreter.ProgramFromChecker(checker),
 				checker.Location,
 				debuggerInterpreter.SharedState,
-			)
+			)*/
 
 			return &REPL{
-				inter:        inter,
+				inter:        debuggerInterpreter,
 				environment:  environment,
 				debugger:     debugger,
 				checker:      checker,
