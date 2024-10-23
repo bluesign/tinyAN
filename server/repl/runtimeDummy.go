@@ -161,6 +161,7 @@ func (d *runtimeWrapper) GetAccountAvailableBalance(address common.Address) (val
 }
 
 func (d *runtimeWrapper) GetStorageUsed(address runtime.Address) (value uint64, err error) {
+	fmt.Println("GetStorageUsed", address)
 	return d.baseRuntime.GetStorageUsed(address)
 }
 
