@@ -67,6 +67,7 @@ func sizeWatcher(p *PosixParser) {
 	for {
 		select {
 		case <-changes:
+			fmt.Println("changes", pty)
 			p.w = pty.Window.Width
 			p.h = pty.Window.Height
 
