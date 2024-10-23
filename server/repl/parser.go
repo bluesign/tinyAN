@@ -45,8 +45,8 @@ func (t *PosixParser) GetWinSize() *prompt.WinSize {
 	pty, _, _ := t.session.Pty()
 
 	return &prompt.WinSize{
-		Row: uint16(pty.Window.Width),
-		Col: uint16(pty.Window.Height),
+		Row: uint16(pty.Window.Height),
+		Col: uint16(pty.Window.Width),
 	}
 }
 
