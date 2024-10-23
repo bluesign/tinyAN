@@ -32,6 +32,7 @@ import (
 	"github.com/onflow/cadence/sema"
 	"reflect"
 	goRuntime "runtime"
+	"sort"
 )
 
 type REPL struct {
@@ -374,38 +375,38 @@ type REPLSuggestion struct {
 }
 
 func (r *REPL) Suggestions() (result []REPLSuggestion) {
-	//names := map[string]string{}
-	/*
-		r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
-			if names[name] != "" {
-				return
-			}
-			names[name] = variable.Type.String()
-		})
+	names := map[string]string{}
 
-		_ = r.checker.Config.BaseValueActivationHandler(nil).ForEach(func(name string, variable *sema.Variable) error {
-			if names[name] == "" {
-				names[name] = variable.Type.String()
-			}
-			return nil
-		})
-
-		// Iterating over the dictionary of names is safe,
-		// as the suggested entries are sorted afterwards
-
-		for name, description := range names { //nolint:maprange
-			result = append(result, REPLSuggestion{
-				Name:        name,
-				Description: description,
-			})
+	r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
+		if names[name] != "" {
+			return
 		}
+		names[name] = variable.Type.String()
+	})
 
-		sort.Slice(result, func(i, j int) bool {
-			a := result[i]
-			b := result[j]
-			return a.Name < b.Name
+	_ = r.checker.Config.BaseValueActivationHandler(nil).ForEach(func(name string, variable *sema.Variable) error {
+		if names[name] == "" {
+			names[name] = variable.Type.String()
+		}
+		return nil
+	})
+
+	// Iterating over the dictionary of names is safe,
+	// as the suggested entries are sorted afterwards
+
+	for name, description := range names { //nolint:maprange
+		result = append(result, REPLSuggestion{
+			Name:        name,
+			Description: description,
 		})
-	*/
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		a := result[i]
+		b := result[j]
+		return a.Name < b.Name
+	})
+
 	return
 }
 
