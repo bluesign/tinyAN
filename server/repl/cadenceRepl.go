@@ -50,7 +50,7 @@ func Interpret(inter *interpreter.Interpreter) (interpreter.Value, error) {
 	return inter.Invoke("main")
 }
 
-func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
+func NewREPL(runtimeInterface runtime.Interface, inter *interpreter.Interpreter) (*REPL, error) {
 
 	// Prepare checkers
 	codesAndPrograms := runtime.NewCodesAndPrograms()
@@ -75,6 +75,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	rv = rv.Elem()                       // deref *rpc.Client
 	rv = rv.FieldByName("CheckerConfig") // get "codec" field from rpc.Client
 	checkerConfig := rv.Interface().(*sema.Config)
+
 	checkerConfig.AccessCheckMode = sema.AccessCheckModeNotSpecifiedUnrestricted
 
 	checker, err := sema.NewChecker(
@@ -88,7 +89,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 		fmt.Println(err)
 		return nil, err
 	}
-	afterCh := make(chan struct{})
+	/*afterCh := make(chan struct{})
 
 	var debuggerInterpreter *interpreter.Interpreter
 	go func() {
@@ -100,9 +101,9 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 		afterCh <- struct{}{}
 		fmt.Println("interpreter ready")
-	}()
+	}()*/
 
-	program, err := environment.ParseAndCheckProgram(
+	/*program, err := environment.ParseAndCheckProgram(
 		[]byte(`access(all) fun main() {var x=1;var y=2;}`),
 		common.ScriptLocation{},
 		false,
@@ -111,36 +112,46 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
-	}
+	}*/
 
 	fmt.Println("executing empty code")
 	//execute empty code
-	go environment.Interpret(common.ScriptLocation{}, program, Interpret)
+	//go environment.Interpret(common.ScriptLocation{}, program, Interpret)
 	fmt.Println("executed empty code")
 
-	for {
-		select {
+	return &REPL{
+		inter:        inter,
+		environment:  environment,
+		debugger:     debugger,
+		checker:      checker,
+		codes:        map[runtime.Location][]byte{},
+		parserConfig: parser.Config{},
+	}, nil
 
-		case <-afterCh:
+	/*
+		for {
+			select {
 
-			fmt.Println("got interpreter")
+			case <-afterCh:
 
-			inter, _ := interpreter.NewInterpreterWithSharedState(
-				interpreter.ProgramFromChecker(checker),
-				checker.Location,
-				debuggerInterpreter.SharedState,
-			)
+				fmt.Println("got interpreter")
 
-			return &REPL{
-				inter:        inter,
-				environment:  environment,
-				debugger:     debugger,
-				checker:      checker,
-				codes:        map[runtime.Location][]byte{},
-				parserConfig: parser.Config{},
-			}, nil
-		}
-	}
+				inter, _ := interpreter.NewInterpreterWithSharedState(
+					interpreter.ProgramFromChecker(checker),
+					checker.Location,
+					debuggerInterpreter.SharedState,
+				)
+
+				return &REPL{
+					inter:        inter,
+					environment:  environment,
+					debugger:     debugger,
+					checker:      checker,
+					codes:        map[runtime.Location][]byte{},
+					parserConfig: parser.Config{},
+				}, nil
+			}
+		}*/
 
 }
 

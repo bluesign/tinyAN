@@ -132,10 +132,15 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 	cadenceRuntime := env.BorrowCadenceRuntime()
 	cadenceRuntime.SetFvmEnvironment(env)
 
+	_, inter, err := cadenceRuntime.Storage(runtime.Context{
+		Interface:   env,
+		Environment: cadenceRuntime.TxRuntimeEnv,
+	})
+
 	cadenceRepl, err := NewREPL(&runtimeWrapper{
 		baseRuntime: env,
 		REPL:        consoleREPL.repl,
-	})
+	}, inter)
 
 	if err != nil {
 		fmt.Println(err)
