@@ -103,7 +103,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	}()
 
 	program, err := environment.ParseAndCheckProgram(
-		[]byte(`access(all) fun main() {var x=1;getAccount(0x7e60df042a9c0868).balance;}`),
+		[]byte(`access(all) fun main() {getAccount(0x7e60df042a9c0868).balance;}`),
 		common.ScriptLocation{},
 		false,
 	)
