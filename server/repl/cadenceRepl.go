@@ -21,7 +21,6 @@ package repl
 import (
 	"bytes"
 	"fmt"
-	"github.com/onflow/atree"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
@@ -79,7 +78,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 	checker, err := sema.NewChecker(
 		nil,
-		common.REPLLocation{},
+		common.ScriptLocation{},
 		nil,
 		checkerConfig,
 	)
@@ -132,7 +131,6 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 				debuggerInterpreter.SharedState,
 			)
 			inter.SharedState.Config.Storage = storage
-			inter.Storage().Retrieve(atree.SlabID{})
 			return &REPL{
 				inter:        inter,
 				environment:  environment,
