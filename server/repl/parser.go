@@ -42,10 +42,11 @@ func (t *PosixParser) Read() ([]byte, error) {
 
 // GetWinSize returns WinSize object to represent width and height of terminal.
 func (t *PosixParser) GetWinSize() *prompt.WinSize {
-	t.session.Pty()
+	pty, _, _ := t.session.Pty()
+
 	return &prompt.WinSize{
-		Row: uint16(t.w),
-		Col: uint16(t.h),
+		Row: uint16(pty.Window.Width),
+		Col: uint16(pty.Window.Height),
 	}
 }
 
