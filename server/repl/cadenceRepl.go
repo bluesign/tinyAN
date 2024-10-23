@@ -50,7 +50,7 @@ func Interpret(inter *interpreter.Interpreter) (interpreter.Value, error) {
 	return inter.Invoke("main")
 }
 
-func NewREPL(runtimeInterface runtime.Interface, interx *interpreter.Interpreter) (*REPL, error) {
+func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 	// Prepare checkers
 	codesAndPrograms := runtime.NewCodesAndPrograms()
