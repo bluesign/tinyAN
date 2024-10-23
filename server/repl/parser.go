@@ -58,8 +58,8 @@ func sizeWatcher(p *PosixParser) {
 		return
 	}
 
-	p.w = pty.Window.Width
-	p.h = pty.Window.Height
+	p.w = 80 //pty.Window.Width
+	p.h = 40 //pty.Window.Height
 
 	for {
 		select {
