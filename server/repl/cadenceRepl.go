@@ -119,8 +119,14 @@ func NewREPL(runtimeInterface runtime.Interface, inter *interpreter.Interpreter)
 	//go environment.Interpret(common.ScriptLocation{}, program, Interpret)
 	fmt.Println("executed empty code")
 
+	newInter, _ := interpreter.NewInterpreterWithSharedState(
+		interpreter.ProgramFromChecker(checker),
+		checker.Location,
+		inter.SharedState,
+	)
+
 	return &REPL{
-		inter:        inter,
+		inter:        newInter,
 		environment:  environment,
 		debugger:     debugger,
 		checker:      checker,
