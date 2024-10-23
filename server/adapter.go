@@ -2,21 +2,16 @@ package server
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"github.com/bluesign/tinyAN/indexer"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
+	"github.com/onflow/cadence/interpreter"
 	"github.com/onflow/cadence/runtime"
-	"github.com/onflow/cadence/runtime/ast"
-	"github.com/onflow/cadence/runtime/interpreter"
-	"github.com/onflow/cadence/runtime/sema"
 	"github.com/onflow/flow-go/access"
-	"github.com/onflow/flow-go/consensus/hotstuff/model"
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
 	"github.com/onflow/flow-go/fvm"
-	"github.com/onflow/flow-go/fvm/environment"
 	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
 	fvmStorage "github.com/onflow/flow-go/fvm/storage"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
@@ -26,7 +21,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strings"
-	"sync"
 )
 
 type TemporaryTransactionResult struct {
@@ -34,41 +28,6 @@ type TemporaryTransactionResult struct {
 	Output      fvm.ProcedureOutput
 	BlockHeight uint64
 	BlockID     flowgo.Identifier
-}
-
-type EntropyProviderPerBlockProvider struct {
-	// AtBlockID returns an entropy provider at the given block ID.
-	store *storage.HeightBasedStorage
-}
-
-type EntropyProvider struct {
-	seed  []byte
-	error error
-}
-
-func (e EntropyProvider) RandomSource() ([]byte, error) {
-	return e.seed, e.error
-}
-
-func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) environment.EntropyProvider {
-	block, err := e.store.GetBlockById(blockID)
-	if err != nil {
-		fmt.Println("error getting entropy seed")
-		return nil
-	}
-	next, err := e.store.GetBlockByHeight(block.Height + 1)
-	if err != nil {
-		fmt.Println("error getting entropy seed")
-		return nil
-	}
-	packer := model.SigDataPacker{}
-	sigData, err := packer.Decode(next.ParentVoterSigData)
-	if err != nil {
-		fmt.Println("error getting entropy seed")
-		return nil
-	}
-	fmt.Println("beacon:", hex.EncodeToString(sigData.ReconstructedRandomBeaconSig))
-	return EntropyProvider{seed: sigData.ReconstructedRandomBeaconSig, error: err}
 }
 
 var _ access.API = &AccessAdapter{}
@@ -688,8 +647,8 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	proc := fvm.Transaction(tx, 0)
 	debugger := interpreter.NewDebugger()
 
-	var entropyProvider = &EntropyProviderPerBlockProvider{
-		store: a.store,
+	var entropyProvider = &storage.EntropyProviderPerBlockProvider{
+		Store: a.store,
 	}
 
 	fvmContext := fvm.NewContext(
@@ -721,107 +680,94 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	}
 
 	executor := proc.NewExecutor(fvmContext, txnState)
+	err = fvm.Run(executor)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	/*
+		var wg sync.WaitGroup
+		wg.Add(1)
 
-	afterCh := make(chan struct{})
-	go func() {
-		defer wg.Done()
-		fmt.Println("before run")
-		err = fvm.Run(executor)
-		fmt.Println("after run")
-		afterCh <- struct{}{}
-	}()
+		afterCh := make(chan struct{})
+		go func() {
+			defer wg.Done()
+			fmt.Println("before run")
+			err = fvm.Run(executor)
+			fmt.Println("after run")
+			afterCh <- struct{}{}
+		}()
 
-	cadenceTrace := strings.Builder{}
-	func() {
+		cadenceTrace := strings.Builder{}
+		func() {
 
-		stop := debugger.Pause()
-		depth := debugger.CurrentActivation(stop.Interpreter).Depth
-		//fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
-		lastLocation := ""
+			stop := debugger.Pause()
+			depth := debugger.CurrentActivation(stop.Interpreter).Depth
+			//fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
+			lastLocation := ""
 
-		stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
-			invoked, ok := function.(*ast.InvocationExpression)
+			stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
+				invoked, ok := function.(*ast.InvocationExpression)
 
-			if ok {
-				depth = len(inter.CallStack())
+				if ok {
+					depth = len(inter.CallStack())
 
-				args := make([]string, len(invocation.Arguments))
-				for i, arg := range invocation.Arguments {
-					args[i] = arg.String()
-				}
-				types := make([]string, 0)
-				f := func(key *sema.TypeParameter, value sema.Type) {
-					types = append(types, value.QualifiedString())
-				}
-
-				invocation.TypeParameterTypes.Foreach(f)
-				locationPrefix := ""
-				if lastLocation != inter.Location.String() {
-					//fmt.Println("not same", lastLocation, inter.Location.String())
-					lastLocation = inter.Location.String()
-					if strings.Contains(inter.Location.String(), "+") {
-						locationPrefix = fmt.Sprintf("%s+%s.", strings.Repeat("  ", depth), inter.Location.String())
+					args := make([]string, len(invocation.Arguments))
+					for i, arg := range invocation.Arguments {
+						args[i] = arg.String()
+					}
+					types := make([]string, 0)
+					f := func(key *sema.TypeParameter, value sema.Type) {
+						types = append(types, value.QualifiedString())
 					}
 
-				}
+					invocation.TypeParameterTypes.Foreach(f)
+					locationPrefix := ""
+					if lastLocation != inter.Location.String() {
+						//fmt.Println("not same", lastLocation, inter.Location.String())
+						lastLocation = inter.Location.String()
+						if strings.Contains(inter.Location.String(), "+") {
+							locationPrefix = fmt.Sprintf("%s+%s.", strings.Repeat("  ", depth), inter.Location.String())
+						}
 
-				if lastLocation == "f233dcee88fe0abe.FungibleToken" {
+					}
+
+					if lastLocation == "f233dcee88fe0abe.FungibleToken" {
+						return
+					}
+
+					cadenceTrace.WriteString(fmt.Sprintf("%s%s%s%s(%s)\n",
+						locationPrefix,
+						strings.Repeat("  ", depth),
+						invoked.InvokedExpression,
+						func() string {
+							if len(types) == 0 {
+								return ""
+							}
+							return fmt.Sprintf("<%s>", strings.Join(types, ", "))
+						}(),
+						strings.Join(args, ", "),
+					))
+				}
+			}
+			stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(inter *interpreter.Interpreter, result interpreter.Value) {
+				if (lastLocation == "f233dcee88fe0abe.FungibleToken") && !strings.HasPrefix(result.String(), "A.") {
 					return
 				}
-
-				cadenceTrace.WriteString(fmt.Sprintf("%s%s%s%s(%s)\n",
-					locationPrefix,
-					strings.Repeat("  ", depth),
-					invoked.InvokedExpression,
-					func() string {
-						if len(types) == 0 {
-							return ""
-						}
-						return fmt.Sprintf("<%s>", strings.Join(types, ", "))
-					}(),
-					strings.Join(args, ", "),
-				))
+				depth = len(inter.CallStack())
+				padding := strings.Repeat("  ", depth)
+				cadenceTrace.WriteString(fmt.Sprintf("%s- %s\n", padding, result.String()))
 			}
-		}
-		stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(inter *interpreter.Interpreter, result interpreter.Value) {
-			if (lastLocation == "f233dcee88fe0abe.FungibleToken") && !strings.HasPrefix(result.String(), "A.") {
-				return
-			}
-			depth = len(inter.CallStack())
-			padding := strings.Repeat("  ", depth)
-			cadenceTrace.WriteString(fmt.Sprintf("%s- %s\n", padding, result.String()))
-		}
 
-		debugger.Continue()
-		for {
-			select {
-			/*case d := <-debugger.Stops():
-			depth = debugger.CurrentActivation(d.Interpreter).Depth
-			fmt.Println(depth, d.Statement.ElementType().String(), d.Statement)
-			switch v := d.Statement.(type) {
-			case *ast.ExpressionStatement:
-				exp := v.Expression.(ast.Expression)
-				fmt.Println("expression", exp)
-				switch inner := exp.(type) {
-				case *ast.InvocationExpression:
-					fmt.Println("invocation", inner.InvokedExpression, inner.TypeArguments, inner.Arguments)
+			debugger.Continue()
+			for {
+				select {
 
+				case <-afterCh:
+					return
 				}
-
 			}
-			debugger.RequestPause()
-			debugger.Continue()*/
-			case <-afterCh:
-				return
-			}
-		}
-	}()
+		}()
 
-	wg.Wait()
-
+		wg.Wait()
+	*/
 	if err != nil {
 		return err
 	}
@@ -847,7 +793,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 
 	tx.Script = []byte(fmt.Sprintf("%s\n\nLogs\n\n%s", string(tx.Script), logs))
 	tx.Script = []byte(fmt.Sprintf("%s\n\nComputation Details\n\n%v", string(tx.Script), output.ComputationIntensities))
-	tx.Script = []byte(fmt.Sprintf("%s\n\nCadence Trace\n\n%v", string(tx.Script), cadenceTrace.String()))
+	//tx.Script = []byte(fmt.Sprintf("%s\n\nCadence Trace\n\n%v", string(tx.Script), cadenceTrace.String()))
 
 	stateChanges := ""
 	for _, v := range blockResources {

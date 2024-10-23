@@ -80,8 +80,8 @@ func (e *ScriptExecutor) Setup(blocks FVMBlocks, store *storage.HeightBasedStora
 		vm,
 		vmCtx,
 		derivedChainData,
-		&EntropyProviderPerBlockProvider{
-			store: store,
+		&storage.EntropyProviderPerBlockProvider{
+			Store: store,
 		},
 	)
 

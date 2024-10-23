@@ -1,6 +1,9 @@
 package server
 
 import (
+	"github.com/bluesign/tinyAN/server/repl"
+	ssh "github.com/gliderlabs/ssh"
+
 	"encoding/json"
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
@@ -14,6 +17,7 @@ import (
 	"github.com/onflow/go-ethereum/rpc"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
+	"log"
 	"net"
 	"net/http"
 )
@@ -26,6 +30,16 @@ type APIServer struct {
 }
 
 func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chain, storage *storage.HeightBasedStorage) *APIServer {
+	ssh.Handle(func(s ssh.Session) {
+		replx, err := repl.NewConsoleREPL(storage, s)
+		fmt.Println("repl", replx)
+		if err != nil {
+			log.Println("error creating new console repl", err)
+			return
+		}
+		replx.Run()
+	})
+
 	var restCollector module.RestMetrics = metrics.NewNoopCollector()
 	builder := routes.NewRouterBuilder(logger, restCollector).AddRestRoutes(adapter, chain)
 	router := builder.Build()
