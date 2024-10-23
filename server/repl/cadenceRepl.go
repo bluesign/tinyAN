@@ -97,7 +97,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 		fmt.Println("debugger stopped")
 
 		debuggerInterpreter = stop.Interpreter
-
+		debugger.Continue()
 		afterCh <- struct{}{}
 		fmt.Println("interpreter ready")
 	}()
