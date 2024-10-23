@@ -74,7 +74,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	rv = rv.Elem()                       // deref *rpc.Client
 	rv = rv.FieldByName("CheckerConfig") // get "codec" field from rpc.Client
 	checkerConfig := rv.Interface().(*sema.Config)
-	checkerConfig.AccessCheckMode = sema.AccessCheckModeNotSpecifiedUnrestricted
+	checkerConfig.AccessCheckMode = sema.AccessCheckModeNone
 
 	checker, err := sema.NewChecker(
 		nil,
