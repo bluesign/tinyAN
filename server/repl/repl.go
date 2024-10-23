@@ -130,7 +130,15 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 		txnState)
 
 	addr, err := flowgo.StringToAddress("7e60df042a9c0868")
-	env.GetStorageUsed(common.MustBytesToAddress(addr.Bytes()))
+	if err != nil {
+		fmt.Println(err)
+	}
+	used, err := env.GetStorageUsed(common.MustBytesToAddress(addr.Bytes()))
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("used", used)
+
 	cadenceRepl, err := NewREPL(&runtimeWrapper{
 		baseRuntime: env,
 		REPL:        consoleREPL.repl,
