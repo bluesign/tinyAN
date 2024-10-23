@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/onflow/atree"
 	"github.com/onflow/cadence"
@@ -59,6 +60,7 @@ func (d *runtimeWrapper) GetInterpreterSharedState() *interpreter.SharedState {
 }
 
 func (d *runtimeWrapper) GetValue(owner, key []byte) (value []byte, err error) {
+	fmt.Println("GetValue", hex.EncodeToString(owner), hex.EncodeToString(key))
 	return d.baseRuntime.GetValue(owner, key)
 }
 
@@ -67,6 +69,7 @@ func (d *runtimeWrapper) SetValue(owner, key, value []byte) (err error) {
 }
 
 func (d *runtimeWrapper) ValueExists(owner, key []byte) (exists bool, err error) {
+	fmt.Println("ValueExists", hex.EncodeToString(owner), hex.EncodeToString(key))
 	return d.baseRuntime.ValueExists(owner, key)
 }
 

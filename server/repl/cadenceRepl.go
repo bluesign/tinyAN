@@ -89,6 +89,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 		return nil, err
 	}
 	afterCh := make(chan struct{})
+
 	var debuggerInterpreter *interpreter.Interpreter
 	go func() {
 		fmt.Println("waiting debugger")

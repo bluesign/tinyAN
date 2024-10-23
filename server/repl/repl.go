@@ -121,12 +121,16 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 		panic(err)
 	}
 	fvmContext.TxId = flowgo.ZeroID
+	fvmContext.TxIndex = 0
 	fvmContext.TxBody = flowgo.NewTransactionBody()
 
 	env := environment.NewTransactionEnvironment(
 		tracing.NewMockTracerSpan(),
 		fvmContext.EnvironmentParams,
 		txnState)
+
+	cadenceRuntime := env.BorrowCadenceRuntime()
+	cadenceRuntime.SetFvmEnvironment(env)
 
 	cadenceRepl, err := NewREPL(&runtimeWrapper{
 		baseRuntime: env,
