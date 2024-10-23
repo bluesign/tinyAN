@@ -52,10 +52,12 @@ func (d *runtimeWrapper) GetOrLoadProgram(location runtime.Location, load func()
 }
 
 func (d *runtimeWrapper) SetInterpreterSharedState(state *interpreter.SharedState) {
+	fmt.Println("SetInterpreterSharedState")
 	d.baseRuntime.SetInterpreterSharedState(state)
 }
 
 func (d *runtimeWrapper) GetInterpreterSharedState() *interpreter.SharedState {
+	fmt.Println("GetInterpreterSharedState")
 	return d.baseRuntime.GetInterpreterSharedState()
 }
 
