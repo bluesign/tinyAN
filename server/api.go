@@ -40,7 +40,16 @@ func NewAPIServer(logger zerolog.Logger, adapter *AccessAdapter, chain flow.Chai
 		}
 		replx.Run()
 	})
-	go ssh.ListenAndServe(":2222", nil)
+	go ssh.ListenAndServe(":2222", nil, ssh.HostKeyPEM([]byte(`-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
+1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQQpaN+53nWrV+TCvhjzWkWeDB+jBvaQ
+Jan75fr4/I4lTvQFUuYG+PV8VK8EIPb6b26Y3OTSec+JZqdvtsbO6u4oAAAAwDY58kU2Of
+JFAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBClo37nedatX5MK+
+GPNaRZ4MH6MG9pAlqfvl+vj8jiVO9AVS5gb49XxUrwQg9vpvbpjc5NJ5z4lmp2+2xs7q7i
+gAAAAhAOD/iTyljm3f6YoULZ/ITrC7Jc/mjS1X0lp8oh1MDE6oAAAAI2JsdWVzaWduQERl
+bml6cy1NYWNCb29rLVByby0yLmxvY2FsAQIDBA==
+-----END OPENSSH PRIVATE KEY-----`)))
+
 	var restCollector module.RestMetrics = metrics.NewNoopCollector()
 	builder := routes.NewRouterBuilder(logger, restCollector).AddRestRoutes(adapter, chain)
 	router := builder.Build()
