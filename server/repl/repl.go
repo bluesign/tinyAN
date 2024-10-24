@@ -217,7 +217,7 @@ func (consoleREPL *ConsoleREPL) showType(expression string) {
 
 	oldOnExpressionType := repl.OnExpressionType
 	repl.OnExpressionType = func(ty sema.Type) {
-		fmt.Fprintf(consoleREPL.out, colorizeResult(string(ty.ID())))
+		fmt.Fprintf(consoleREPL.out, colorizeResult(string(ty.ID()))+"\n")
 	}
 	defer func() {
 		repl.OnExpressionType = oldOnExpressionType
