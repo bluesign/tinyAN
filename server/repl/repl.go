@@ -288,7 +288,7 @@ func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 		}
 	}
 
-	words := strings.Split(wordBeforeCursor, ".")
+	//words := strings.Split(wordBeforeCursor, ".")
 
 	return prompt.FilterHasPrefix(suggests, wordBeforeCursor, false)
 }
