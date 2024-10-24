@@ -380,7 +380,8 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 
 	if strings.Contains(word, ".") {
 		words := strings.Split(word, ".")
-		word = words[len(words)-1]
+
+		word = words[len(words)-2]
 		fmt.Println("wordTrimmed", word)
 
 		variable, ok := r.checker.Elaboration.GetGlobalValue(word)
