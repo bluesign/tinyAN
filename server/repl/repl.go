@@ -25,6 +25,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/gliderlabs/ssh"
 	"github.com/onflow/cadence"
+	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
 	jsoncdc "github.com/onflow/cadence/encoding/json"
 	"github.com/onflow/cadence/interpreter"
@@ -52,6 +53,7 @@ type ConsoleREPL struct {
 	historyWriter      *csv.Writer
 	session            ssh.Session
 	out                *stringWriter
+	lastPosition       ast.Position
 }
 type stringWriter struct {
 	w io.Writer
@@ -278,7 +280,7 @@ func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 		}
 
 	} else {
-		for _, suggestion := range consoleREPL.repl.Suggestions() {
+		for _, suggestion := range consoleREPL.repl.Suggestions(wordBeforeCursor) {
 			suggests = append(suggests, prompt.Suggest{
 				Text:        suggestion.Name,
 				Description: suggestion.Description,

@@ -33,6 +33,7 @@ import (
 	"reflect"
 	goRuntime "runtime"
 	"sort"
+	"strings"
 )
 
 type REPL struct {
@@ -374,7 +375,7 @@ type REPLSuggestion struct {
 	Name, Description string
 }
 
-func (r *REPL) Suggestions() (result []REPLSuggestion) {
+func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 	names := map[string]string{}
 
 	r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
@@ -390,6 +391,16 @@ func (r *REPL) Suggestions() (result []REPLSuggestion) {
 		}
 		return nil
 	})
+
+	if strings.HasSuffix(word, ".") {
+		word = word[:len(word)-1]
+		variable, ok := r.checker.Elaboration.GetGlobalValue(word)
+		if ok {
+			for name, value := range variable.Type.GetMembers() {
+				names[name] = value.Kind.String()
+			}
+		}
+	}
 
 	// Iterating over the dictionary of names is safe,
 	// as the suggested entries are sorted afterwards
