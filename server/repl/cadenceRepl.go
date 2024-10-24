@@ -404,7 +404,7 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 				fmt.Println("name", name)
 				fmt.Println("value", value)
 
-				names[name] = value.Kind.String()
+				names[name] = "denis"
 			}
 		}
 	}
