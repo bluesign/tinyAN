@@ -388,7 +388,7 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 		fmt.Println("variable", variable)
 		if ok {
 			for name, value := range variable.Type.GetMembers() {
-				fmt.Println("name", name)
+				fmt.Println("name", word+"."+name)
 				fmt.Println("value", value)
 
 				names[name] = value.Resolve(nil, name, ast.Range{}, func(err error) {
