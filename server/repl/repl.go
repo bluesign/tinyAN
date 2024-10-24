@@ -288,7 +288,9 @@ func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 		}
 	}
 
-	return suggests // prompt.FilterHasPrefix(suggests, wordBeforeCursor, false)
+	words := strings.Split(wordBeforeCursor, ".")
+	lastWord := words[len(words)-1]
+	return prompt.FilterHasPrefix(suggests, lastWord, false)
 }
 
 func (consoleREPL *ConsoleREPL) changeLivePrefix() (string, bool) {
