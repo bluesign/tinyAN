@@ -378,23 +378,9 @@ type REPLSuggestion struct {
 func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 	names := map[string]string{}
 
-	r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
-		if names[name] != "" {
-			return
-		}
-		names[name] = variable.Type.String()
-	})
-
-	_ = r.checker.Config.BaseValueActivationHandler(nil).ForEach(func(name string, variable *sema.Variable) error {
-		if names[name] == "" {
-			names[name] = variable.Type.String()
-		}
-		return nil
-	})
-
-	fmt.Println("word", word)
-	if strings.HasSuffix(word, ".") {
-		word = word[:len(word)-1]
+	if strings.Contains(word, ".") {
+		words := strings.Split(word, ".")
+		word = words[len(words)-1]
 		fmt.Println("wordTrimmed", word)
 
 		variable, ok := r.checker.Elaboration.GetGlobalValue(word)
@@ -407,7 +393,22 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 				names[name] = "denis"
 			}
 		}
+	} else {
+		r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
+			if names[name] != "" {
+				return
+			}
+			names[name] = variable.Type.String()
+		})
+
+		_ = r.checker.Config.BaseValueActivationHandler(nil).ForEach(func(name string, variable *sema.Variable) error {
+			if names[name] == "" {
+				names[name] = variable.Type.String()
+			}
+			return nil
+		})
 	}
+	fmt.Println("word", word)
 
 	// Iterating over the dictionary of names is safe,
 	// as the suggested entries are sorted afterwards
