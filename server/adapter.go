@@ -642,7 +642,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		}
 	}
 
-	snapshot := a.store.LedgerSnapshot(block.Height)
+	snapshot := a.store.LedgerSnapshot(block.Height - 1)
 
 	proc := fvm.Transaction(tx, 0)
 	debugger := interpreter.NewDebugger()
