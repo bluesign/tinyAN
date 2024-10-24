@@ -392,9 +392,13 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 		return nil
 	})
 
+	fmt.Println("word", word)
 	if strings.HasSuffix(word, ".") {
 		word = word[:len(word)-1]
+		fmt.Println("wordTrimmed", word)
+
 		variable, ok := r.checker.Elaboration.GetGlobalValue(word)
+		fmt.Println("variable", variable)
 		if ok {
 			for name, value := range variable.Type.GetMembers() {
 				names[name] = value.Kind.String()
