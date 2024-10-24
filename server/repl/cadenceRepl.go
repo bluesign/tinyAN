@@ -391,7 +391,9 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 				fmt.Println("name", name)
 				fmt.Println("value", value)
 
-				names[name] = "denis"
+				names[name] = value.Resolve(nil, name, ast.Range{}, func(err error) {
+					fmt.Println(err)
+				}).TypeAnnotation.String()
 			}
 		}
 	} else {
