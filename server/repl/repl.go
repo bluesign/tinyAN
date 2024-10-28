@@ -257,7 +257,7 @@ func (consoleREPL *ConsoleREPL) execute(line string) {
 }
 
 func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
-	wordBeforeCursor := d.GetWordBeforeCursor()
+	wordBeforeCursor := d.GetWordBeforeCursorUntilSeparator(".")
 	line := d.GetWordBeforeCursorUntilSeparator(" ")
 
 	if len(wordBeforeCursor) == 0 {
