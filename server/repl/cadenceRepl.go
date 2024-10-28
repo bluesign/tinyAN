@@ -462,7 +462,7 @@ func (r *REPL) Suggestions(line string, remain string) (result []REPLSuggestion)
 	// Iterating over the dictionary of names is safe,
 	// as the suggested entries are sorted afterwards
 	for name, description := range names { //nolint:maprange
-		if strings.HasPrefix(name, remain) {
+		if remain == "" || strings.HasPrefix(name, remain) {
 			result = append(result, REPLSuggestion{
 				Name:        name,
 				Description: description,
