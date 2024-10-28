@@ -377,11 +377,12 @@ type REPLSuggestion struct {
 
 func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 	names := map[string]string{}
-	words := strings.Split(word, ".")
-	code := []byte(strings.Join(words[:len(words)-1], "."))
-	remain := words[len(words)-1]
+	remain := word
 
 	if strings.Contains(word, ".") {
+		words := strings.Split(word, ".")
+		code := []byte(strings.Join(words[:len(words)-1], "."))
+		remain := words[len(words)-1]
 
 		fmt.Println("code", string(code))
 		tokens, err := lexer.Lex(code, nil)
