@@ -429,7 +429,7 @@ func (r *REPL) Suggestions(line string, remain string) (result []REPLSuggestion)
 
 				memberResolver := expressionType.GetMembers()
 				for name, member := range memberResolver {
-					if strings.HasPrefix(name, remain) {
+					if remain == "" || strings.HasPrefix(name, remain) {
 						fmt.Println("name", name)
 						m := member.Resolve(nil, name, ast.Range{}, func(err error) {
 							fmt.Println(err)
