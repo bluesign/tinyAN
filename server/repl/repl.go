@@ -68,13 +68,14 @@ func (w stringWriter) Write(b []byte) (int, error) {
 
 func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*ConsoleREPL, error) {
 
+	sw := &stringWriter{
+		w: session,
+	}
 	consoleREPL := &ConsoleREPL{
 		lineNumber:         1,
 		errorPrettyPrinter: pretty.NewErrorPrettyPrinter(sw, true),
 		session:            session,
-		out: &stringWriter{
-			w: session,
-		},
+		out:                sw,
 	}
 
 	var block *flowgo.Header
