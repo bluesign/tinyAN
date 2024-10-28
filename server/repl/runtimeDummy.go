@@ -116,7 +116,7 @@ func (d *runtimeWrapper) GetSigningAccounts() ([]runtime.Address, error) {
 }
 
 func (d *runtimeWrapper) ProgramLog(s string) error {
-	fmt.Println("XXLOG: ", s)
+	d.REPL.OnResult
 	return d.baseRuntime.ProgramLog(s)
 }
 

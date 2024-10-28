@@ -384,6 +384,16 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 		word = words[len(words)-2]
 		fmt.Println("wordTrimmed", word)
 
+		value := r.inter.Globals.Get(word)
+
+		composite, isComposite := value.GetValue(r.inter).(*interpreter.CompositeValue)
+
+		if isComposite {
+			composite.ForEachField(r.inter, func(name string, v interpreter.Value) bool {
+				names[name] = v.StaticType(r.inter).String()
+				return true
+			}, interpreter.LocationRange{})
+		}
 		variable, ok := r.checker.Elaboration.GetGlobalValue(word)
 		fmt.Println("variable", variable)
 		if ok {
