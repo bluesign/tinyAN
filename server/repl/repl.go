@@ -319,7 +319,7 @@ func (consoleREPL *ConsoleREPL) Run() {
 		prompt.OptionHistory(history),
 		prompt.OptionWriter(NewStandardOutputWriter(consoleREPL.out)),
 		prompt.OptionParser(NewStandardInputParser(consoleREPL.session)),
-		prompt.OptionCompletionWordSeparator(" "),
+		prompt.OptionCompletionWordSeparator("."),
 	).Run()
 }
 
