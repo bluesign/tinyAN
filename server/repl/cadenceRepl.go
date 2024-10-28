@@ -432,6 +432,9 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 					m := member.Resolve(nil, name, ast.Range{}, func(err error) {
 						fmt.Println(err)
 					})
+					fmt.Println("after resolve")
+					fmt.Println(name, m.DocString)
+					fmt.Println("after docstring")
 					names[name] = m.DocString
 				}
 
