@@ -382,20 +382,24 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 		words := strings.Split(word, ".")
 
 		code := []byte(strings.Join(words[:len(words)-1], "."))
+		fmt.Println("code", string(code))
 		tokens, err := lexer.Lex(code, nil)
 		defer tokens.Reclaim()
 		if err != nil {
+			fmt.Println("lexer error", err)
 			return
 		}
 
 		inputIsComplete := isInputComplete(tokens)
 
 		if !inputIsComplete {
+			fmt.Println("input not complete")
 			return
 		}
 
 		parsed, errs := parser.ParseStatementsFromTokenStream(nil, tokens, r.parserConfig)
 		if len(errs) > 0 {
+			fmt.Println("parse error", errs)
 			return
 		}
 
@@ -405,9 +409,11 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 
 			switch element := element.(type) {
 			case ast.Declaration:
+				fmt.Println("declaration")
 				return
 
 			case ast.Statement:
+				fmt.Println("statement")
 				statement := element
 
 				r.checker.Program = nil
@@ -415,6 +421,7 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 				var expressionType sema.Type
 				expressionStatement, isExpression := statement.(*ast.ExpressionStatement)
 				if !isExpression {
+					fmt.Println("not expression")
 					return
 				}
 				expressionType = r.checker.VisitExpression(expressionStatement.Expression, expressionStatement, nil)
@@ -432,20 +439,6 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 			}
 		}
 
-		word = words[len(words)-2]
-		fmt.Println("wordTrimmed", word)
-
-		variable, ok := r.checker.Elaboration.GetGlobalValue(word)
-		fmt.Println("variable", variable)
-		if ok {
-			for name, value := range variable.Type.GetMembers() {
-				fmt.Println("name", word+"."+name)
-				fmt.Println("value", value)
-				names[word+"."+name] = value.Resolve(nil, name, ast.Range{}, func(err error) {
-					fmt.Println(err)
-				}).TypeAnnotation.String()
-			}
-		}
 	} else {
 		r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
 			if names[name] != "" {
