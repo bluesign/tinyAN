@@ -433,7 +433,7 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 						fmt.Println(err)
 					})
 					fmt.Println("after resolve")
-					fmt.Println(name, m.DocString)
+					fmt.Println(name, m.TypeAnnotation.String())
 					fmt.Println("after docstring")
 					names[name] = m.DocString
 				}
