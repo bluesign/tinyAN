@@ -428,6 +428,7 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 
 				memberResolver := expressionType.GetMembers()
 				for name, member := range memberResolver {
+					fmt.Println("name", name)
 					m := member.Resolve(nil, name, ast.Range{}, func(err error) {
 						fmt.Println(err)
 					})
