@@ -258,6 +258,7 @@ func (consoleREPL *ConsoleREPL) execute(line string) {
 
 func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 	wordBeforeCursor := d.GetWordBeforeCursor()
+	line := d.GetWordBeforeCursorUntilSeparator(" ")
 
 	if len(wordBeforeCursor) == 0 {
 		return nil
@@ -279,7 +280,7 @@ func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 		}
 
 	} else {
-		for _, suggestion := range consoleREPL.repl.Suggestions(wordBeforeCursor) {
+		for _, suggestion := range consoleREPL.repl.Suggestions(line, wordBeforeCursor) {
 			suggests = append(suggests, prompt.Suggest{
 				Text:        suggestion.Name,
 				Description: suggestion.Description,
@@ -318,6 +319,7 @@ func (consoleREPL *ConsoleREPL) Run() {
 		prompt.OptionHistory(history),
 		prompt.OptionWriter(NewStandardOutputWriter(consoleREPL.out)),
 		prompt.OptionParser(NewStandardInputParser(consoleREPL.session)),
+		prompt.OptionCompletionWordSeparator("."),
 	).Run()
 }
 

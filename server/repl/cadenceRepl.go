@@ -375,15 +375,14 @@ type REPLSuggestion struct {
 	Name, Description string
 }
 
-func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
+func (r *REPL) Suggestions(line string, remain string) (result []REPLSuggestion) {
 	names := map[string]string{}
-	remain := word
+	fmt.Println("word", line)
+	fmt.Println("remain", remain)
 
-	if strings.Contains(word, ".") {
-		words := strings.Split(word, ".")
+	if strings.Contains(line, ".") {
+		words := strings.Split(line, ".")
 		code := []byte(strings.Join(words[:len(words)-1], "."))
-		remain = words[len(words)-1]
-		fmt.Println("remain", remain)
 		fmt.Println("code", string(code))
 		tokens, err := lexer.Lex(code, nil)
 		defer tokens.Reclaim()
