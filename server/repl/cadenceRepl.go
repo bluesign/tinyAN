@@ -100,6 +100,7 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 
 		debuggerInterpreter = stop.Interpreter
 		debugger.Continue()
+
 		afterCh <- struct{}{}
 		fmt.Println("interpreter ready")
 	}()
@@ -341,7 +342,6 @@ func (r *REPL) Accept(code []byte, eval bool) (inputIsComplete bool, err error) 
 			var expressionType sema.Type
 			expressionStatement, isExpression := statement.(*ast.ExpressionStatement)
 			if isExpression {
-
 				expressionType = r.checker.VisitExpression(expressionStatement.Expression, expressionStatement, nil)
 				if !eval && expressionType != sema.InvalidType {
 					r.onExpressionType(expressionType)
@@ -381,6 +381,57 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 	if strings.Contains(word, ".") {
 		words := strings.Split(word, ".")
 
+		code := []byte(strings.Join(words[:len(words)-1], "."))
+		tokens, err := lexer.Lex(code, nil)
+		defer tokens.Reclaim()
+		if err != nil {
+			return
+		}
+
+		inputIsComplete := isInputComplete(tokens)
+
+		if !inputIsComplete {
+			return
+		}
+
+		parsed, errs := parser.ParseStatementsFromTokenStream(nil, tokens, r.parserConfig)
+		if len(errs) > 0 {
+			return
+		}
+
+		r.checker.ResetErrors()
+
+		for _, element := range parsed {
+
+			switch element := element.(type) {
+			case ast.Declaration:
+				return
+
+			case ast.Statement:
+				statement := element
+
+				r.checker.Program = nil
+
+				var expressionType sema.Type
+				expressionStatement, isExpression := statement.(*ast.ExpressionStatement)
+				if !isExpression {
+					return
+				}
+				expressionType = r.checker.VisitExpression(expressionStatement.Expression, expressionStatement, nil)
+
+				memberResolver := expressionType.GetMembers()
+				for name, member := range memberResolver {
+					m := member.Resolve(nil, name, ast.Range{}, func(err error) {
+						fmt.Println(err)
+					})
+					names[name] = m.DocString
+				}
+
+			default:
+				panic(errors.NewUnreachableError())
+			}
+		}
+
 		word = words[len(words)-2]
 		fmt.Println("wordTrimmed", word)
 
@@ -390,7 +441,6 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 			for name, value := range variable.Type.GetMembers() {
 				fmt.Println("name", word+"."+name)
 				fmt.Println("value", value)
-
 				names[word+"."+name] = value.Resolve(nil, name, ast.Range{}, func(err error) {
 					fmt.Println(err)
 				}).TypeAnnotation.String()
