@@ -382,6 +382,8 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 		words := strings.Split(word, ".")
 
 		code := []byte(strings.Join(words[:len(words)-1], "."))
+		remain := words[len(words)-1]
+
 		fmt.Println("code", string(code))
 		tokens, err := lexer.Lex(code, nil)
 		defer tokens.Reclaim()
@@ -428,14 +430,13 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 
 				memberResolver := expressionType.GetMembers()
 				for name, member := range memberResolver {
-					fmt.Println("name", name)
-					m := member.Resolve(nil, name, ast.Range{}, func(err error) {
-						fmt.Println(err)
-					})
-					fmt.Println("after resolve")
-					fmt.Println(name, m.TypeAnnotation.String())
-					fmt.Println("after docstring")
-					names[name] = m.TypeAnnotation.String()
+					if strings.HasPrefix(name, remain) {
+						fmt.Println("name", name)
+						m := member.Resolve(nil, name, ast.Range{}, func(err error) {
+							fmt.Println(err)
+						})
+						names[name] = m.TypeAnnotation.String()
+					}
 				}
 
 			default:
