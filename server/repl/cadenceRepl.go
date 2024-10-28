@@ -458,7 +458,6 @@ func (r *REPL) Suggestions(line string, remain string) (result []REPLSuggestion)
 			return nil
 		})
 	}
-	fmt.Println("word", word)
 
 	// Iterating over the dictionary of names is safe,
 	// as the suggested entries are sorted afterwards
