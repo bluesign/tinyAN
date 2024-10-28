@@ -377,12 +377,11 @@ type REPLSuggestion struct {
 
 func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 	names := map[string]string{}
+	words := strings.Split(word, ".")
+	code := []byte(strings.Join(words[:len(words)-1], "."))
+	remain := words[len(words)-1]
 
 	if strings.Contains(word, ".") {
-		words := strings.Split(word, ".")
-
-		code := []byte(strings.Join(words[:len(words)-1], "."))
-		remain := words[len(words)-1]
 
 		fmt.Println("code", string(code))
 		tokens, err := lexer.Lex(code, nil)
@@ -465,10 +464,12 @@ func (r *REPL) Suggestions(word string) (result []REPLSuggestion) {
 	// as the suggested entries are sorted afterwards
 
 	for name, description := range names { //nolint:maprange
-		result = append(result, REPLSuggestion{
-			Name:        name,
-			Description: description,
-		})
+		if strings.HasPrefix(name, remain) {
+			result = append(result, REPLSuggestion{
+				Name:        name,
+				Description: description,
+			})
+		}
 	}
 
 	sort.Slice(result, func(i, j int) bool {
