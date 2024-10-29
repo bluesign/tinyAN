@@ -233,34 +233,41 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		for _, child := range storable.ChildStorables() {
-			size = size + sizeOf(child, true)
-		}
-
+		parsed := false
 		mapStorable, ok := storable.(*atree.MapDataSlab)
 		if ok {
 			mapStorable.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
-				size = size + sizeOf(key, true)
+				//size = size + sizeOf(key, true)
 				size = size + sizeOf(value, true)
 			})
+			parsed = true
 		}
 		arrayStorable, ok := storable.(*atree.ArrayDataSlab)
 		if ok {
 			arrayStorable.PopIterate(persistentSlabStorage, func(value atree.Storable) {
 				size = size + sizeOf(value, true)
 			})
+			parsed = true
 		}
 
 		slabStorable, ok := storable.(*atree.SlabIDStorable)
 		if ok {
 			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(*slabStorable))
 			size = size + sizeOf(s, false)
+			parsed = true
 		}
 
 		slabStorable2, ok := storable.(atree.SlabIDStorable)
 		if ok {
 			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(slabStorable2))
 			size = size + sizeOf(s, false)
+			parsed = true
+		}
+
+		if !parsed {
+			for _, child := range storable.ChildStorables() {
+				size = size + sizeOf(child, true)
+			}
 		}
 
 		return size
