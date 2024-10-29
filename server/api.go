@@ -218,7 +218,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("storageSlab", storageSlab)
 	mapSlab := storageSlab.(*atree.MapDataSlab)
 
-	err := mapSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
+	err = mapSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
 		fmt.Println("key", key)
 		fmt.Println("value", value)
 	})
