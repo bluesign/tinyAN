@@ -219,12 +219,12 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 
 	var sizeOf func(storable atree.Storable) uint32
 	sizeOf = func(storable atree.Storable) uint32 {
+
 		size := storable.ByteSize()
 		for _, child := range storable.ChildStorables() {
 			size += sizeOf(child)
 		}
 
-		fmt.Println(fmt.Sprintf("storable %T", storable), storable, size)
 		mapStorable, ok := storable.(*atree.MapDataSlab)
 		if ok {
 			mapStorable.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
@@ -245,6 +245,8 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(*slabStorable))
 			size += sizeOf(s)
 		}
+
+		fmt.Println(fmt.Sprintf("storable %T", storable), storable, size)
 
 		return size
 	}
