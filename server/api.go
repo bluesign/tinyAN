@@ -223,6 +223,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		}
 		return size
 	}
+	total := uint32(0)
 	fmt.Println("storageSlab", storageSlab)
 	mapSlab, ok := storageSlab.(*atree.MapDataSlab)
 	if ok {
@@ -238,10 +239,11 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("key", key)
 
 				fmt.Println("value", sizeOf(value))
+				total += sizeOf(value)
 			})
 		}
 	}
-
+	fmt.Println("total", total)
 	fmt.Println("err", err)
 
 	/*for len(childStorables) > 0 {
