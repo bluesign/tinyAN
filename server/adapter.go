@@ -658,7 +658,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		fvm.WithEVMEnabled(true),
 		fvm.WithMemoryLimit(2*1024*1024*1024), //2GB
 		fvm.WithComputationLimit(10_000),      //100k
-
 	)
 
 	blockDatabase := fvmStorage.NewBlockDatabase(snapshot, 0, nil)
