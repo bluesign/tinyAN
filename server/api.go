@@ -2,7 +2,10 @@ package server
 
 import (
 	"github.com/bluesign/tinyAN/server/repl"
+	"github.com/fxamacker/cbor/v2"
 	ssh "github.com/gliderlabs/ssh"
+	"github.com/onflow/atree"
+	"github.com/onflow/cadence/interpreter"
 
 	"encoding/json"
 	"fmt"
@@ -85,7 +88,7 @@ bml6cy1NYWNCb29rLVByby0yLmxvY2FsAQIDBA==
 	router.HandleFunc("/api/resourceByType", r.ResourceByType)
 	router.HandleFunc("/api/addressBalanceHistory", r.AddressBalanceHistory)
 	router.HandleFunc("/api/ownerOfUuid", r.OwnerOfUuid)
-
+	router.HandleFunc("/api/accountSize", r.AccountSize)
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedHeaders: []string{"*"},
@@ -148,6 +151,103 @@ type apiResults struct {
 
 type singleResult struct {
 	Result api_result `json:"result"`
+}
+
+func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("address is required"))
+		return
+	}
+
+	flowAddress, _ := flow.StringToAddress(address)
+	addressBytes := flowAddress.Bytes()
+
+	var height uint64 = m.storage.Latest().Ledger().LastProcessedHeight()
+
+	ledger := m.storage.StorageForHeight(height).Ledger()
+	snapshot := ledger.StorageSnapshot(height)
+	roView := NewViewOnlyLedger(snapshot)
+
+	decodeStorable := func(
+		decoder *cbor.StreamDecoder,
+		slabID atree.SlabID,
+		inlinedExtraData []atree.ExtraData,
+	) (
+		atree.Storable,
+		error,
+	) {
+		return interpreter.DecodeStorable(
+			decoder,
+			slabID,
+			inlinedExtraData,
+			nil,
+		)
+	}
+
+	decodeTypeInfo := func(decoder *cbor.StreamDecoder) (atree.TypeInfo, error) {
+		return interpreter.DecodeTypeInfo(decoder, nil)
+	}
+
+	ledgerStorage := atree.NewLedgerBaseStorage(roView)
+
+	persistentSlabStorage := atree.NewPersistentSlabStorage(
+		ledgerStorage,
+		interpreter.CBOREncMode,
+		interpreter.CBORDecMode,
+		decodeStorable,
+		decodeTypeInfo,
+	)
+
+	storageSlabId, err := roView.GetValue(addressBytes, []byte("storage"))
+	if err != nil {
+		fmt.Println("error", err)
+		return
+	}
+
+	storageSlab, _, err := persistentSlabStorage.Retrieve(atree.NewSlabID(atree.Address(addressBytes), atree.SlabIndex(storageSlabId)))
+	if err != nil {
+		// Wrap err as external error (if needed) because err is returned by SlabStorage interface.
+		fmt.Println("error", err)
+		return
+	}
+
+	fmt.Println("storageSlab", storageSlab)
+	childStorables := storageSlab.ChildStorables()
+
+	for len(childStorables) > 0 {
+
+		var next []atree.Storable
+
+		for _, s := range childStorables {
+
+			fmt.Println("s", s)
+			fmt.Println("s", s.ByteSize())
+			sv, err := s.StoredValue(persistentSlabStorage)
+			if err != nil {
+				fmt.Println("error2", err)
+				return
+			}
+			fmt.Println("sv", sv)
+
+			if _, ok := s.(atree.MapValue); ok {
+
+			}
+
+			// This handles inlined slab because inlined slab is a child storable (s) and
+			// we traverse s.ChildStorables() for its inlined elements.
+			next = append(next, s.ChildStorables()...)
+		}
+
+		childStorables = next
+	}
+
+	p, _ := json.Marshal(singleResult{Result: nil})
+	w.Write(p)
+
 }
 
 func (m APIServer) OwnerOfUuid(w http.ResponseWriter, r *http.Request) {
