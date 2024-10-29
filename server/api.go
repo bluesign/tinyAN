@@ -255,7 +255,8 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Println(fmt.Sprintf("storable %T", storable), storable, size)
-
+		fmt.Println("size", size)
+		fmt.Println("total", total)
 		return size
 	}
 
