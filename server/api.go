@@ -223,7 +223,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("value", value)
 	})
 
-	for len(childStorables) > 0 {
+	/*for len(childStorables) > 0 {
 
 		var next []atree.Storable
 
@@ -248,7 +248,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		}
 
 		childStorables = next
-	}
+	}*/
 
 	p, _ := json.Marshal(singleResult{Result: nil})
 	w.Write(p)
