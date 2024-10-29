@@ -662,7 +662,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	)
 
 	blockDatabase := fvmStorage.NewBlockDatabase(snapshot, 0, nil)
-	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+	txnState, err := blockDatabase.NewTransaction(proc.ExecutionTime(), fvmState.DefaultParameters())
 	if err != nil {
 		panic(err)
 	}
