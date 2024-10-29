@@ -276,21 +276,23 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 	}
 	if !ok {
 		mapMetaSlab, ok := storageSlab.(*atree.MapMetaDataSlab)
-		if ok {
-			mapMetaSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
-				fmt.Println("key", key)
+		total = total + sizeOf(mapMetaSlab, false)
+		/*
+			if ok {
+				mapMetaSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
+					fmt.Println("key", key)
 
-				s := sizeOf(value, false)
-				total = total + s
-				fmt.Println("size", s)
-				fmt.Println("total", total)
-				usage = append(usage, storageUsage{
-					Path: fmt.Sprintf("%v", key),
-					Size: s,
+					s := sizeOf(value, false)
+					total = total + s
+					fmt.Println("size", s)
+					fmt.Println("total", total)
+					usage = append(usage, storageUsage{
+						Path: fmt.Sprintf("%v", key),
+						Size: s,
+					})
+
 				})
-
-			})
-		}
+			}*/
 	}
 	fmt.Println("total", total)
 	fmt.Println("err", err)
