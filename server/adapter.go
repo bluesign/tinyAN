@@ -6,7 +6,6 @@ import (
 	"github.com/bluesign/tinyAN/indexer"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
-	"github.com/onflow/cadence/interpreter"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
@@ -643,7 +642,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	snapshot := a.store.LedgerSnapshot(block.Height - 1)
 
 	proc := fvm.Transaction(tx, 0)
-	debugger := interpreter.NewDebugger()
+	//debugger := interpreter.NewDebugger()
 
 	var entropyProvider = &storage.EntropyProviderPerBlockProvider{
 		Store: a.store,
