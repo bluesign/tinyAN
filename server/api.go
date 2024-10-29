@@ -216,7 +216,12 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("storageSlab", storageSlab)
-	childStorables := storageSlab.ChildStorables()
+	mapSlab := storageSlab.(*atree.MapDataSlab)
+
+	mapSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
+		fmt.Println("key", key)
+		fmt.Println("value", value)
+	})
 
 	for len(childStorables) > 0 {
 
