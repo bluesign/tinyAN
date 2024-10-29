@@ -95,6 +95,7 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 	}
 
 	fvmContext := fvm.NewContext(
+		fvm.WithChain(flowgo.Mainnet.Chain()),
 		fvm.WithBlockHeader(block),
 		fvm.WithBlocks(store),
 		fvm.WithEntropyProvider(entropyProvider.AtBlockID(block.ID())),

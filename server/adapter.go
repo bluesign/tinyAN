@@ -649,6 +649,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	}
 
 	fvmContext := fvm.NewContext(
+		fvm.WithChain(flowgo.Mainnet.Chain()),
 		fvm.WithBlockHeader(block),
 		fvm.WithBlocks(a.store),
 		fvm.WithEntropyProvider(entropyProvider.AtBlockID(block.ID())),
