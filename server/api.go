@@ -207,6 +207,38 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		decodeTypeInfo,
 	)
 
+	usage := make([]storageUsage, 0)
+
+	total := uint32(0)
+
+	var sizeOf func(atree.Storable, bool) uint32
+	sizeOf = func(storable atree.Storable, isChild bool) uint32 {
+
+		size := uint32(0)
+		if !isChild {
+			size = size + storable.ByteSize()
+		}
+
+		switch v := storable.(type) {
+		case *atree.MapDataSlab:
+			v.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
+				size = size + sizeOf(value, true)
+			})
+		case *atree.ArrayDataSlab:
+			v.PopIterate(persistentSlabStorage, func(value atree.Storable) {
+				size = size + sizeOf(value, true)
+			})
+		case *atree.SlabIDStorable:
+			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(*v))
+			size = size + sizeOf(s, false)
+		case atree.SlabIDStorable:
+			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(v))
+			size = size + sizeOf(s, false)
+		}
+
+		return size
+	}
+
 	storageSlabId, err := roView.GetValue(addressBytes, []byte("storage"))
 	if err != nil {
 		fmt.Println("error", err)
@@ -220,70 +252,11 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usage := make([]storageUsage, 0)
-
-	total := uint32(0)
-
-	var sizeOf func(atree.Storable, bool) uint32
-	sizeOf = func(storable atree.Storable, isChild bool) uint32 {
-
-		size := uint32(0)
-		if !isChild {
-			size = size + storable.ByteSize()
-
-		}
-
-		parsed := false
-		mapStorable, ok := storable.(*atree.MapDataSlab)
-		if ok {
-			mapStorable.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
-				//size = size + sizeOf(key, true)
-				size = size + sizeOf(value, true)
-			})
-			parsed = true
-		}
-		arrayStorable, ok := storable.(*atree.ArrayDataSlab)
-		if ok {
-			arrayStorable.PopIterate(persistentSlabStorage, func(value atree.Storable) {
-				size = size + sizeOf(value, true)
-			})
-			parsed = true
-		}
-
-		slabStorable, ok := storable.(*atree.SlabIDStorable)
-		if ok {
-			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(*slabStorable))
-			size = size + sizeOf(s, false)
-			parsed = true
-		}
-
-		slabStorable2, ok := storable.(atree.SlabIDStorable)
-		if ok {
-			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(slabStorable2))
-			size = size + sizeOf(s, false)
-			parsed = true
-		}
-
-		if true {
-			fmt.Println(parsed)
-			for _, child := range storable.ChildStorables() {
-				size = size + sizeOf(child, true)
-			}
-		}
-
-		return size
-	}
-
-	fmt.Println("storageSlab", storageSlab)
 	mapSlab, ok := storageSlab.(*atree.MapDataSlab)
 	if ok {
 		err = mapSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
-			fmt.Println("key", key)
-
 			s := sizeOf(value, false)
 			total = total + s
-			fmt.Println("size", s)
-			fmt.Println("total", total)
 			usage = append(usage, storageUsage{
 				Path: fmt.Sprintf("%v", key),
 				Size: s,

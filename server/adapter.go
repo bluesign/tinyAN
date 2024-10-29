@@ -7,12 +7,10 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
 	"github.com/onflow/cadence/interpreter"
-	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/flow-go/access"
 	"github.com/onflow/flow-go/engine/access/subscription"
 	"github.com/onflow/flow-go/engine/common/rpc/convert"
 	"github.com/onflow/flow-go/fvm"
-	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
 	fvmStorage "github.com/onflow/flow-go/fvm/storage"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	flowgo "github.com/onflow/flow-go/model/flow"
@@ -661,16 +659,7 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 		fvm.WithEVMEnabled(true),
 		fvm.WithMemoryLimit(2*1024*1024*1024), //2GB
 		fvm.WithComputationLimit(10_000),      //100k
-		fvm.WithReusableCadenceRuntimePool(
-			reusableRuntime.NewReusableCadenceRuntimePool(
-				0,
-				runtime.Config{
-					Debugger:           debugger,
-					TracingEnabled:     false,
-					AttachmentsEnabled: true,
-				},
-			),
-		),
+
 	)
 
 	blockDatabase := fvmStorage.NewBlockDatabase(snapshot, 0, nil)
