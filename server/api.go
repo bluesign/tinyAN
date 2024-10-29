@@ -228,6 +228,12 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 				size += sizeOf(value)
 			})
 		}
+		arrayStorable, ok := storable.(*atree.ArrayDataSlab)
+		if ok {
+			arrayStorable.PopIterate(persistentSlabStorage, func(value atree.Storable) {
+				size += sizeOf(value)
+			})
+		}
 
 		return size
 	}
