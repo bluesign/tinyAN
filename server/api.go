@@ -275,7 +275,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	if !ok {
-		mapMetaSlab, ok := storageSlab.(*atree.MapMetaDataSlab)
+		mapMetaSlab, _ := storageSlab.(*atree.MapMetaDataSlab)
 		total = total + sizeOf(mapMetaSlab, false)
 		/*
 			if ok {
