@@ -124,6 +124,11 @@ func stringToUint64(s string) uint64 {
 type api_result interface {
 }
 
+type storageUsage struct {
+	path string `json:"path"`
+	size uint32 `json:"size"`
+}
+
 type location struct {
 	Uuid    string `json:"uuid"`
 	Address string `json:"address"`
@@ -215,6 +220,8 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	usage := make([]storageUsage, 0)
+
 	total := uint32(0)
 
 	var sizeOf func(storable atree.Storable) uint32
@@ -268,10 +275,15 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			mapMetaSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
 				fmt.Println("key", key)
+
 				s := sizeOf(value)
 				total = total + s
 				fmt.Println("size", s)
 				fmt.Println("total", total)
+				usage = append(usage, storageUsage{
+					path: fmt.Sprintf("%v", key),
+					size: s,
+				})
 
 			})
 		}
@@ -306,7 +318,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		childStorables = next
 	}*/
 
-	p, _ := json.Marshal(singleResult{Result: nil})
+	p, _ := json.Marshal(singleResult{Result: usage})
 	w.Write(p)
 
 }
