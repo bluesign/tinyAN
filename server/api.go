@@ -221,6 +221,8 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		for _, child := range storable.ChildStorables() {
 			size += sizeOf(child)
 		}
+
+		fmt.Println("storable %T", storable)
 		mapStorable, ok := storable.(*atree.MapDataSlab)
 		if ok {
 			mapStorable.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
