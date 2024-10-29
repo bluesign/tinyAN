@@ -242,9 +242,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		slabStorable, ok := storable.(*atree.SlabIDStorable)
 		if ok {
 			fmt.Println("slabStorable", slabStorable)
-			v, _ := slabStorable.StoredValue(persistentSlabStorage)
-			fmt.Println(v)
-			s, _ := v.Storable(persistentSlabStorage, atree.Address(addressBytes), 0)
+			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(*slabStorable))
 			size += sizeOf(s)
 		}
 
