@@ -248,7 +248,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 
 		slabStorable2, ok := storable.(atree.SlabIDStorable)
 		if ok {
-			fmt.Println("slabStorable", slabStorable)
+			fmt.Println("slabStorable2", slabStorable2)
 			s, _, _ := persistentSlabStorage.Retrieve(atree.SlabID(slabStorable2))
 			size += sizeOf(s)
 		}
@@ -271,7 +271,6 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			mapMetaSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
 				fmt.Println("key", key)
-
 				fmt.Println("value", sizeOf(value))
 				total += sizeOf(value)
 			})
