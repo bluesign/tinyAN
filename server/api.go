@@ -280,7 +280,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 			mapMetaSlab.PopIterate(persistentSlabStorage, func(key atree.Storable, value atree.Storable) {
 				fmt.Println("key", key)
 
-				s := sizeOf(value, true)
+				s := sizeOf(value, false)
 				total = total + s
 				fmt.Println("size", s)
 				fmt.Println("total", total)
