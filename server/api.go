@@ -125,8 +125,8 @@ type api_result interface {
 }
 
 type storageUsage struct {
-	path string `json:"path"`
-	size uint32 `json:"size"`
+	Path string `json:"path"`
+	Size uint32 `json:"size"`
 }
 
 type location struct {
