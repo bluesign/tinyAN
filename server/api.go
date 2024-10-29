@@ -268,6 +268,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 			for _, child := range storable.ChildStorables() {
 				size = size + sizeOf(child, true)
 			}
+			fmt.Println("childs")
 		}
 
 		return size
