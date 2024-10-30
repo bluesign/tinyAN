@@ -82,7 +82,7 @@ func NewREPL(storageProvider *storage.HeightBasedStorage, output io.Writer) (*RE
 		output:          output,
 	}
 
-	err = repl.StartAtHeight(lastBlock.Height)
+	err = repl.StartAtHeight(lastBlock.Height, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +127,10 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 
 	var fvmEnvironment environment.Environment
 	if body != nil {
+		vmCtx.TxId = body.ID()
+		vmCtx.TxIndex = 0
+		vmCtx.TxBody = body
+
 		blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, vmCtx.DerivedBlockData)
 		txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
 		if err != nil {
@@ -224,7 +228,7 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 		return err
 	}
 
-	err = r.StartAtHeight(result.BlockHeight)
+	err = r.StartAtHeight(result.BlockHeight, tx)
 	if err != nil {
 		return err
 	}
