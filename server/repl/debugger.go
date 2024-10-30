@@ -24,6 +24,7 @@ import (
 	"io"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/c-bata/go-prompt"
 
@@ -74,10 +75,21 @@ func (d *InteractiveDebugger) Continue() {
 }
 
 func (d *InteractiveDebugger) Next() {
-	d.stop = d.debugger.Next()
+	d.debugger.RequestPause()
+	d.debugger.Continue()
 
-	d.Where()
-	fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
+	for {
+		select {
+		case <-d.debugger.Stops():
+			d.Where()
+			fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
+			return
+		case <-time.After(1 * time.Second):
+			fmt.Println("timeout 1")
+			d.Exit = true
+			return
+		}
+	}
 
 }
 
