@@ -128,7 +128,7 @@ func (d *InteractiveDebugger) Run() {
 
 		switch command {
 		case "":
-			break
+			d.Next()
 		case commandShortContinue, commandLongContinue:
 			d.Continue()
 		case commandShortNext, commandLongNext:
