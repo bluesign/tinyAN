@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/bluesign/tinyAN/storage"
 	"github.com/goccy/go-json"
 	"github.com/onflow/cadence/common"
 	"github.com/onflow/flow-evm-gateway/models"
@@ -154,7 +155,7 @@ func (d *DebugAPI) traceBlock(
 	snap := d.api.storage.LedgerSnapshot(parentCadenceHeight) // 1 prev block
 	snapAfter := d.api.storage.LedgerSnapshot(cadenceHeight)
 
-	roView := NewViewOnlyLedger(snap)
+	roView := storage.NewViewOnlyLedger(snap)
 	emulator := emulator2.NewEmulator(roView, base)
 
 	transactions, err := d.api.blockTransactions(height)

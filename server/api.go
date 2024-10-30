@@ -175,7 +175,7 @@ func (m APIServer) AccountSize(w http.ResponseWriter, r *http.Request) {
 
 	ledger := m.storage.StorageForHeight(height).Ledger()
 	snapshot := ledger.StorageSnapshot(height)
-	roView := NewViewOnlyLedger(snapshot)
+	roView := storage.NewViewOnlyLedger(snapshot)
 
 	decodeStorable := func(
 		decoder *cbor.StreamDecoder,

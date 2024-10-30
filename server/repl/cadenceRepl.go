@@ -21,7 +21,14 @@ package repl
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+	goRuntime "runtime"
+	"sort"
+	"unsafe"
+
+	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/cadence"
+	"github.com/onflow/cadence/activations"
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
 	"github.com/onflow/cadence/errors"
@@ -30,52 +37,97 @@ import (
 	"github.com/onflow/cadence/parser/lexer"
 	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/sema"
-	"reflect"
-	goRuntime "runtime"
-	"sort"
-	"strings"
+	"github.com/onflow/cadence/stdlib"
+	"github.com/onflow/flow-go/fvm"
+	"github.com/onflow/flow-go/fvm/environment"
+	"github.com/onflow/flow-go/fvm/storage/derived"
+
+	flowgo "github.com/onflow/flow-go/model/flow"
+	"github.com/rs/zerolog"
 )
 
 type REPL struct {
 	inter            *interpreter.Interpreter
 	checker          *sema.Checker
-	environment      runtime.Environment
+	codes            map[common.Location][]byte
+	checkers         map[common.Location]*sema.Checker
+	fvmEnvironment   any
 	debugger         *interpreter.Debugger
 	OnError          func(err error, location runtime.Location, codes map[runtime.Location][]byte)
 	OnExpressionType func(sema.Type)
 	OnResult         func(interpreter.Value)
-	codes            map[runtime.Location][]byte
+	currentCode      string
 	parserConfig     parser.Config
+	counter          uint64
 }
 
-func Interpret(inter *interpreter.Interpreter) (interpreter.Value, error) {
-	return inter.Invoke("main")
-}
+func NewREPL(storageProvider *storage.HeightBasedStorage) (*REPL, error) {
 
-func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
-
-	// Prepare checkers
-	codesAndPrograms := runtime.NewCodesAndPrograms()
 	debugger := interpreter.NewDebugger()
+	logger := zerolog.Nop()
 
-	config := runtime.Config{
-		AttachmentsEnabled: true,
-		Debugger:           debugger,
+	lastBlock, err := storageProvider.GetLatestBlock()
+	if err != nil {
+		logger.Panic().Msgf("cannot get last block %v", err)
+	}
+	snap := storageProvider.LedgerSnapshot(lastBlock.Height)
+
+	derivedChainData, err := derived.NewDerivedChainData(10)
+	if err != nil {
+		logger.Panic().Msgf("cannot create derived data cache: %v", err)
+	}
+	entropyPerBlock := storage.EntropyProviderPerBlockProvider{
+		Store: storageProvider,
 	}
 
-	storage := runtime.NewStorage(runtimeInterface, runtimeInterface)
-	environment := runtime.NewScriptInterpreterEnvironment(config)
-	environment.Configure(
-		runtimeInterface,
-		codesAndPrograms,
-		storage,
-		nil,
-	)
+	fvmOptions := []fvm.Option{
+		fvm.WithChain(flowgo.Mainnet.Chain()),
+		fvm.WithBlockHeader(lastBlock),
+		fvm.WithBlocks(storageProvider),
+		fvm.WithComputationLimit(100_000),           //100k
+		fvm.WithMemoryLimit(2 * 1024 * 1024 * 1024), //2GB
+		fvm.WithEVMEnabled(true),
+		fvm.WithDerivedBlockData(
+			derivedChainData.NewDerivedBlockDataForScript(lastBlock.ID()),
+		),
+		fvm.WithEntropyProvider(entropyPerBlock.AtBlockID(lastBlock.ID())),
+	}
 
-	rv := reflect.ValueOf(environment)
-	rv = rv.Elem()                       // deref *rpc.Client
-	rv = rv.FieldByName("CheckerConfig") // get "codec" field from rpc.Client
-	checkerConfig := rv.Interface().(*sema.Config)
+	vmCtx := fvm.NewContext(fvmOptions...)
+
+	fvmEnvironment := environment.NewScriptEnvironmentFromStorageSnapshot(
+		vmCtx.EnvironmentParams,
+		snap)
+
+	codes := runtime.NewCodesAndPrograms()
+	fmt.Println(codes)
+	codesRef := &codes
+	field := reflect.ValueOf(codesRef).Elem().FieldByName("codes")
+	codesInner := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface().(map[common.Location][]byte)
+	fmt.Println("codesInner", codesInner)
+	cadenceStorage := runtime.NewStorage(fvmEnvironment, fvmEnvironment)
+
+	interpreterEnvironment := runtime.NewScriptInterpreterEnvironment(runtime.Config{
+		AttachmentsEnabled: true,
+	})
+	interpreterEnvironment.Configure(fvmEnvironment, codes, cadenceStorage, nil)
+
+	_, err = interpreterEnvironment.ParseAndCheckProgram(
+		[]byte(`access(all) fun main() {}`),
+		common.ScriptLocation{},
+		false,
+	)
+	fmt.Println(err)
+
+	cadenceRuntime := runtime.NewInterpreterRuntime(runtime.Config{
+		AttachmentsEnabled: true,
+	})
+
+	checkerConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("CheckerConfig").Interface().(*sema.Config)
+
+	fmt.Println("CheckerConfig", checkerConfig)
+
+	standardLibraryValues := stdlib.DefaultScriptStandardLibraryValues(interpreterEnvironment)
 	checkerConfig.AccessCheckMode = sema.AccessCheckModeNone
 
 	checker, err := sema.NewChecker(
@@ -86,68 +138,43 @@ func NewREPL(runtimeInterface runtime.Interface) (*REPL, error) {
 	)
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
-	afterCh := make(chan struct{})
+	baseActivation := activations.NewActivation(nil, interpreter.BaseActivation)
+	for _, value := range standardLibraryValues {
+		interpreter.Declare(baseActivation, value)
+	}
 
-	var debuggerInterpreter *interpreter.Interpreter
-	go func() {
-		fmt.Println("waiting debugger")
-		stop := debugger.Pause()
-		fmt.Println("debugger stopped")
+	_, rinter, err := cadenceRuntime.Storage(runtime.Context{
+		Interface:   fvmEnvironment,
+		Location:    common.ScriptLocation{},
+		Environment: interpreterEnvironment,
+	})
 
-		debuggerInterpreter = stop.Interpreter
-		debugger.Continue()
-
-		afterCh <- struct{}{}
-		fmt.Println("interpreter ready")
-	}()
-
-	program, err := environment.ParseAndCheckProgram(
-		[]byte(`access(all) fun main() {getAccount(0x7e60df042a9c0868).balance;}`),
-		common.ScriptLocation{},
-		false,
+	inter, err := interpreter.NewInterpreter(
+		interpreter.ProgramFromChecker(checker),
+		checker.Location,
+		rinter.SharedState.Config,
 	)
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
-	fmt.Println("executing empty code")
-	//execute empty code
-	go environment.Interpret(checker.Location, program, Interpret)
-	fmt.Println("executed empty code")
-
-	for {
-		select {
-
-		case <-afterCh:
-
-			fmt.Println("got interpreter")
-
-			inter, _ := interpreter.NewInterpreterWithSharedState(
-				interpreter.ProgramFromChecker(checker),
-				checker.Location,
-				debuggerInterpreter.SharedState,
-			)
-			inter.SharedState.Config.Storage = storage
-			return &REPL{
-				inter:        inter,
-				environment:  environment,
-				debugger:     debugger,
-				checker:      checker,
-				codes:        map[runtime.Location][]byte{},
-				parserConfig: parser.Config{},
-			}, nil
-		}
-	}
+	return &REPL{
+		inter:          inter,
+		codes:          codesInner,
+		fvmEnvironment: fvmEnvironment,
+		checker:        checker,
+		debugger:       debugger,
+		currentCode:    "",
+		parserConfig:   parser.Config{},
+	}, nil
 
 }
 
-func (r *REPL) onError(err error, location common.Location, codes map[runtime.Location][]byte) {
+func (r *REPL) onError(err error, location common.Location, codes map[common.Location][]byte) {
 	onError := r.OnError
 	if onError == nil {
 		return
@@ -324,7 +351,6 @@ func (r *REPL) Accept(code []byte, eval bool) (inputIsComplete bool, err error) 
 			program := ast.NewProgram(nil, []ast.Declaration{declaration})
 
 			r.checker.CheckProgram(program)
-
 			err = r.handleCheckerError()
 			if err != nil {
 				return
@@ -375,99 +401,31 @@ type REPLSuggestion struct {
 	Name, Description string
 }
 
-func (r *REPL) Suggestions(line string, remain string) (result []REPLSuggestion) {
+func (r *REPL) Suggestions() (result []REPLSuggestion) {
 	names := map[string]string{}
-	fmt.Println("word", line)
-	fmt.Println("remain", remain)
 
-	if strings.Contains(line, ".") {
-		words := strings.Split(line, ".")
-		code := []byte(strings.Join(words[:len(words)-1], "."))
-		fmt.Println("code", string(code))
-		tokens, err := lexer.Lex(code, nil)
-		defer tokens.Reclaim()
-		if err != nil {
-			fmt.Println("lexer error", err)
+	r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
+		if names[name] != "" {
 			return
 		}
+		names[name] = variable.Type.String()
+	})
 
-		inputIsComplete := isInputComplete(tokens)
-
-		if !inputIsComplete {
-			fmt.Println("input not complete")
-			return
-		}
-
-		parsed, errs := parser.ParseStatementsFromTokenStream(nil, tokens, r.parserConfig)
-		if len(errs) > 0 {
-			fmt.Println("parse error", errs)
-			return
-		}
-
-		r.checker.ResetErrors()
-
-		for _, element := range parsed {
-
-			switch element := element.(type) {
-			case ast.Declaration:
-				fmt.Println("declaration")
-				return
-
-			case ast.Statement:
-				fmt.Println("statement")
-				statement := element
-
-				r.checker.Program = nil
-
-				var expressionType sema.Type
-				expressionStatement, isExpression := statement.(*ast.ExpressionStatement)
-				if !isExpression {
-					fmt.Println("not expression")
-					return
-				}
-				expressionType = r.checker.VisitExpression(expressionStatement.Expression, expressionStatement, nil)
-
-				memberResolver := expressionType.GetMembers()
-				for name, member := range memberResolver {
-					if remain == "" || strings.HasPrefix(name, remain) {
-						fmt.Println("name", name)
-						m := member.Resolve(nil, name, ast.Range{}, func(err error) {
-							fmt.Println(err)
-						})
-						names[name] = m.TypeAnnotation.String()
-					}
-				}
-
-			default:
-				panic(errors.NewUnreachableError())
-			}
-		}
-
-	} else {
-		r.checker.Elaboration.ForEachGlobalValue(func(name string, variable *sema.Variable) {
-			if names[name] != "" {
-				return
-			}
+	_ = r.checker.Config.BaseValueActivationHandler(nil).ForEach(func(name string, variable *sema.Variable) error {
+		if names[name] == "" {
 			names[name] = variable.Type.String()
-		})
-
-		_ = r.checker.Config.BaseValueActivationHandler(nil).ForEach(func(name string, variable *sema.Variable) error {
-			if names[name] == "" {
-				names[name] = variable.Type.String()
-			}
-			return nil
-		})
-	}
+		}
+		return nil
+	})
 
 	// Iterating over the dictionary of names is safe,
 	// as the suggested entries are sorted afterwards
+
 	for name, description := range names { //nolint:maprange
-		if remain == "" || strings.HasPrefix(name, remain) {
-			result = append(result, REPLSuggestion{
-				Name:        name,
-				Description: description,
-			})
-		}
+		result = append(result, REPLSuggestion{
+			Name:        name,
+			Description: description,
+		})
 	}
 
 	sort.Slice(result, func(i, j int) bool {

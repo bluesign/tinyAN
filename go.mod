@@ -18,8 +18,8 @@ require (
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/onflow/atree v0.8.0
 	github.com/onflow/cadence v1.2.1
-	github.com/onflow/flow-evm-gateway v0.36.5
-	github.com/onflow/flow-go v0.38.0-preview.0.0.20241023115538-1d55978658e6
+	github.com/onflow/flow-evm-gateway v0.37.0
+	github.com/onflow/flow-go v0.38.0-preview.0.0.20241029205025-3496c0f02d51
 	github.com/onflow/flow-go-sdk v1.2.2
 	github.com/onflow/flow/protobuf/go/flow v0.4.7
 	github.com/onflow/go-ethereum v1.14.7
@@ -27,10 +27,9 @@ require (
 	github.com/rivo/tview v0.0.0-20240921122403-a64fc48d7654
 	github.com/rs/cors v1.8.0
 	github.com/rs/zerolog v1.33.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/tidwall/pretty v1.2.1
 	go.opentelemetry.io/otel v1.24.0
-	golang.org/x/crypto v0.26.0
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 	google.golang.org/grpc v1.63.2
 )
@@ -213,6 +212,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
+	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect

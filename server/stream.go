@@ -6,6 +6,7 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/onflow/flow-evm-gateway/api"
 	"github.com/onflow/go-ethereum/core/types"
+	"github.com/rs/zerolog"
 	"math/big"
 
 	"github.com/onflow/flow-evm-gateway/models"
@@ -204,7 +205,7 @@ func newSubscription[T any](
 
 	rpcSub := notifier.CreateSubscription()
 
-	subs := models.NewSubscription(callback(notifier, rpcSub))
+	subs := models.NewSubscription(zerolog.Nop(), callback(notifier, rpcSub))
 
 	publisher.Subscribe(subs)
 

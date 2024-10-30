@@ -30,15 +30,7 @@ import (
 	jsoncdc "github.com/onflow/cadence/encoding/json"
 	"github.com/onflow/cadence/interpreter"
 	"github.com/onflow/cadence/pretty"
-	"github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/sema"
-	"github.com/onflow/flow-go/fvm"
-	"github.com/onflow/flow-go/fvm/environment"
-	reusableRuntime "github.com/onflow/flow-go/fvm/runtime"
-	fvmStorage "github.com/onflow/flow-go/fvm/storage"
-	fvmState "github.com/onflow/flow-go/fvm/storage/state"
-	"github.com/onflow/flow-go/fvm/tracing"
-	flowgo "github.com/onflow/flow-go/model/flow"
 	prettyJSON "github.com/tidwall/pretty"
 	"io"
 	"strings"
@@ -78,74 +70,7 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 		out:                sw,
 	}
 
-	var block *flowgo.Header
-	var err error
-
-	block, err = store.GetBlockByHeight(store.Latest().LastBlocksHeight() - 2)
-	if err != nil {
-		return nil, err
-	}
-
-	snapshot := store.LedgerSnapshot(block.Height)
-
-	debugger := interpreter.NewDebugger()
-
-	var entropyProvider = &storage.EntropyProviderPerBlockProvider{
-		Store: store,
-	}
-
-	fvmContext := fvm.NewContext(
-		fvm.WithChain(flowgo.Mainnet.Chain()),
-		fvm.WithBlockHeader(block),
-		fvm.WithBlocks(store),
-		fvm.WithEntropyProvider(entropyProvider.AtBlockID(block.ID())),
-		fvm.WithCadenceLogging(true),
-		fvm.WithAuthorizationChecksEnabled(false),
-		fvm.WithSequenceNumberCheckAndIncrementEnabled(false),
-		fvm.WithEVMEnabled(true),
-		fvm.WithMemoryLimit(2*1024*1024*1024), //2GB
-		fvm.WithComputationLimit(10_000),      //100k
-		fvm.WithReusableCadenceRuntimePool(
-			reusableRuntime.NewReusableCadenceRuntimePool(
-				0,
-				runtime.Config{
-					Debugger:           debugger,
-					TracingEnabled:     false,
-					AttachmentsEnabled: true,
-				},
-			),
-		),
-	)
-
-	blockDatabase := fvmStorage.NewBlockDatabase(snapshot, 0, nil)
-	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
-	if err != nil {
-		panic(err)
-	}
-	fvmContext.TxId = flowgo.ZeroID
-	fvmContext.TxIndex = 0
-	fvmContext.TxBody = flowgo.NewTransactionBody()
-
-	env := environment.NewTransactionEnvironment(
-		tracing.NewMockTracerSpan(),
-		fvmContext.EnvironmentParams,
-		txnState)
-
-	addr, err := flowgo.StringToAddress("7e60df042a9c0868")
-	if err != nil {
-		fmt.Println(err)
-	}
-	used, err := env.GetStorageUsed(common.MustBytesToAddress(addr.Bytes()))
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("used", used)
-
-	cadenceRepl, err := NewREPL(&runtimeWrapper{
-		baseRuntime: env,
-		REPL:        consoleREPL.repl,
-	})
-
+	cadenceRepl, err := NewREPL(store)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -259,7 +184,6 @@ func (consoleREPL *ConsoleREPL) execute(line string) {
 
 func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 	wordBeforeCursor := d.GetWordBeforeCursorUntilSeparator(".")
-	line := d.GetWordBeforeCursorUntilSeparator(" ")
 
 	if len(wordBeforeCursor) == 0 {
 		return nil
@@ -281,7 +205,7 @@ func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 		}
 
 	} else {
-		for _, suggestion := range consoleREPL.repl.Suggestions(line, wordBeforeCursor) {
+		for _, suggestion := range consoleREPL.repl.Suggestions() {
 			suggests = append(suggests, prompt.Suggest{
 				Text:        suggestion.Name,
 				Description: suggestion.Description,

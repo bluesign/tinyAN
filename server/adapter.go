@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/bluesign/tinyAN/indexer"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/hashicorp/golang-lru/v2"
@@ -17,7 +19,6 @@ import (
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"strings"
 )
 
 type TemporaryTransactionResult struct {
