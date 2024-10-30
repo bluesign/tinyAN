@@ -254,7 +254,7 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 		})
 		fmt.Println("Transaction executed")
 		interactiveDebugger.Continue()
-		interactiveDebugger.Exit()
+		interactiveDebugger.Exit = true
 	}()
 
 	stop := <-r.debugger.Stops()
