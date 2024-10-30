@@ -124,6 +124,8 @@ func (r *REPL) StartAtHeight(height uint64) error {
 	}
 
 	vmCtx := fvm.NewContext(fvmOptions...)
+	vmCtx.TxId = flowgo.ZeroID
+	vmCtx.TxIndex = 0
 
 	blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, vmCtx.DerivedBlockData)
 	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
