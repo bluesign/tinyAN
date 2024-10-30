@@ -71,7 +71,7 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 		out:                sw,
 	}
 
-	cadenceRepl, err := NewREPL(store, sw)
+	cadenceRepl, err := NewREPL(store, session, sw)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -245,7 +245,7 @@ func (consoleREPL *ConsoleREPL) Run() {
 		prompt.OptionHistory(history),
 		prompt.OptionWriter(NewStandardOutputWriter(consoleREPL.out)),
 		prompt.OptionParser(NewStandardInputParser(consoleREPL.session)),
-		prompt.OptionCompletionWordSeparator("."),
+		prompt.OptionCompletionWordSeparator(" "),
 	).Run()
 }
 

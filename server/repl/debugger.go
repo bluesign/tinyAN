@@ -20,6 +20,7 @@ package repl
 
 import (
 	"fmt"
+	"github.com/gliderlabs/ssh"
 	"io"
 	"strings"
 	"text/tabwriter"
@@ -54,13 +55,15 @@ type InteractiveDebugger struct {
 	debugger *interpreter.Debugger
 	stop     interpreter.Stop
 	output   io.Writer
+	session  ssh.Session
 }
 
-func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, output io.Writer) *InteractiveDebugger {
+func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer) *InteractiveDebugger {
 	return &InteractiveDebugger{
 		debugger: debugger,
 		stop:     stop,
 		output:   output,
+		session:  session,
 	}
 }
 
@@ -164,6 +167,8 @@ func (d *InteractiveDebugger) Run() {
 		suggest,
 		prompt.OptionPrefix("(cdb) "),
 		prompt.OptionSetExitCheckerOnInput(exitChecker),
+		prompt.OptionWriter(NewStandardOutputWriter(d.output)),
+		prompt.OptionParser(NewStandardInputParser(d.session)),
 	).Run()
 }
 

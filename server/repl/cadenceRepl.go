@@ -21,6 +21,7 @@ package repl
 import (
 	"bytes"
 	"fmt"
+	"github.com/gliderlabs/ssh"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/fvm/tracing"
 	"io"
@@ -52,6 +53,7 @@ import (
 
 type REPL struct {
 	logger           zerolog.Logger
+	session          ssh.Session
 	cadenceRuntime   runtime.Runtime
 	fvmEnvironment   environment.Environment
 	inter            *interpreter.Interpreter
@@ -66,7 +68,7 @@ type REPL struct {
 	output           io.Writer
 }
 
-func NewREPL(storageProvider *storage.HeightBasedStorage, output io.Writer) (*REPL, error) {
+func NewREPL(storageProvider *storage.HeightBasedStorage, session ssh.Session, output io.Writer) (*REPL, error) {
 
 	logger := zerolog.Nop()
 
@@ -80,6 +82,7 @@ func NewREPL(storageProvider *storage.HeightBasedStorage, output io.Writer) (*RE
 		storageProvider: storageProvider,
 		parserConfig:    parser.Config{},
 		output:          output,
+		session:         session,
 	}
 
 	err = repl.StartAtHeight(lastBlock.Height, nil)
@@ -252,7 +255,7 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	stop := <-r.debugger.Stops()
 	fmt.Println("Stopped")
 
-	interactiveDebugger := NewInteractiveDebugger(r.debugger, stop, r.output)
+	interactiveDebugger := NewInteractiveDebugger(r.debugger, stop, r.session, r.output)
 	interactiveDebugger.Run()
 
 	return nil
