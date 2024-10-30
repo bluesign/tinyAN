@@ -56,7 +56,7 @@ type InteractiveDebugger struct {
 	stop     interpreter.Stop
 	output   io.Writer
 	session  ssh.Session
-	Exit bool
+	Exit     bool
 }
 
 func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer) *InteractiveDebugger {
@@ -65,15 +65,13 @@ func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Sto
 		stop:     stop,
 		output:   output,
 		session:  session,
-		Exit: false
+		Exit:     false,
 	}
 }
 
 func (d *InteractiveDebugger) Continue() {
 	d.debugger.Continue()
 }
-
-
 
 func (d *InteractiveDebugger) Next() {
 	d.stop = d.debugger.Next()
