@@ -91,7 +91,7 @@ func NewREPL(storageProvider *storage.HeightBasedStorage, output io.Writer) (*RE
 
 }
 
-func (r *REPL) StartAtHeight(height uint64) error {
+func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error {
 	snap := r.storageProvider.LedgerSnapshot(height)
 	debugger := interpreter.NewDebugger()
 
@@ -124,20 +124,24 @@ func (r *REPL) StartAtHeight(height uint64) error {
 	}
 
 	vmCtx := fvm.NewContext(fvmOptions...)
-	vmCtx.TxId = flowgo.ZeroID
-	vmCtx.TxIndex = 0
 
-	blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, vmCtx.DerivedBlockData)
-	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
-	if err != nil {
-		return err
+	var fvmEnvironment environment.Environment
+	if body != nil {
+		blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, vmCtx.DerivedBlockData)
+		txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+		if err != nil {
+			return err
+		}
+		fvmEnvironment = environment.NewTransactionEnvironment(
+			tracing.NewMockTracerSpan(),
+			vmCtx.EnvironmentParams,
+			txnState)
+	} else {
+		fvmEnvironment = environment.NewScriptEnvironmentFromStorageSnapshot(
+			vmCtx.EnvironmentParams,
+			snap,
+		)
 	}
-
-	fvmEnvironment := environment.NewTransactionEnvironment(
-		tracing.NewMockTracerSpan(),
-		vmCtx.EnvironmentParams,
-		txnState)
-
 	codes := runtime.NewCodesAndPrograms()
 	codesRef := &codes
 	field := reflect.ValueOf(codesRef).Elem().FieldByName("codes")
