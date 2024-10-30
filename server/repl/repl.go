@@ -31,6 +31,7 @@ import (
 	"github.com/onflow/cadence/interpreter"
 	"github.com/onflow/cadence/pretty"
 	"github.com/onflow/cadence/sema"
+	flowgo "github.com/onflow/flow-go/model/flow"
 	prettyJSON "github.com/tidwall/pretty"
 	"io"
 	"strings"
@@ -310,6 +311,25 @@ func init() {
 			description: "Exit the interpreter",
 			handler: func(r *ConsoleREPL, _ string) {
 				r.session.Close()
+			},
+		},
+		{
+			name:        "debug",
+			description: "Debug a transaction",
+			handler: func(r *ConsoleREPL, argument string) {
+				txId, err := flowgo.HexStringToIdentifier(argument)
+				if err != nil {
+					printError(r.out, err.Error())
+					return
+				}
+
+				err = r.repl.DebugTransactions(txId)
+				if err != nil {
+					printError(r.out, err.Error())
+					return
+				}
+				return
+
 			},
 		},
 		{
