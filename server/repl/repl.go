@@ -70,7 +70,7 @@ func NewConsoleREPL(store *storage.HeightBasedStorage, session ssh.Session) (*Co
 		out:                sw,
 	}
 
-	cadenceRepl, err := NewREPL(store)
+	cadenceRepl, err := NewREPL(store, sw)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err

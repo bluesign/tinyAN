@@ -21,6 +21,9 @@ package repl
 import (
 	"bytes"
 	"fmt"
+	fvmState "github.com/onflow/flow-go/fvm/storage/state"
+	"github.com/onflow/flow-go/fvm/tracing"
+	"io"
 	"reflect"
 	goRuntime "runtime"
 	"sort"
@@ -40,6 +43,7 @@ import (
 	"github.com/onflow/cadence/stdlib"
 	"github.com/onflow/flow-go/fvm"
 	"github.com/onflow/flow-go/fvm/environment"
+	fvmStorage "github.com/onflow/flow-go/fvm/storage"
 	"github.com/onflow/flow-go/fvm/storage/derived"
 
 	flowgo "github.com/onflow/flow-go/model/flow"
@@ -47,60 +51,92 @@ import (
 )
 
 type REPL struct {
+	logger           zerolog.Logger
+	cadenceRuntime   runtime.Runtime
+	fvmEnvironment   environment.Environment
 	inter            *interpreter.Interpreter
 	checker          *sema.Checker
+	storageProvider  *storage.HeightBasedStorage
 	codes            map[common.Location][]byte
-	checkers         map[common.Location]*sema.Checker
-	fvmEnvironment   any
 	debugger         *interpreter.Debugger
 	OnError          func(err error, location runtime.Location, codes map[runtime.Location][]byte)
 	OnExpressionType func(sema.Type)
 	OnResult         func(interpreter.Value)
-	currentCode      string
 	parserConfig     parser.Config
-	counter          uint64
+	output           io.Writer
 }
 
-func NewREPL(storageProvider *storage.HeightBasedStorage) (*REPL, error) {
+func NewREPL(storageProvider *storage.HeightBasedStorage, output io.Writer) (*REPL, error) {
 
-	debugger := interpreter.NewDebugger()
 	logger := zerolog.Nop()
 
 	lastBlock, err := storageProvider.GetLatestBlock()
 	if err != nil {
 		logger.Panic().Msgf("cannot get last block %v", err)
 	}
-	snap := storageProvider.LedgerSnapshot(lastBlock.Height)
+
+	repl := &REPL{
+		logger:          logger,
+		storageProvider: storageProvider,
+		parserConfig:    parser.Config{},
+		output:          output,
+	}
+
+	err = repl.StartAtHeight(lastBlock.Height)
+	if err != nil {
+		return nil, err
+	}
+
+	return repl, nil
+
+}
+
+func (r *REPL) StartAtHeight(height uint64) error {
+	snap := r.storageProvider.LedgerSnapshot(height)
+	debugger := interpreter.NewDebugger()
+
+	blockHeader, err := r.storageProvider.GetBlockByHeight(height)
+	if err != nil {
+		r.logger.Err(err).Msgf("cannot get block by height")
+		return err
+	}
 
 	derivedChainData, err := derived.NewDerivedChainData(10)
 	if err != nil {
-		logger.Panic().Msgf("cannot create derived data cache: %v", err)
+		r.logger.Err(err).Msgf("cannot create derived data cache")
 	}
+
 	entropyPerBlock := storage.EntropyProviderPerBlockProvider{
-		Store: storageProvider,
+		Store: r.storageProvider,
 	}
 
 	fvmOptions := []fvm.Option{
 		fvm.WithChain(flowgo.Mainnet.Chain()),
-		fvm.WithBlockHeader(lastBlock),
-		fvm.WithBlocks(storageProvider),
+		fvm.WithBlockHeader(blockHeader),
+		fvm.WithBlocks(r.storageProvider),
 		fvm.WithComputationLimit(100_000),           //100k
 		fvm.WithMemoryLimit(2 * 1024 * 1024 * 1024), //2GB
 		fvm.WithEVMEnabled(true),
 		fvm.WithDerivedBlockData(
-			derivedChainData.NewDerivedBlockDataForScript(lastBlock.ID()),
+			derivedChainData.NewDerivedBlockDataForScript(blockHeader.ID()),
 		),
-		fvm.WithEntropyProvider(entropyPerBlock.AtBlockID(lastBlock.ID())),
+		fvm.WithEntropyProvider(entropyPerBlock.AtBlockID(blockHeader.ID())),
 	}
 
 	vmCtx := fvm.NewContext(fvmOptions...)
 
-	fvmEnvironment := environment.NewScriptEnvironmentFromStorageSnapshot(
+	blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, vmCtx.DerivedBlockData)
+	txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+	if err != nil {
+		return err
+	}
+
+	fvmEnvironment := environment.NewTransactionEnvironment(
+		tracing.NewMockTracerSpan(),
 		vmCtx.EnvironmentParams,
-		snap)
+		txnState)
 
 	codes := runtime.NewCodesAndPrograms()
-	fmt.Println(codes)
 	codesRef := &codes
 	field := reflect.ValueOf(codesRef).Elem().FieldByName("codes")
 	codesInner := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface().(map[common.Location][]byte)
@@ -109,6 +145,7 @@ func NewREPL(storageProvider *storage.HeightBasedStorage) (*REPL, error) {
 
 	interpreterEnvironment := runtime.NewScriptInterpreterEnvironment(runtime.Config{
 		AttachmentsEnabled: true,
+		Debugger:           debugger,
 	})
 	interpreterEnvironment.Configure(fvmEnvironment, codes, cadenceStorage, nil)
 
@@ -117,10 +154,10 @@ func NewREPL(storageProvider *storage.HeightBasedStorage) (*REPL, error) {
 		common.ScriptLocation{},
 		false,
 	)
-	fmt.Println(err)
 
 	cadenceRuntime := runtime.NewInterpreterRuntime(runtime.Config{
 		AttachmentsEnabled: true,
+		Debugger:           debugger,
 	})
 
 	checkerConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("CheckerConfig").Interface().(*sema.Config)
@@ -138,7 +175,7 @@ func NewREPL(storageProvider *storage.HeightBasedStorage) (*REPL, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	baseActivation := activations.NewActivation(nil, interpreter.BaseActivation)
@@ -158,20 +195,57 @@ func NewREPL(storageProvider *storage.HeightBasedStorage) (*REPL, error) {
 		rinter.SharedState.Config,
 	)
 
+	r.cadenceRuntime = cadenceRuntime
+	r.fvmEnvironment = fvmEnvironment
+	r.inter = inter
+	r.checker = checker
+	r.codes = codesInner
+	r.debugger = debugger
+
+	return nil
+}
+
+func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
+
+	tx, err := r.storageProvider.GetTransactionById(txId)
 	if err != nil {
-		return nil, err
+		r.logger.Err(err).Msgf("cannot get transaction")
+		return err
+	}
+	result, err := r.storageProvider.GetTransactionResult(txId)
+	if err != nil {
+		r.logger.Err(err).Msgf("cannot get transaction result")
+		return err
 	}
 
-	return &REPL{
-		inter:          inter,
-		codes:          codesInner,
-		fvmEnvironment: fvmEnvironment,
-		checker:        checker,
-		debugger:       debugger,
-		currentCode:    "",
-		parserConfig:   parser.Config{},
-	}, nil
+	err = r.StartAtHeight(result.BlockHeight)
+	if err != nil {
+		return err
+	}
 
+	script := runtime.Script{
+		tx.Script,
+		tx.Arguments,
+	}
+	//debug transaction here
+	fmt.Println("Debugging transaction", txId)
+
+	r.debugger.RequestPause()
+	fmt.Println("Pause requested")
+
+	go r.cadenceRuntime.ExecuteTransaction(script, runtime.Context{
+		Interface: r.fvmEnvironment,
+		Location:  common.NewTransactionLocation(nil, txId[:]),
+	})
+	fmt.Println("Transaction executed")
+
+	stop := <-r.debugger.Stops()
+	fmt.Println("Stopped")
+
+	interactiveDebugger := NewInteractiveDebugger(r.debugger, stop)
+	interactiveDebugger.Run()
+
+	return nil
 }
 
 func (r *REPL) onError(err error, location common.Location, codes map[common.Location][]byte) {
