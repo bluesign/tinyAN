@@ -61,13 +61,17 @@ type InteractiveDebugger struct {
 }
 
 func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer) *InteractiveDebugger {
-	return &InteractiveDebugger{
+
+	d := &InteractiveDebugger{
 		debugger: debugger,
 		stop:     stop,
 		output:   output,
 		session:  session,
 		Exit:     false,
 	}
+	d.Where()
+	fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
+	return d
 }
 
 func (d *InteractiveDebugger) Continue() {
