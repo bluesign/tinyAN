@@ -246,16 +246,21 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	r.debugger.RequestPause()
 	fmt.Println("Pause requested")
 
-	go r.cadenceRuntime.ExecuteTransaction(script, runtime.Context{
-		Interface: r.fvmEnvironment,
-		Location:  common.NewTransactionLocation(nil, txId[:]),
-	})
-	fmt.Println("Transaction executed")
+	var interactiveDebugger *InteractiveDebugger
+	go func() {
+		r.cadenceRuntime.ExecuteTransaction(script, runtime.Context{
+			Interface: r.fvmEnvironment,
+			Location:  common.NewTransactionLocation(nil, txId[:]),
+		})
+		fmt.Println("Transaction executed")
+		interactiveDebugger.Continue()
+		interactiveDebugger.Exit()
+	}()
 
 	stop := <-r.debugger.Stops()
 	fmt.Println("Stopped")
 
-	interactiveDebugger := NewInteractiveDebugger(r.debugger, stop, r.session, r.output)
+	interactiveDebugger = NewInteractiveDebugger(r.debugger, stop, r.session, r.output)
 	interactiveDebugger.Run()
 
 	return nil
