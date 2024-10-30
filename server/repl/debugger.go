@@ -73,6 +73,10 @@ func (d *InteractiveDebugger) Continue() {
 
 func (d *InteractiveDebugger) Next() {
 	d.stop = d.debugger.Next()
+
+	d.Where()
+	fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
+
 }
 
 // Show shows the values for the variables with the given names.
