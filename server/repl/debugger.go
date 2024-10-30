@@ -69,6 +69,9 @@ func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Sto
 		session:  session,
 		Exit:     false,
 	}
+
+	fmt.Fprintln(d.output, "Welcome to the Cadence debugger!\n")
+
 	d.Where()
 	fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
 	return d
@@ -184,8 +187,6 @@ func (d *InteractiveDebugger) Run() {
 		}
 		return false
 	}
-
-	fmt.Fprintln(d.output, "Welcome to the Cadence debugger!")
 
 	prompt.New(
 		executor,
