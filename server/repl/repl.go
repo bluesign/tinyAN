@@ -184,7 +184,7 @@ func (consoleREPL *ConsoleREPL) execute(line string) {
 }
 
 func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
-	wordBeforeCursor := d.GetWordBeforeCursorUntilSeparator(".")
+	wordBeforeCursor := d.GetWordBeforeCursor()
 
 	if len(wordBeforeCursor) == 0 {
 		return nil
@@ -214,9 +214,7 @@ func (consoleREPL *ConsoleREPL) suggest(d prompt.Document) []prompt.Suggest {
 		}
 	}
 
-	//words := strings.Split(wordBeforeCursor, ".")
-
-	return suggests //prompt.FilterHasPrefix(suggests, wordBeforeCursor, false)
+	return prompt.FilterHasPrefix(suggests, wordBeforeCursor, false)
 }
 
 func (consoleREPL *ConsoleREPL) changeLivePrefix() (string, bool) {
