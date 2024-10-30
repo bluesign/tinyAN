@@ -242,7 +242,7 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	stop := <-r.debugger.Stops()
 	fmt.Println("Stopped")
 
-	interactiveDebugger := NewInteractiveDebugger(r.debugger, stop)
+	interactiveDebugger := NewInteractiveDebugger(r.debugger, stop, r.output)
 	interactiveDebugger.Run()
 
 	return nil
