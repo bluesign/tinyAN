@@ -84,7 +84,7 @@ func (d *InteractiveDebugger) Next() {
 
 	for {
 		select {
-		case <-d.debugger.Stops():
+		case d.stop = <-d.debugger.Stops():
 			d.Where()
 			fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
 			return
