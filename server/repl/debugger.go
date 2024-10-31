@@ -138,6 +138,7 @@ func (d *InteractiveDebugger) Break(args []string) {
 		return
 	}
 
+	fmt.Println("Breakpoint set at line", line)
 	d.debugger.AddBreakpoint(d.stop.Interpreter.Location, uint(line-1))
 	d.debugger.Continue()
 
