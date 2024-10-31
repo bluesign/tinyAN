@@ -103,14 +103,17 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	fmt.Println("codeLines", len(codeLines))
 	fmt.Println(string(d.codes[location]))
 	var startLine = statement.StartPosition().Line - height/2
-	var endLine = statement.EndPosition(nil).Line - height/2
 
 	if startLine < 0 {
 		startLine = 0
 	}
+
+	endLine := startLine + height
+
 	if endLine > len(codeLines)-1 {
 		endLine = len(codeLines) - 1
 	}
+
 	fmt.Println("startLine", startLine)
 	fmt.Println("endLine", endLine)
 	if endLine-startLine > height {
