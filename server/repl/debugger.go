@@ -86,6 +86,8 @@ func (d *InteractiveDebugger) Continue() {
 }
 
 func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement) {
+	fmt.Println("location", location)
+	fmt.Println(d.codes)
 	var codeLines = strings.Split(string(d.codes[location]), "\n")
 	fmt.Println("codeLines", len(codeLines))
 	fmt.Println(string(d.codes[location]))
