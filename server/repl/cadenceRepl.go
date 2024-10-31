@@ -164,7 +164,7 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		Debugger:           debugger,
 	})
 
-	err := evm.SetupEnvironment(flowgo.Mainnet, fvmEnvironment, interpreterEnvironment, nil)
+	err = evm.SetupEnvironment(flowgo.Mainnet, fvmEnvironment, interpreterEnvironment, nil)
 	if err != nil {
 		fmt.Println("Error in setup environment", err)
 		return err
