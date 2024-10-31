@@ -169,6 +169,8 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		false,
 	)
 
+	interpreterConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("InterpreterConfig").Interface().(*interpreter.Config)
+
 	cadenceRuntime := runtime.NewInterpreterRuntime(runtime.Config{
 		AttachmentsEnabled: true,
 		Debugger:           debugger,
@@ -197,16 +199,16 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		interpreter.Declare(baseActivation, value)
 	}
 
-	_, rinter, err := cadenceRuntime.Storage(runtime.Context{
+	/*_, rinter, err := cadenceRuntime.Storage(runtime.Context{
 		Interface:   fvmEnvironment,
 		Location:    common.ScriptLocation{},
 		Environment: interpreterEnvironment,
-	})
+	})*/
 
 	inter, err := interpreter.NewInterpreter(
 		interpreter.ProgramFromChecker(checker),
 		checker.Location,
-		rinter.SharedState.Config,
+		interpreterConfig,
 	)
 
 	r.cadenceRuntime = cadenceRuntime
