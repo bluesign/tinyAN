@@ -94,10 +94,11 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	if startLine < 0 {
 		startLine = 0
 	}
+	fmt.Println("startLine", startLine)
 	if endLine > len(codeLines)-1 {
 		endLine = len(codeLines) - 1
 	}
-
+	fmt.Println("endLine", endLine)
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
 			fmt.Fprintf(d.output, ">> %s\n", line)
