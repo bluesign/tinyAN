@@ -41,7 +41,9 @@ func (d *runtimeWrapper) InteractionUsed() (uint64, error) {
 
 func (d *runtimeWrapper) ResolveLocation(identifiers []runtime.Identifier, location runtime.Location) ([]runtime.ResolvedLocation, error) {
 	fmt.Println("ResolveLocation", identifiers, location)
-	return d.baseRuntime.ResolveLocation(identifiers, location)
+	result, err := d.baseRuntime.ResolveLocation(identifiers, location)
+	fmt.Println(result)
+	return result, err
 }
 
 func (d *runtimeWrapper) GetCode(location runtime.Location) ([]byte, error) {
