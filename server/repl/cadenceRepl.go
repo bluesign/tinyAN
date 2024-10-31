@@ -52,20 +52,21 @@ import (
 )
 
 type REPL struct {
-	logger           zerolog.Logger
-	session          ssh.Session
-	cadenceRuntime   runtime.Runtime
-	fvmEnvironment   environment.Environment
-	inter            *interpreter.Interpreter
-	checker          *sema.Checker
-	storageProvider  *storage.HeightBasedStorage
-	codes            map[common.Location][]byte
-	debugger         *interpreter.Debugger
-	OnError          func(err error, location runtime.Location, codes map[runtime.Location][]byte)
-	OnExpressionType func(sema.Type)
-	OnResult         func(interpreter.Value)
-	parserConfig     parser.Config
-	output           io.Writer
+	logger                 zerolog.Logger
+	session                ssh.Session
+	cadenceRuntime         runtime.Runtime
+	fvmEnvironment         environment.Environment
+	inter                  *interpreter.Interpreter
+	interpreterEnvironment runtime.Environment
+	checker                *sema.Checker
+	storageProvider        *storage.HeightBasedStorage
+	codes                  map[common.Location][]byte
+	debugger               *interpreter.Debugger
+	OnError                func(err error, location runtime.Location, codes map[runtime.Location][]byte)
+	OnExpressionType       func(sema.Type)
+	OnResult               func(interpreter.Value)
+	parserConfig           parser.Config
+	output                 io.Writer
 }
 
 func NewREPL(storageProvider *storage.HeightBasedStorage, session ssh.Session, output io.Writer) (*REPL, error) {
@@ -214,6 +215,7 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 	r.checker = checker
 	r.codes = codesInner
 	r.debugger = debugger
+	r.interpreterEnvironment = interpreterEnvironment
 
 	return nil
 }
@@ -246,6 +248,7 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	r.debugger.RequestPause()
 	fmt.Println("Pause requested")
 
+	r.interpreterEnvironment.ParseAndCheckProgram(script.Source, common.NewTransactionLocation(nil, txId[:]), false)
 	var interactiveDebugger *InteractiveDebugger
 	go func() {
 		r.cadenceRuntime.ExecuteTransaction(script, runtime.Context{
