@@ -124,9 +124,9 @@ func (d *InteractiveDebugger) Next() {
 		select {
 		case d.stop = <-d.debugger.Stops():
 			d.Where()
+			//send clear screen
+			fmt.Fprintln(d.output, "\033[H\033[2J")
 			d.ShowCode(d.stop.Interpreter.Location, d.stop.Statement)
-
-			fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
 			return
 		case <-time.After(1 * time.Second):
 			d.Exit = true
