@@ -26,6 +26,7 @@ import (
 	"github.com/onflow/flow-go/fvm/evm/debug"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/fvm/tracing"
+	"github.com/onflow/go-ethereum/common/math"
 	"io"
 	"reflect"
 	goRuntime "runtime"
@@ -76,9 +77,19 @@ func NewREPL(storageProvider *storage.HeightBasedStorage, session ssh.Session, o
 
 	logger := zerolog.Nop()
 
-	lastBlock, err := storageProvider.GetLatestBlock()
-	if err != nil {
-		logger.Panic().Msgf("cannot get last block %v", err)
+	user := session.User()
+	blockheight, ok := math.ParseUint64(user)
+
+	var lastBlock *flowgo.Header
+	var err error
+	if ok {
+		lastBlock, err = storageProvider.GetBlockByHeight(blockheight)
+		if err != nil {
+			lastBlock, err = storageProvider.GetLatestBlock()
+			if err != nil {
+				logger.Err(err).Msgf("cannot get last block %v", err)
+			}
+		}
 	}
 
 	repl := &REPL{
