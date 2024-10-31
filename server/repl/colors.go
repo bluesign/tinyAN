@@ -40,5 +40,5 @@ func colorizeError(message string) string {
 }
 
 func colorizeCode(message string) string {
-	return aurora.Colorize(message, aurora.RedFg|aurora.BrightFg|aurora.BoldFm).String()
+	return aurora.Colorize(message, aurora.YellowFg|aurora.BrightFg|aurora.BoldFm).String()
 }
