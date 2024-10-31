@@ -99,7 +99,7 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	codes = precodes + coloredCodes + postcodes
 
 	screen, _, _ := d.session.Pty()
-	height := int(screen.Window.Height - 2)
+	height := int(screen.Window.Height - 4)
 
 	codeLines := strings.Split(codes, "\n")
 	fmt.Println("codeLines", len(codeLines))
