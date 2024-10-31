@@ -138,7 +138,7 @@ func (d *InteractiveDebugger) Break(args []string) {
 		return
 	}
 
-	d.debugger.AddBreakpoint(d.stop.Interpreter.Location, line)
+	d.debugger.AddBreakpoint(d.stop.Interpreter.Location, uint(line))
 	d.debugger.Continue()
 
 	for {
