@@ -14,211 +14,213 @@ import (
 	"time"
 )
 
-type runtimeWrapper struct {
-	baseRuntime runtime.Interface
-	REPL        *REPL
+type RuntimeWrapper struct {
+	BaseRuntime    runtime.Interface
+	CurrentRuntime runtime.Interface
+	REPL           *REPL
 }
 
-func (d *runtimeWrapper) MeterMemory(usage common.MemoryUsage) error {
-	return d.baseRuntime.MeterMemory(usage)
+func (d *RuntimeWrapper) MeterMemory(usage common.MemoryUsage) error {
+	return d.BaseRuntime.MeterMemory(usage)
 }
 
-func (d *runtimeWrapper) MeterComputation(operationType common.ComputationKind, intensity uint) error {
-	return d.baseRuntime.MeterComputation(operationType, intensity)
+func (d *RuntimeWrapper) MeterComputation(operationType common.ComputationKind, intensity uint) error {
+	return d.BaseRuntime.MeterComputation(operationType, intensity)
 }
 
-func (d *runtimeWrapper) ComputationUsed() (uint64, error) {
-	return d.baseRuntime.ComputationUsed()
+func (d *RuntimeWrapper) ComputationUsed() (uint64, error) {
+	return d.BaseRuntime.ComputationUsed()
 }
 
-func (d *runtimeWrapper) MemoryUsed() (uint64, error) {
-	return d.baseRuntime.MemoryUsed()
+func (d *RuntimeWrapper) MemoryUsed() (uint64, error) {
+	return d.BaseRuntime.MemoryUsed()
 }
 
-func (d *runtimeWrapper) InteractionUsed() (uint64, error) {
-	return d.baseRuntime.InteractionUsed()
+func (d *RuntimeWrapper) InteractionUsed() (uint64, error) {
+	return d.BaseRuntime.InteractionUsed()
 }
 
-func (d *runtimeWrapper) ResolveLocation(identifiers []runtime.Identifier, location runtime.Location) ([]runtime.ResolvedLocation, error) {
+func (d *RuntimeWrapper) ResolveLocation(identifiers []runtime.Identifier, location runtime.Location) ([]runtime.ResolvedLocation, error) {
 	fmt.Println("ResolveLocation", identifiers, location)
-	result, err := d.baseRuntime.ResolveLocation(identifiers, location)
+	result, err := d.BaseRuntime.ResolveLocation(identifiers, location)
 	fmt.Println(result)
 	return result, err
 }
 
-func (d *runtimeWrapper) GetCode(location runtime.Location) ([]byte, error) {
+func (d *RuntimeWrapper) GetCode(location runtime.Location) ([]byte, error) {
 	fmt.Println("GetCode", location)
-	return d.baseRuntime.GetCode(location)
+	return d.BaseRuntime.GetCode(location)
 }
 
-func (d *runtimeWrapper) GetOrLoadProgram(location runtime.Location, load func() (*interpreter.Program, error)) (*interpreter.Program, error) {
+func (d *RuntimeWrapper) GetOrLoadProgram(location runtime.Location, load func() (*interpreter.Program, error)) (*interpreter.Program, error) {
 	fmt.Println("GetOrLoadProgram", location)
-	return d.baseRuntime.GetOrLoadProgram(location, load)
+
+	return d.BaseRuntime.GetOrLoadProgram(location, load)
 }
 
-func (d *runtimeWrapper) SetInterpreterSharedState(state *interpreter.SharedState) {
+func (d *RuntimeWrapper) SetInterpreterSharedState(state *interpreter.SharedState) {
 	fmt.Println("SetInterpreterSharedState")
-	d.baseRuntime.SetInterpreterSharedState(state)
+	d.BaseRuntime.SetInterpreterSharedState(state)
 }
 
-func (d *runtimeWrapper) GetInterpreterSharedState() *interpreter.SharedState {
+func (d *RuntimeWrapper) GetInterpreterSharedState() *interpreter.SharedState {
 	fmt.Println("GetInterpreterSharedState")
-	return d.baseRuntime.GetInterpreterSharedState()
+	return d.BaseRuntime.GetInterpreterSharedState()
 }
 
-func (d *runtimeWrapper) GetValue(owner, key []byte) (value []byte, err error) {
+func (d *RuntimeWrapper) GetValue(owner, key []byte) (value []byte, err error) {
 	fmt.Println("GetValue", hex.EncodeToString(owner), hex.EncodeToString(key))
-	return d.baseRuntime.GetValue(owner, key)
+	return d.BaseRuntime.GetValue(owner, key)
 }
 
-func (d *runtimeWrapper) SetValue(owner, key, value []byte) (err error) {
-	return d.baseRuntime.SetValue(owner, key, value)
+func (d *RuntimeWrapper) SetValue(owner, key, value []byte) (err error) {
+	return d.BaseRuntime.SetValue(owner, key, value)
 }
 
-func (d *runtimeWrapper) ValueExists(owner, key []byte) (exists bool, err error) {
+func (d *RuntimeWrapper) ValueExists(owner, key []byte) (exists bool, err error) {
 	fmt.Println("ValueExists", hex.EncodeToString(owner), hex.EncodeToString(key))
-	return d.baseRuntime.ValueExists(owner, key)
+	return d.BaseRuntime.ValueExists(owner, key)
 }
 
-func (d *runtimeWrapper) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error) {
-	return d.baseRuntime.AllocateSlabIndex(owner)
+func (d *RuntimeWrapper) AllocateSlabIndex(owner []byte) (atree.SlabIndex, error) {
+	return d.BaseRuntime.AllocateSlabIndex(owner)
 }
 
-func (d *runtimeWrapper) CreateAccount(payer runtime.Address) (address runtime.Address, err error) {
-	return d.baseRuntime.CreateAccount(payer)
+func (d *RuntimeWrapper) CreateAccount(payer runtime.Address) (address runtime.Address, err error) {
+	return d.BaseRuntime.CreateAccount(payer)
 }
 
-func (d *runtimeWrapper) AddAccountKey(address runtime.Address, publicKey *runtime.PublicKey, hashAlgo runtime.HashAlgorithm, weight int) (*runtime.AccountKey, error) {
-	return d.baseRuntime.AddAccountKey(address, publicKey, hashAlgo, weight)
+func (d *RuntimeWrapper) AddAccountKey(address runtime.Address, publicKey *runtime.PublicKey, hashAlgo runtime.HashAlgorithm, weight int) (*runtime.AccountKey, error) {
+	return d.BaseRuntime.AddAccountKey(address, publicKey, hashAlgo, weight)
 }
 
-func (d *runtimeWrapper) GetAccountKey(address runtime.Address, index uint32) (*runtime.AccountKey, error) {
-	return d.baseRuntime.GetAccountKey(address, index)
+func (d *RuntimeWrapper) GetAccountKey(address runtime.Address, index uint32) (*runtime.AccountKey, error) {
+	return d.BaseRuntime.GetAccountKey(address, index)
 }
 
-func (d *runtimeWrapper) AccountKeysCount(address runtime.Address) (uint32, error) {
-	return d.baseRuntime.AccountKeysCount(address)
+func (d *RuntimeWrapper) AccountKeysCount(address runtime.Address) (uint32, error) {
+	return d.BaseRuntime.AccountKeysCount(address)
 }
 
-func (d *runtimeWrapper) RevokeAccountKey(address runtime.Address, index uint32) (*runtime.AccountKey, error) {
-	return d.baseRuntime.RevokeAccountKey(address, index)
+func (d *RuntimeWrapper) RevokeAccountKey(address runtime.Address, index uint32) (*runtime.AccountKey, error) {
+	return d.BaseRuntime.RevokeAccountKey(address, index)
 }
 
-func (d *runtimeWrapper) UpdateAccountContractCode(location common.AddressLocation, code []byte) (err error) {
-	return d.baseRuntime.UpdateAccountContractCode(location, code)
+func (d *RuntimeWrapper) UpdateAccountContractCode(location common.AddressLocation, code []byte) (err error) {
+	return d.BaseRuntime.UpdateAccountContractCode(location, code)
 }
 
-func (d *runtimeWrapper) GetAccountContractCode(location common.AddressLocation) (code []byte, err error) {
-	return d.baseRuntime.GetAccountContractCode(location)
+func (d *RuntimeWrapper) GetAccountContractCode(location common.AddressLocation) (code []byte, err error) {
+	return d.BaseRuntime.GetAccountContractCode(location)
 }
 
-func (d *runtimeWrapper) RemoveAccountContractCode(location common.AddressLocation) (err error) {
-	return d.baseRuntime.RemoveAccountContractCode(location)
+func (d *RuntimeWrapper) RemoveAccountContractCode(location common.AddressLocation) (err error) {
+	return d.BaseRuntime.RemoveAccountContractCode(location)
 }
 
-func (d *runtimeWrapper) GetSigningAccounts() ([]runtime.Address, error) {
-	return d.baseRuntime.GetSigningAccounts()
+func (d *RuntimeWrapper) GetSigningAccounts() ([]runtime.Address, error) {
+	return d.BaseRuntime.GetSigningAccounts()
 }
 
-func (d *runtimeWrapper) ProgramLog(s string) error {
-	return d.baseRuntime.ProgramLog(s)
+func (d *RuntimeWrapper) ProgramLog(s string) error {
+	return d.BaseRuntime.ProgramLog(s)
 }
 
-func (d *runtimeWrapper) EmitEvent(event cadence.Event) error {
-	return d.baseRuntime.EmitEvent(event)
+func (d *RuntimeWrapper) EmitEvent(event cadence.Event) error {
+	return d.BaseRuntime.EmitEvent(event)
 }
 
-func (d *runtimeWrapper) GenerateUUID() (uint64, error) {
-	return d.baseRuntime.GenerateUUID()
+func (d *RuntimeWrapper) GenerateUUID() (uint64, error) {
+	return d.BaseRuntime.GenerateUUID()
 }
 
-func (d *runtimeWrapper) DecodeArgument(argument []byte, argumentType cadence.Type) (cadence.Value, error) {
-	return d.baseRuntime.DecodeArgument(argument, argumentType)
+func (d *RuntimeWrapper) DecodeArgument(argument []byte, argumentType cadence.Type) (cadence.Value, error) {
+	return d.BaseRuntime.DecodeArgument(argument, argumentType)
 }
 
-func (d *runtimeWrapper) GetCurrentBlockHeight() (uint64, error) {
-	return d.baseRuntime.GetCurrentBlockHeight()
+func (d *RuntimeWrapper) GetCurrentBlockHeight() (uint64, error) {
+	return d.BaseRuntime.GetCurrentBlockHeight()
 }
 
-func (d *runtimeWrapper) GetBlockAtHeight(height uint64) (block runtime.Block, exists bool, err error) {
-	return d.baseRuntime.GetBlockAtHeight(height)
+func (d *RuntimeWrapper) GetBlockAtHeight(height uint64) (block runtime.Block, exists bool, err error) {
+	return d.BaseRuntime.GetBlockAtHeight(height)
 }
 
-func (d *runtimeWrapper) ReadRandom(bytes []byte) error {
-	return d.baseRuntime.ReadRandom(bytes)
+func (d *RuntimeWrapper) ReadRandom(bytes []byte) error {
+	return d.BaseRuntime.ReadRandom(bytes)
 }
 
-func (d *runtimeWrapper) VerifySignature(signature []byte, tag string, signedData []byte, publicKey []byte, signatureAlgorithm runtime.SignatureAlgorithm, hashAlgorithm runtime.HashAlgorithm) (bool, error) {
-	return d.baseRuntime.VerifySignature(signature, tag, signedData, publicKey, signatureAlgorithm, hashAlgorithm)
+func (d *RuntimeWrapper) VerifySignature(signature []byte, tag string, signedData []byte, publicKey []byte, signatureAlgorithm runtime.SignatureAlgorithm, hashAlgorithm runtime.HashAlgorithm) (bool, error) {
+	return d.BaseRuntime.VerifySignature(signature, tag, signedData, publicKey, signatureAlgorithm, hashAlgorithm)
 }
 
-func (d *runtimeWrapper) Hash(data []byte, tag string, hashAlgorithm runtime.HashAlgorithm) ([]byte, error) {
-	return d.baseRuntime.Hash(data, tag, hashAlgorithm)
+func (d *RuntimeWrapper) Hash(data []byte, tag string, hashAlgorithm runtime.HashAlgorithm) ([]byte, error) {
+	return d.BaseRuntime.Hash(data, tag, hashAlgorithm)
 }
 
-func (d *runtimeWrapper) GetAccountBalance(address common.Address) (value uint64, err error) {
-	return d.baseRuntime.GetAccountBalance(address)
+func (d *RuntimeWrapper) GetAccountBalance(address common.Address) (value uint64, err error) {
+	return d.BaseRuntime.GetAccountBalance(address)
 }
 
-func (d *runtimeWrapper) GetAccountAvailableBalance(address common.Address) (value uint64, err error) {
-	return d.baseRuntime.GetAccountAvailableBalance(address)
+func (d *RuntimeWrapper) GetAccountAvailableBalance(address common.Address) (value uint64, err error) {
+	return d.BaseRuntime.GetAccountAvailableBalance(address)
 }
 
-func (d *runtimeWrapper) GetStorageUsed(address runtime.Address) (value uint64, err error) {
+func (d *RuntimeWrapper) GetStorageUsed(address runtime.Address) (value uint64, err error) {
 	fmt.Println("GetStorageUsed", address)
-	return d.baseRuntime.GetStorageUsed(address)
+	return d.BaseRuntime.GetStorageUsed(address)
 }
 
-func (d *runtimeWrapper) GetStorageCapacity(address runtime.Address) (value uint64, err error) {
-	return d.baseRuntime.GetStorageCapacity(address)
+func (d *RuntimeWrapper) GetStorageCapacity(address runtime.Address) (value uint64, err error) {
+	return d.BaseRuntime.GetStorageCapacity(address)
 }
 
-func (d *runtimeWrapper) ImplementationDebugLog(message string) error {
-	return d.baseRuntime.ImplementationDebugLog(message)
+func (d *RuntimeWrapper) ImplementationDebugLog(message string) error {
+	return d.BaseRuntime.ImplementationDebugLog(message)
 }
 
-func (d *runtimeWrapper) ValidatePublicKey(key *runtime.PublicKey) error {
-	return d.baseRuntime.ValidatePublicKey(key)
+func (d *RuntimeWrapper) ValidatePublicKey(key *runtime.PublicKey) error {
+	return d.BaseRuntime.ValidatePublicKey(key)
 }
 
-func (d *runtimeWrapper) GetAccountContractNames(address runtime.Address) ([]string, error) {
-	return d.baseRuntime.GetAccountContractNames(address)
+func (d *RuntimeWrapper) GetAccountContractNames(address runtime.Address) ([]string, error) {
+	return d.BaseRuntime.GetAccountContractNames(address)
 }
 
-func (d *runtimeWrapper) RecordTrace(operation string, location runtime.Location, duration time.Duration, attrs []attribute.KeyValue) {
-	d.baseRuntime.RecordTrace(operation, location, duration, attrs)
+func (d *RuntimeWrapper) RecordTrace(operation string, location runtime.Location, duration time.Duration, attrs []attribute.KeyValue) {
+	d.BaseRuntime.RecordTrace(operation, location, duration, attrs)
 }
 
-func (d *runtimeWrapper) BLSVerifyPOP(publicKey *runtime.PublicKey, signature []byte) (bool, error) {
-	return d.baseRuntime.BLSVerifyPOP(publicKey, signature)
+func (d *RuntimeWrapper) BLSVerifyPOP(publicKey *runtime.PublicKey, signature []byte) (bool, error) {
+	return d.BaseRuntime.BLSVerifyPOP(publicKey, signature)
 }
 
-func (d *runtimeWrapper) BLSAggregateSignatures(signatures [][]byte) ([]byte, error) {
-	return d.baseRuntime.BLSAggregateSignatures(signatures)
+func (d *RuntimeWrapper) BLSAggregateSignatures(signatures [][]byte) ([]byte, error) {
+	return d.BaseRuntime.BLSAggregateSignatures(signatures)
 }
 
-func (d *runtimeWrapper) BLSAggregatePublicKeys(publicKeys []*runtime.PublicKey) (*runtime.PublicKey, error) {
-	return d.baseRuntime.BLSAggregatePublicKeys(publicKeys)
+func (d *RuntimeWrapper) BLSAggregatePublicKeys(publicKeys []*runtime.PublicKey) (*runtime.PublicKey, error) {
+	return d.BaseRuntime.BLSAggregatePublicKeys(publicKeys)
 }
 
-func (d *runtimeWrapper) ResourceOwnerChanged(interpreter *interpreter.Interpreter, resource *interpreter.CompositeValue, oldOwner common.Address, newOwner common.Address) {
-	d.baseRuntime.ResourceOwnerChanged(interpreter, resource, oldOwner, newOwner)
+func (d *RuntimeWrapper) ResourceOwnerChanged(interpreter *interpreter.Interpreter, resource *interpreter.CompositeValue, oldOwner common.Address, newOwner common.Address) {
+	d.BaseRuntime.ResourceOwnerChanged(interpreter, resource, oldOwner, newOwner)
 }
 
-func (d *runtimeWrapper) GenerateAccountID(address common.Address) (uint64, error) {
-	return d.baseRuntime.GenerateAccountID(address)
+func (d *RuntimeWrapper) GenerateAccountID(address common.Address) (uint64, error) {
+	return d.BaseRuntime.GenerateAccountID(address)
 }
 
-func (d *runtimeWrapper) RecoverProgram(program *ast.Program, location common.Location) ([]byte, error) {
-	return d.baseRuntime.RecoverProgram(program, location)
+func (d *RuntimeWrapper) RecoverProgram(program *ast.Program, location common.Location) ([]byte, error) {
+	return d.BaseRuntime.RecoverProgram(program, location)
 }
 
-func (d *runtimeWrapper) ValidateAccountCapabilitiesGet(inter *interpreter.Interpreter, locationRange interpreter.LocationRange, address interpreter.AddressValue, path interpreter.PathValue, wantedBorrowType *sema.ReferenceType, capabilityBorrowType *sema.ReferenceType) (bool, error) {
-	return d.baseRuntime.ValidateAccountCapabilitiesGet(inter, locationRange, address, path, wantedBorrowType, capabilityBorrowType)
+func (d *RuntimeWrapper) ValidateAccountCapabilitiesGet(inter *interpreter.Interpreter, locationRange interpreter.LocationRange, address interpreter.AddressValue, path interpreter.PathValue, wantedBorrowType *sema.ReferenceType, capabilityBorrowType *sema.ReferenceType) (bool, error) {
+	return d.BaseRuntime.ValidateAccountCapabilitiesGet(inter, locationRange, address, path, wantedBorrowType, capabilityBorrowType)
 }
 
-func (d *runtimeWrapper) ValidateAccountCapabilitiesPublish(inter *interpreter.Interpreter, locationRange interpreter.LocationRange, address interpreter.AddressValue, path interpreter.PathValue, capabilityBorrowType *interpreter.ReferenceStaticType) (bool, error) {
-	return d.baseRuntime.ValidateAccountCapabilitiesPublish(inter, locationRange, address, path, capabilityBorrowType)
+func (d *RuntimeWrapper) ValidateAccountCapabilitiesPublish(inter *interpreter.Interpreter, locationRange interpreter.LocationRange, address interpreter.AddressValue, path interpreter.PathValue, capabilityBorrowType *interpreter.ReferenceStaticType) (bool, error) {
+	return d.BaseRuntime.ValidateAccountCapabilitiesPublish(inter, locationRange, address, path, capabilityBorrowType)
 }
 
-var _ runtime.Interface = &runtimeWrapper{}
+var _ runtime.Interface = &RuntimeWrapper{}

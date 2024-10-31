@@ -625,14 +625,16 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	var block *flowgo.Header
 	var err error
 
+	latestBlock, err := a.store.GetBlockByHeight(a.store.Latest().LastBlocksHeight() - 2)
+	if err != nil {
+		return err
+	}
+
 	//check if exists on network
 	//TODO: check if expired transaction
 	existing, err := a.store.GetTransactionResult(tx.ID())
 	if err != nil {
-		block, err = a.store.GetBlockByHeight(a.store.Latest().LastBlocksHeight() - 2)
-		if err != nil {
-			return err
-		}
+		block = latestBlock
 	} else {
 		block, err = a.store.GetBlockById(existing.BlockID)
 		if err != nil {
@@ -671,92 +673,6 @@ func (a *AccessAdapter) SendTransaction(_ context.Context, tx *flowgo.Transactio
 	executor := proc.NewExecutor(fvmContext, txnState)
 	err = fvm.Run(executor)
 
-	/*
-		var wg sync.WaitGroup
-		wg.Add(1)
-
-		afterCh := make(chan struct{})
-		go func() {
-			defer wg.Done()
-			fmt.Println("before run")
-			err = fvm.Run(executor)
-			fmt.Println("after run")
-			afterCh <- struct{}{}
-		}()
-
-		cadenceTrace := strings.Builder{}
-		func() {
-
-			stop := debugger.Pause()
-			depth := debugger.CurrentActivation(stop.Interpreter).Depth
-			//fmt.Println(depth, stop.Statement.ElementType().String(), stop.Statement)
-			lastLocation := ""
-
-			stop.Interpreter.SharedState.Config.OnFunctionInvocation = func(inter *interpreter.Interpreter, function ast.HasPosition, invocation *interpreter.Invocation) {
-				invoked, ok := function.(*ast.InvocationExpression)
-
-				if ok {
-					depth = len(inter.CallStack())
-
-					args := make([]string, len(invocation.Arguments))
-					for i, arg := range invocation.Arguments {
-						args[i] = arg.String()
-					}
-					types := make([]string, 0)
-					f := func(key *sema.TypeParameter, value sema.Type) {
-						types = append(types, value.QualifiedString())
-					}
-
-					invocation.TypeParameterTypes.Foreach(f)
-					locationPrefix := ""
-					if lastLocation != inter.Location.String() {
-						//fmt.Println("not same", lastLocation, inter.Location.String())
-						lastLocation = inter.Location.String()
-						if strings.Contains(inter.Location.String(), "+") {
-							locationPrefix = fmt.Sprintf("%s+%s.", strings.Repeat("  ", depth), inter.Location.String())
-						}
-
-					}
-
-					if lastLocation == "f233dcee88fe0abe.FungibleToken" {
-						return
-					}
-
-					cadenceTrace.WriteString(fmt.Sprintf("%s%s%s%s(%s)\n",
-						locationPrefix,
-						strings.Repeat("  ", depth),
-						invoked.InvokedExpression,
-						func() string {
-							if len(types) == 0 {
-								return ""
-							}
-							return fmt.Sprintf("<%s>", strings.Join(types, ", "))
-						}(),
-						strings.Join(args, ", "),
-					))
-				}
-			}
-			stop.Interpreter.SharedState.Config.OnInvokedFunctionReturn = func(inter *interpreter.Interpreter, result interpreter.Value) {
-				if (lastLocation == "f233dcee88fe0abe.FungibleToken") && !strings.HasPrefix(result.String(), "A.") {
-					return
-				}
-				depth = len(inter.CallStack())
-				padding := strings.Repeat("  ", depth)
-				cadenceTrace.WriteString(fmt.Sprintf("%s- %s\n", padding, result.String()))
-			}
-
-			debugger.Continue()
-			for {
-				select {
-
-				case <-afterCh:
-					return
-				}
-			}
-		}()
-
-		wg.Wait()
-	*/
 	if err != nil {
 		return err
 	}

@@ -171,8 +171,8 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		return err
 	}
 
-	wrappedInterface := &runtimeWrapper{
-		baseRuntime: fvmEnvironment,
+	wrappedInterface := &RuntimeWrapper{
+		BaseRuntime: fvmEnvironment,
 	}
 	interpreterEnvironment.Configure(wrappedInterface, codes, cadenceStorage, nil)
 
