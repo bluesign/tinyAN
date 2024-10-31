@@ -21,6 +21,8 @@ package repl
 import (
 	"fmt"
 	"github.com/gliderlabs/ssh"
+	"github.com/onflow/cadence/ast"
+	"github.com/onflow/cadence/common"
 	"io"
 	"strings"
 	"text/tabwriter"
@@ -58,9 +60,10 @@ type InteractiveDebugger struct {
 	output   io.Writer
 	session  ssh.Session
 	Exit     bool
+	codes    map[common.Location][]byte
 }
 
-func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer) *InteractiveDebugger {
+func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer, codes map[common.Location][]byte) *InteractiveDebugger {
 
 	d := &InteractiveDebugger{
 		debugger: debugger,
@@ -68,6 +71,7 @@ func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Sto
 		output:   output,
 		session:  session,
 		Exit:     false,
+		codes:    codes,
 	}
 
 	fmt.Fprintln(d.output, "Welcome to the Cadence debugger!\n")
@@ -81,6 +85,26 @@ func (d *InteractiveDebugger) Continue() {
 	d.debugger.Continue()
 }
 
+func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement) {
+	var codeLines = strings.Split(string(d.codes[location]), "\n")
+
+	var startLine = statement.StartPosition().Line - 5
+	var endLine = statement.EndPosition().Line + 5
+
+	if startLine < 0 {
+		startLine = 0
+	}
+	if endLine > len(codeLines)-1 {
+		endLine = len(codeLines) - 1
+	}
+
+	for i, line := range codeLines {
+		if i >= startLine && i <= endLine {
+			fmt.Fprintf(d.output, ">> %s\n", line)
+		}
+	}
+}
+
 func (d *InteractiveDebugger) Next() {
 	d.debugger.RequestPause()
 	d.debugger.Continue()
@@ -89,6 +113,8 @@ func (d *InteractiveDebugger) Next() {
 		select {
 		case d.stop = <-d.debugger.Stops():
 			d.Where()
+			d.ShowCode(d.stop.Interpreter.Location, d.stop.Statement)
+
 			fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
 			return
 		case <-time.After(1 * time.Second):
