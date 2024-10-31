@@ -88,7 +88,15 @@ func (d *InteractiveDebugger) Continue() {
 func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement) {
 	fmt.Println("location", location)
 	fmt.Println(d.codes)
-	var codeLines = strings.Split(string(d.codes[location]), "\n")
+
+	codes := string(d.codes[location])
+	precodes := codes[:statement.StartPosition().Offset]
+	coloredCodes := colorizeError(codes[statement.StartPosition().Offset:statement.EndPosition(nil).Offset])
+	postcodes := codes[statement.EndPosition(nil).Offset:]
+
+	codes = precodes + coloredCodes + postcodes
+
+	codeLines := strings.Split(codes, "\n")
 	fmt.Println("codeLines", len(codeLines))
 	fmt.Println(string(d.codes[location]))
 	var startLine = statement.StartPosition().Line - 5
@@ -97,23 +105,12 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	if startLine < 0 {
 		startLine = 0
 	}
-	fmt.Println("startLine", startLine)
 	if endLine > len(codeLines)-1 {
 		endLine = len(codeLines) - 1
 	}
 	fmt.Println("endLine", endLine)
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
-			if i >= statement.StartPosition().Line && i <= statement.EndPosition(nil).Line {
-				startColumn := statement.StartPosition().Column
-				endColumn := statement.EndPosition(nil).Column
-
-				if i == statement.StartPosition().Line {
-					line = line[:startColumn-1] + colorizeError(line[startColumn-1:endColumn]) + line[endColumn:]
-				} else {
-					line = colorizeError(line)
-				}
-			}
 			fmt.Fprintf(d.output, "%d\t %s\n", i, line)
 		}
 	}
