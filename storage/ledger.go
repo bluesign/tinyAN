@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-go/fvm/storage/snapshot"
@@ -191,8 +192,17 @@ func (s *LedgerStorage) GetRegisterFunc(
 	return func(regID flow.RegisterID) (flow.RegisterValue, error) {
 		fmt.Println("GetRegisterFunc", regID, height)
 		value := s.GetRegister(regID, height)
+
 		if len(value) == 0 {
+			v, _ := hex.DecodeString("e467b9dd11fa00df")
+			cryptoKey := flow.RegisterID{
+				Owner: string(v),
+				Key:   "code.Crypto",
+			}
 			fmt.Println("register not found")
+			if regID == cryptoKey {
+				return []byte(cryptoCode), nil
+			}
 		}
 		return value, nil
 	}
