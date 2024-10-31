@@ -189,7 +189,7 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 
 	checker, err := sema.NewChecker(
 		nil,
-		common.ScriptLocation{},
+		common.REPLLocation{},
 		nil,
 		checkerConfig,
 	)
