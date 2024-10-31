@@ -248,7 +248,9 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	r.debugger.RequestPause()
 	fmt.Println("Pause requested")
 
-	r.interpreterEnvironment.ParseAndCheckProgram(script.Source, common.NewTransactionLocation(nil, txId[:]), false)
+	program, err := r.interpreterEnvironment.ParseAndCheckProgram(script.Source, common.NewTransactionLocation(nil, txId[:]), false)
+	fmt.Println(program)
+	fmt.Println(err)
 	var interactiveDebugger *InteractiveDebugger
 	go func() {
 		r.cadenceRuntime.ExecuteTransaction(script, runtime.Context{
