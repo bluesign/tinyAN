@@ -25,6 +25,7 @@ import (
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
 	"io"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -45,12 +46,15 @@ const commandShortShow = "s"
 const commandLongShow = "show"
 const commandShortWhere = "w"
 const commandLongWhere = "where"
+const commandLongBreak = "break"
+const commandShortBreak = "b"
 
 var debuggerCommandSuggestions = []prompt.Suggest{
 	{Text: commandLongContinue, Description: "Continue"},
 	{Text: commandLongNext, Description: "Next / step"},
 	{Text: commandLongWhere, Description: "Location info"},
 	{Text: commandLongShow, Description: "Show variable(s)"},
+	{Text: commandLongBreak, Description: "Set Breakpoint and Go"},
 	{Text: commandLongExit, Description: "Exit"},
 	{Text: commandLongHelp, Description: "Help"},
 }
@@ -119,6 +123,34 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 			lineNumber := aurora.Colorize(fmt.Sprintf("%d\t", i), aurora.WhiteFg|aurora.BrightFg|aurora.BoldFm).String()
 
 			fmt.Fprintf(d.output, "%s\t%s\n", lineNumber, line)
+		}
+	}
+}
+
+func (d *InteractiveDebugger) Break(args []string) {
+	if len(args) != 1 {
+		fmt.Fprintln(d.output, colorizeError("error: 'break' command requires exactly one argument"))
+		return
+	}
+	line, err := strconv.ParseUint(args[0], 10, 64)
+	if err != nil {
+		fmt.Fprintln(d.output, colorizeError(fmt.Sprintf("error: invalid line number '%s'", args[0])))
+		return
+	}
+
+	d.debugger.AddBreakpoint(d.stop.Interpreter.Location, line)
+	d.debugger.Continue()
+
+	for {
+		select {
+		case d.stop = <-d.debugger.Stops():
+			fmt.Fprintln(d.output, "\033[H\033[2J")
+			d.Where()
+			d.ShowCode(d.stop.Interpreter.Location, d.stop.Statement)
+			return
+		case <-time.After(1 * time.Second):
+			d.Exit = true
+			return
 		}
 	}
 }
@@ -199,6 +231,8 @@ func (d *InteractiveDebugger) Run() {
 			d.Continue()
 		case commandShortNext, commandLongNext:
 			d.Next()
+		case commandShortBreak, commandLongBreak:
+			d.Break(arguments)
 		case commandShortShow, commandLongShow:
 			d.Show(arguments)
 		case commandShortWhere, commandLongWhere:
