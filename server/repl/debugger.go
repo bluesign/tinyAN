@@ -104,7 +104,17 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	fmt.Println("endLine", endLine)
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
-			fmt.Fprintf(d.output, ">> %s\n", line)
+			if i >= statement.StartPosition().Line && i <= statement.EndPosition(nil).Line {
+				startColumn := statement.StartPosition().Column
+				endColumn := statement.EndPosition(nil).Column
+
+				if i == statement.StartPosition().Line {
+					line = line[:startColumn-1] + colorizeError(line[startColumn-1:endColumn]) + line[endColumn:]
+				} else {
+					line = colorizeError(line)
+				}
+			}
+			fmt.Fprintf(d.output, "%d\t %s\n", i, line)
 		}
 	}
 }
