@@ -275,10 +275,10 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 		})
 		err = executor.execute(r.codesAndPrograms)
 		if err != nil {
-			fmt.Println("Error in preprocessing", err)
+			fmt.Fprintln(r.output, colorizeError(fmt.Sprintf("error: %s", err)))
 		}
+		fmt.Fprintf(r.output, "Transaction executed\n")
 
-		fmt.Println("Transaction executed")
 		interactiveDebugger.Continue()
 		interactiveDebugger.Exit = true
 	}()
