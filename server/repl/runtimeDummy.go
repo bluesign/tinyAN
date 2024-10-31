@@ -52,6 +52,7 @@ func (d *runtimeWrapper) GetCode(location runtime.Location) ([]byte, error) {
 }
 
 func (d *runtimeWrapper) GetOrLoadProgram(location runtime.Location, load func() (*interpreter.Program, error)) (*interpreter.Program, error) {
+	fmt.Println("GetOrLoadProgram", location)
 	return d.baseRuntime.GetOrLoadProgram(location, load)
 }
 
