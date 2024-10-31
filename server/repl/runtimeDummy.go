@@ -44,6 +44,7 @@ func (d *runtimeWrapper) ResolveLocation(identifiers []runtime.Identifier, locat
 }
 
 func (d *runtimeWrapper) GetCode(location runtime.Location) ([]byte, error) {
+	fmt.Println("GetCode", location)
 	return d.baseRuntime.GetCode(location)
 }
 

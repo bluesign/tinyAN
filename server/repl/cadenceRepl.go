@@ -162,7 +162,11 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		AttachmentsEnabled: true,
 		Debugger:           debugger,
 	})
-	interpreterEnvironment.Configure(fvmEnvironment, codes, cadenceStorage, nil)
+
+	wrappedInterface := &runtimeWrapper{
+		baseRuntime: fvmEnvironment,
+	}
+	interpreterEnvironment.Configure(wrappedInterface, codes, cadenceStorage, nil)
 
 	_, err = interpreterEnvironment.ParseAndCheckProgram(
 		[]byte(`access(all) fun main() {}`),
