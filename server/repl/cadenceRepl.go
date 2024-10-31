@@ -76,20 +76,24 @@ type REPL struct {
 func NewREPL(storageProvider *storage.HeightBasedStorage, session ssh.Session, output io.Writer) (*REPL, error) {
 
 	logger := zerolog.Nop()
+	var lastBlock *flowgo.Header
+	var err error
 
 	user := session.User()
 	blockheight, ok := math.ParseUint64(user)
+	if !ok {
+		lastBlock, err = storageProvider.GetLatestBlock()
+		if err != nil {
+			logger.Err(err).Msgf("cannot get last block %v", err)
+		}
+		blockheight = lastBlock.Height
+	}
 
-	var lastBlock *flowgo.Header
-	var err error
+	fmt.Println("blockheight", blockheight)
+
 	if ok {
 		lastBlock, err = storageProvider.GetBlockByHeight(blockheight)
-		if err != nil {
-			lastBlock, err = storageProvider.GetLatestBlock()
-			if err != nil {
-				logger.Err(err).Msgf("cannot get last block %v", err)
-			}
-		}
+
 	}
 
 	repl := &REPL{
