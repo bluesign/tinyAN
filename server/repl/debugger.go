@@ -75,10 +75,8 @@ func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Sto
 		codes:    codes,
 	}
 
-	fmt.Fprintln(d.output, "Welcome to the Cadence debugger!\n")
-
 	d.Where()
-	fmt.Fprintf(d.output, "> %s\n", d.stop.Statement)
+	d.ShowCode(stop.Interpreter.Location, stop.Statement)
 	return d
 }
 
