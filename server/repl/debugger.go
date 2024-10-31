@@ -111,7 +111,8 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	if endLine > len(codeLines)-1 {
 		endLine = len(codeLines) - 1
 	}
-
+	fmt.Println("startLine", startLine)
+	fmt.Println("endLine", endLine)
 	if endLine-startLine > height {
 		startLine = endLine - height
 	}
