@@ -191,6 +191,9 @@ func (s *LedgerStorage) GetRegisterFunc(
 	return func(regID flow.RegisterID) (flow.RegisterValue, error) {
 		fmt.Println("GetRegisterFunc", regID, height)
 		value := s.GetRegister(regID, height)
+		if len(value) == 0 {
+			fmt.Println("register not found")
+		}
 		return value, nil
 	}
 }
