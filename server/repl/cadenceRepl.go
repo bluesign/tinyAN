@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/gliderlabs/ssh"
 	"github.com/onflow/flow-go/fvm/evm"
+	"github.com/onflow/flow-go/fvm/evm/debug"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/fvm/tracing"
 	"io"
@@ -164,7 +165,7 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		Debugger:           debugger,
 	})
 
-	err = evm.SetupEnvironment(flowgo.Mainnet, fvmEnvironment, interpreterEnvironment, nil)
+	err = evm.SetupEnvironment(flowgo.Mainnet, fvmEnvironment, interpreterEnvironment, debug.NopTracer)
 	if err != nil {
 		fmt.Println("Error in setup environment", err)
 		return err
