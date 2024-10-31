@@ -268,7 +268,7 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 		return err
 	}
 
-	err = r.StartAtHeight(result.BlockHeight, tx)
+	err = r.StartAtHeight(result.BlockHeight-1, tx)
 	if err != nil {
 		return err
 	}
