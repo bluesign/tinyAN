@@ -40,6 +40,7 @@ func (d *runtimeWrapper) InteractionUsed() (uint64, error) {
 }
 
 func (d *runtimeWrapper) ResolveLocation(identifiers []runtime.Identifier, location runtime.Location) ([]runtime.ResolvedLocation, error) {
+	fmt.Println("ResolveLocation", identifiers, location)
 	return d.baseRuntime.ResolveLocation(identifiers, location)
 }
 
