@@ -55,6 +55,7 @@ type REPL struct {
 	logger                 zerolog.Logger
 	session                ssh.Session
 	cadenceRuntime         runtime.Runtime
+	codesAndPrograms       runtime.CodesAndPrograms
 	fvmEnvironment         environment.Environment
 	inter                  *interpreter.Interpreter
 	interpreterEnvironment runtime.Environment
@@ -170,13 +171,12 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 	)
 
 	interpreterConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("InterpreterConfig").Interface().(*interpreter.Config)
+	checkerConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("CheckerConfig").Interface().(*sema.Config)
 
 	cadenceRuntime := runtime.NewInterpreterRuntime(runtime.Config{
 		AttachmentsEnabled: true,
 		Debugger:           debugger,
 	})
-
-	checkerConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("CheckerConfig").Interface().(*sema.Config)
 
 	fmt.Println("CheckerConfig", checkerConfig)
 
@@ -212,6 +212,7 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 	)
 
 	r.cadenceRuntime = cadenceRuntime
+	r.codesAndPrograms = codes
 	r.fvmEnvironment = fvmEnvironment
 	r.inter = inter
 	r.checker = checker
@@ -255,10 +256,15 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	fmt.Println(err)
 	var interactiveDebugger *InteractiveDebugger
 	go func() {
-		r.cadenceRuntime.ExecuteTransaction(script, runtime.Context{
+		executor := newInterpreterTransactionExecutor(&r.cadenceRuntime, script, runtime.Context{
 			Interface: r.fvmEnvironment,
 			Location:  common.NewTransactionLocation(nil, txId[:]),
 		})
+		err = executor.execute(r.codesAndPrograms)
+		if err != nil {
+			fmt.Println("Error in preprocessing", err)
+		}
+
 		fmt.Println("Transaction executed")
 		interactiveDebugger.Continue()
 		interactiveDebugger.Exit = true
