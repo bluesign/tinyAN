@@ -85,8 +85,6 @@ func (d *InteractiveDebugger) Continue() {
 }
 
 func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement) {
-	fmt.Println("location", location)
-	fmt.Println(d.codes)
 
 	codes := string(d.codes[location])
 	codes = codes + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
@@ -100,8 +98,6 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	height := int(screen.Window.Height - 4)
 
 	codeLines := strings.Split(codes, "\n")
-	fmt.Println("codeLines", len(codeLines))
-	fmt.Println(string(d.codes[location]))
 	var startLine = statement.StartPosition().Line - height/2
 
 	if startLine < 0 {
@@ -114,13 +110,10 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 		endLine = len(codeLines) - 1
 	}
 
-	fmt.Println("startLine", startLine)
-	fmt.Println("endLine", endLine)
 	if endLine-startLine > height {
 		startLine = endLine - height
 	}
 
-	fmt.Println("endLine", endLine)
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
 			lineNumber := aurora.Colorize(fmt.Sprintf("%d\t", i), aurora.WhiteFg|aurora.BrightFg|aurora.BoldFm).String()
