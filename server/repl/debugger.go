@@ -21,6 +21,7 @@ package repl
 import (
 	"fmt"
 	"github.com/gliderlabs/ssh"
+	"github.com/logrusorgru/aurora/v4"
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
 	"io"
@@ -91,8 +92,8 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 
 	codes := string(d.codes[location])
 	precodes := codes[:statement.StartPosition().Offset-1]
-	coloredCodes := colorizeCode(codes[statement.StartPosition().Offset-1 : statement.EndPosition(nil).Offset-1])
-	postcodes := codes[statement.EndPosition(nil).Offset-1:]
+	coloredCodes := colorizeCode(codes[statement.StartPosition().Offset:statement.EndPosition(nil).Offset])
+	postcodes := codes[statement.EndPosition(nil).Offset:]
 
 	codes = precodes + coloredCodes + postcodes
 
@@ -123,7 +124,9 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	fmt.Println("endLine", endLine)
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
-			fmt.Fprintf(d.output, "%d\t %s\n", i, line)
+			lineNumber := aurora.Colorize(fmt.Sprintf("%d\t", i), aurora.WhiteFg|aurora.BrightFg|aurora.BoldFm).String()
+
+			fmt.Fprintf(d.output, "%s\t %s\n", lineNumber, line)
 		}
 	}
 }
