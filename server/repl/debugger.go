@@ -91,7 +91,7 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 
 	codes := string(d.codes[location])
 	precodes := codes[:statement.StartPosition().Offset]
-	coloredCodes := colorizeError(codes[statement.StartPosition().Offset:statement.EndPosition(nil).Offset])
+	coloredCodes := colorizeCode(codes[statement.StartPosition().Offset:statement.EndPosition(nil).Offset])
 	postcodes := codes[statement.EndPosition(nil).Offset:]
 
 	codes = precodes + coloredCodes + postcodes

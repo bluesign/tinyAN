@@ -38,3 +38,7 @@ func colorizeValue(value interpreter.Value) string {
 func colorizeError(message string) string {
 	return aurora.Colorize(message, aurora.RedFg|aurora.BrightFg|aurora.BoldFm).String()
 }
+
+func colorizeCode(message string) string {
+	return aurora.Colorize(message, aurora.RedFg|aurora.BrightFg|aurora.BoldFm).String()
+}
