@@ -96,11 +96,14 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 
 	codes = precodes + coloredCodes + postcodes
 
+	screen, _, _ := d.session.Pty()
+	height := int(screen.Window.Height - 2)
+
 	codeLines := strings.Split(codes, "\n")
 	fmt.Println("codeLines", len(codeLines))
 	fmt.Println(string(d.codes[location]))
-	var startLine = statement.StartPosition().Line - 5
-	var endLine = statement.EndPosition(nil).Line + 5
+	var startLine = statement.StartPosition().Line - height/2
+	var endLine = statement.EndPosition(nil).Line - height/2
 
 	if startLine < 0 {
 		startLine = 0
@@ -108,6 +111,11 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	if endLine > len(codeLines)-1 {
 		endLine = len(codeLines) - 1
 	}
+
+	if endLine-startLine > height {
+		startLine = endLine - height
+	}
+
 	fmt.Println("endLine", endLine)
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
@@ -123,9 +131,11 @@ func (d *InteractiveDebugger) Next() {
 	for {
 		select {
 		case d.stop = <-d.debugger.Stops():
+			fmt.Fprintln(d.output, "\033[H\033[2J")
+
 			d.Where()
 			//send clear screen
-			fmt.Fprintln(d.output, "\033[H\033[2J")
+
 			d.ShowCode(d.stop.Interpreter.Location, d.stop.Statement)
 			return
 		case <-time.After(1 * time.Second):
