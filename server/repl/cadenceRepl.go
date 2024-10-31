@@ -257,8 +257,9 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	var interactiveDebugger *InteractiveDebugger
 	go func() {
 		executor := newInterpreterTransactionExecutor(&r.cadenceRuntime, script, runtime.Context{
-			Interface: r.fvmEnvironment,
-			Location:  common.NewTransactionLocation(nil, txId[:]),
+			Interface:   r.fvmEnvironment,
+			Location:    common.NewTransactionLocation(nil, txId[:]),
+			Environment: r.interpreterEnvironment,
 		})
 		err = executor.execute(r.codesAndPrograms)
 		if err != nil {
