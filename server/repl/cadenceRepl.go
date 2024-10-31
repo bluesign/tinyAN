@@ -81,7 +81,17 @@ func NewREPL(storageProvider *storage.HeightBasedStorage, session ssh.Session, o
 
 	user := session.User()
 	blockheight, ok := math.ParseUint64(user)
-	if !ok {
+	if ok {
+		lastBlock, err = storageProvider.GetBlockByHeight(blockheight)
+		if err != nil {
+			logger.Err(err).Msgf("cannot get block by height %v", blockheight)
+			blockheight = 0
+		} else {
+			blockheight = lastBlock.Height
+		}
+	}
+
+	if blockheight == 0 {
 		lastBlock, err = storageProvider.GetLatestBlock()
 		if err != nil {
 			logger.Err(err).Msgf("cannot get last block %v", err)
@@ -90,11 +100,6 @@ func NewREPL(storageProvider *storage.HeightBasedStorage, session ssh.Session, o
 	}
 
 	fmt.Println("blockheight", blockheight)
-
-	if ok {
-		lastBlock, err = storageProvider.GetBlockByHeight(blockheight)
-
-	}
 
 	repl := &REPL{
 		logger:          logger,
