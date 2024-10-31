@@ -120,7 +120,7 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 
 	for i, line := range codeLines {
 		if i >= startLine && i <= endLine {
-			lineNumber := aurora.Colorize(fmt.Sprintf("%d\t", i), aurora.WhiteFg|aurora.BrightFg|aurora.BoldFm).String()
+			lineNumber := aurora.Colorize(fmt.Sprintf("%d\t", i+1), aurora.WhiteFg|aurora.BrightFg|aurora.BoldFm).String()
 
 			fmt.Fprintf(d.output, "%s\t%s\n", lineNumber, line)
 		}
