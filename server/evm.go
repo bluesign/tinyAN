@@ -182,6 +182,7 @@ type TransactionWithReceipt struct {
 func (a *APINamespace) evmTransactionsAtCadenceHeight(cadenceHeight uint64) (map[common.Hash]TransactionWithReceipt, error) {
 	cadenceBlockId, err := a.storage.GetBlockIdByHeight(cadenceHeight)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	transactions := make(map[common.Hash]TransactionWithReceipt)
@@ -196,7 +197,7 @@ func (a *APINamespace) evmTransactionsAtCadenceHeight(cadenceHeight uint64) (map
 	})
 
 	if cadenceEvents == nil || len(cadenceEvents) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, fmt.Errorf("not found 1")
 	}
 
 	transactionIndex := 0
@@ -225,7 +226,7 @@ func (a *APINamespace) evmTransactionsAtCadenceHeight(cadenceHeight uint64) (map
 
 		transactionIndex = transactionIndex + 1
 	}
-	return nil, fmt.Errorf("not found")
+	return transactions, nil
 
 }
 

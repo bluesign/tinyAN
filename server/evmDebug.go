@@ -89,14 +89,16 @@ func (d *DebugAPI) TraceTransaction(
 ) (json.RawMessage, error) {
 
 	cadenceHeight, err := d.api.storage.CadenceBlockHeightForTransactionHash(txId)
-
+	fmt.Println("cadenceHeight", cadenceHeight)
 	transactions, err := d.api.evmTransactionsAtCadenceHeight(cadenceHeight)
 	if err != nil {
+		fmt.Println("transactions not found", err)
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
 
 	tx, found := transactions[txId]
 	if !found {
+		fmt.Println("tx not found", txId)
 		return handleError[json.RawMessage](errs.ErrEntityNotFound)
 	}
 
@@ -104,14 +106,17 @@ func (d *DebugAPI) TraceTransaction(
 
 	block, err := d.api.blockFromBlockStorage(blockHeight.Uint64())
 	if err != nil {
+		fmt.Println("block not found", err)
 		return handleError[json.RawMessage](errs.ErrInternal)
 	}
 	traced, err := d.traceBlock(ctx, block.Height, nil)
 	if err != nil {
+		fmt.Println("traceBlock error", err)
 		return handleError[json.RawMessage](errs.ErrInternal)
 	}
 
 	for _, txResult := range traced {
+		fmt.Println(txResult.TxHash, txId)
 		if txResult.TxHash == txId {
 			jsonRaw, _ := json.Marshal(txResult.Result)
 			return jsonRaw, nil
@@ -140,6 +145,7 @@ func (d *DebugAPI) traceBlock(
 		return nil, err
 	}
 	parentCadenceHeight, err := d.api.storage.StorageForEVMHeight(height - 1).EVM().CadenceHeightFromEVMHeight(height - 1)
+	fmt.Println("cadenceHeight", cadenceHeight)
 	if err != nil {
 		fmt.Println("empty parentCadenceHeight", height)
 		return []*txTraceResult{}, nil
@@ -175,7 +181,7 @@ func (d *DebugAPI) traceBlock(
 
 	totalGasUsed := uint64(0)
 	for i, tx := range transactions {
-
+		fmt.Println("tx", i, tx.Receipt.TxHash.String())
 		var gethTx *gethTypes.Transaction
 		var res *evmTypes.Result
 
