@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"log"
+	"math"
 	"strings"
 	"time"
 )
@@ -33,8 +34,9 @@ func UpdateBlocks(store *storage.SporkStorage, chain flow.Chain) {
 			store.AccessURL(),
 			chain,
 			grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(1024*1024*100),
-				grpc.UseCompressor(gzip.Name)),
+				grpc.MaxCallRecvMsgSize(math.MaxInt32),
+				grpc.UseCompressor(gzip.Name),
+			),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 
@@ -107,7 +109,7 @@ func TestMissing(store *storage.SporkStorage, height uint64, endHeight uint64, c
 			store.AccessURL(),
 			chain,
 			grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(1024*1024*100),
+				grpc.MaxCallRecvMsgSize(math.MaxInt32),
 				grpc.UseCompressor(gzip.Name)),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)

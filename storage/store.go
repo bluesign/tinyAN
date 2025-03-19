@@ -1,7 +1,13 @@
 package storage
 
 import (
+	//"encoding/hex"
 	"fmt"
+	"os"
+	//"strings"
+	"sync"
+	"time"
+
 	"github.com/cockroachdb/pebble"
 	"github.com/onflow/cadence"
 	"github.com/onflow/cadence/encoding/ccf"
@@ -15,9 +21,6 @@ import (
 	flowStorage "github.com/onflow/flow-go/storage"
 	gethCommon "github.com/onflow/go-ethereum/common"
 	"github.com/rs/zerolog"
-	"os"
-	"sync"
-	"time"
 )
 
 type FVMStorageSnapshot interface {
@@ -407,6 +410,14 @@ func (s *SporkStorage) ProcessExecutionData(height uint64, executionData *execut
 			if payload == nil {
 				continue
 			}
+
+			//key, _ := payload.Key()
+			/*if strings.Contains(string(key.CanonicalForm()), "BlockHash") {
+				fmt.Println("BlockHash")
+				fmt.Println(hex.EncodeToString(key.CanonicalForm()))
+				fmt.Println(string(key.CanonicalForm()))
+				fmt.Println(payload.Value())
+			}*/
 
 			err = s.ledger.SavePayload(ledger_batch, payload, height)
 			if err != nil {

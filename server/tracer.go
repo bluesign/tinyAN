@@ -253,6 +253,8 @@ func NewSafeTxTracer(ct *CallTracer) *tracers.Tracer {
 					Msg("OnOpcode trace collection failed")
 			}
 		}()
+
+		fmt.Println("OnOpcode", pc, op, gas, cost)
 		//l.Debug().Msg("tracing OnOpcode is called")
 		if ct.tracer.OnOpcode != nil {
 			ct.tracer.OnOpcode(pc, op, gas, cost, scope, rData, depth, err)

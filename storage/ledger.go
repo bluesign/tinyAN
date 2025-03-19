@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"strings"
+	"sync"
+
 	"github.com/cockroachdb/pebble"
 	"github.com/onflow/flow-go/fvm/storage/snapshot"
 	"github.com/onflow/flow-go/ledger"
 	"github.com/onflow/flow-go/ledger/common/convert"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
-	"os"
-	"sync"
 )
 
 const (
@@ -118,6 +120,14 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 	options := &pebble.IterOptions{}
 	var k []byte
 
+	debug := false
+	if register.Owner == string([]byte{0xd4, 0x21, 0xa6, 0x3f, 0xaa, 0xe3, 0x18, 0xf9}) {
+		if strings.Contains(string(register.Key), "BlockHashList") {
+			debug = true
+			fmt.Println("debug")
+		}
+	}
+
 	iter, err := s.ledgerDb.NewIter(options)
 	if err != nil {
 		s.logger.Log().Err(err).Str("key", key.String()).Msg("error creating iterator")
@@ -147,6 +157,10 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (ledger)")
 			return nil
 		}
+		if debug {
+			fmt.Println("GetRegister @ ledger", string(k), hex.EncodeToString(k), height, hex.EncodeToString(data))
+		}
+
 		return data
 	}
 
@@ -180,6 +194,9 @@ func (s *LedgerStorage) GetRegister(register flow.RegisterID, height uint64) led
 			s.logger.Log().Err(err).Str("key", key.String()).Msg("error unmarshalling data (cp)")
 			return nil
 		}
+		if debug {
+			fmt.Println("GetRegister @ checkpoint", string(k), hex.EncodeToString(k), height, hex.EncodeToString(data))
+		}
 		return data
 	}
 
@@ -192,7 +209,6 @@ func (s *LedgerStorage) GetRegisterFunc(
 	return func(regID flow.RegisterID) (flow.RegisterValue, error) {
 		//fmt.Println("GetRegisterFunc", regID, height)
 		value := s.GetRegister(regID, height)
-
 		if len(value) == 0 {
 			v, _ := hex.DecodeString("e467b9dd11fa00df")
 			cryptoKey := flow.RegisterID{

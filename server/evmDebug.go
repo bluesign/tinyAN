@@ -145,7 +145,6 @@ func (d *DebugAPI) traceBlock(
 		return nil, err
 	}
 	parentCadenceHeight, err := d.api.storage.StorageForEVMHeight(height - 1).EVM().CadenceHeightFromEVMHeight(height - 1)
-	fmt.Println("cadenceHeight", cadenceHeight)
 	if err != nil {
 		fmt.Println("empty parentCadenceHeight", height)
 		return []*txTraceResult{}, nil
