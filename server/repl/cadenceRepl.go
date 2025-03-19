@@ -305,6 +305,16 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 	stop := <-r.debugger.Stops()
 	fmt.Println("Stopped")
 
+	stop.Interpreter.SharedState.Config.OnMeterComputation = func(
+		compKind common.ComputationKind,
+		intensity uint,
+	) {
+		fmt.Println("Intensity", intensity)
+		fmt.Println("CompKind", compKind)
+		used, _ := r.fvmEnvironment.ComputationUsed()
+		fmt.Println("CompUsed", used)
+	}
+
 	interactiveDebugger = NewInteractiveDebugger(r.debugger, stop, r.session, r.output, r.codes)
 	interactiveDebugger.Run()
 

@@ -80,7 +80,7 @@ func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Sto
 	}
 
 	d.Where()
-	d.ShowCode(stop.Interpreter.Location, stop.Statement)
+	d.ShowCode(stop.Interpreter.Location, stop.Statement, 0)
 	return d
 }
 
@@ -88,9 +88,9 @@ func (d *InteractiveDebugger) Continue() {
 	d.debugger.Continue()
 }
 
-func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement) {
+func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement, compused uint64) {
 
-	codes := string(d.codes[location])
+	codes := fmt.Sprintf("%s - C: %s ", string(d.codes[location]), compused)
 	codes = codes + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	precodes := codes[:statement.StartPosition().Offset]
 	coloredCodes := colorizeCode(codes[statement.StartPosition().Offset : statement.EndPosition(nil).Offset+1])
