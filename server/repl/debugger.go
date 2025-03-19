@@ -296,10 +296,13 @@ func (d *InteractiveDebugger) Help() {
 }
 
 func (d *InteractiveDebugger) Where() {
+	comp, _ := d.environment.ComputationUsed()
+
 	fmt.Fprintf(
 		d.output,
-		"%s @ %d\n",
+		"%s @ %d - C: %d \n",
 		d.stop.Interpreter.Location,
 		d.stop.Statement.StartPosition().Line,
+		comp,
 	)
 }
