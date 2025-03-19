@@ -158,7 +158,10 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 		vmCtx.TxBody = body
 
 		blockDatabase := fvmStorage.NewBlockDatabase(snap, 0, vmCtx.DerivedBlockData)
-		txnState, err := blockDatabase.NewTransaction(0, fvmState.DefaultParameters())
+		stateParams := fvmState.DefaultParameters()
+		meterParams := stateParams.MeterParameters.WithComputationWeights(environment.MainnetExecutionEffortWeights)
+		stateParams.MeterParameters = meterParams
+		txnState, err := blockDatabase.NewTransaction(0, stateParams)
 		if err != nil {
 			return err
 		}
