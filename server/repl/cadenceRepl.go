@@ -297,6 +297,8 @@ func (r *REPL) DebugTransactions(txId flowgo.Identifier) error {
 			fmt.Fprintln(r.output, colorizeError(fmt.Sprintf("error: %s", err)))
 		}
 		fmt.Fprintf(r.output, "Transaction executed\n")
+		comp, _ := r.fvmEnvironment.ComputationUsed()
+		fmt.Fprintf(r.output, "ComputationUsed: %d\n", comp)
 
 		interactiveDebugger.Continue()
 		interactiveDebugger.Exit = true
