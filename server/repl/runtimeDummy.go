@@ -20,6 +20,10 @@ type RuntimeWrapper struct {
 	REPL           *REPL
 }
 
+func (d *RuntimeWrapper) MinimumRequiredVersion() (string, error) {
+	return "", nil
+}
+
 func (d *RuntimeWrapper) MeterMemory(usage common.MemoryUsage) error {
 	return d.BaseRuntime.MeterMemory(usage)
 }

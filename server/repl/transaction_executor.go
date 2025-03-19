@@ -75,7 +75,7 @@ func (executor *interpreterTransactionExecutor) preprocess(codesAndPrograms runt
 
 	runtimeInterface := context.Interface
 
-	storage := runtime.NewStorage(runtimeInterface, runtimeInterface)
+	storage := runtime.NewStorage(runtimeInterface, runtimeInterface, runtime.StorageConfig{StorageFormatV2Enabled: true})
 	executor.storage = storage
 
 	environment := context.Environment

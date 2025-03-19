@@ -54,8 +54,8 @@ func (e *ScriptExecutor) Setup(blocks FVMBlocks, store *storage.HeightBasedStora
 			reusableRuntime.NewReusableCadenceRuntimePool(
 				0,
 				runtime.Config{
-					TracingEnabled:     false,
-					AttachmentsEnabled: true,
+					TracingEnabled:         false,
+					StorageFormatV2Enabled: true,
 				},
 			),
 		),

@@ -4,14 +4,16 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/onflow/flow-go/consensus/hotstuff/model"
-	"github.com/onflow/flow-go/fvm/environment"
 	flowgo "github.com/onflow/flow-go/model/flow"
+	"github.com/onflow/flow-go/state/protocol"
 )
 
 type EntropyProviderPerBlockProvider struct {
 	// AtBlockID returns an entropy provider at the given block ID.
 	Store *HeightBasedStorage
 }
+
+var _ protocol.SnapshotExecutionSubsetProvider = &EntropyProviderPerBlockProvider{}
 
 type EntropyProvider struct {
 	seed  []byte
@@ -21,8 +23,11 @@ type EntropyProvider struct {
 func (e EntropyProvider) RandomSource() ([]byte, error) {
 	return e.seed, e.error
 }
+func (e EntropyProvider) VersionBeacon() (*flowgo.SealedVersionBeacon, error) {
+	return nil, nil
+}
 
-func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) environment.EntropyProvider {
+func (e *EntropyProviderPerBlockProvider) AtBlockID(blockID flowgo.Identifier) protocol.SnapshotExecutionSubset {
 	block, err := e.Store.GetBlockById(blockID)
 	if err != nil {
 		fmt.Println("error getting entropy seed")

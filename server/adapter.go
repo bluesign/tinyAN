@@ -37,6 +37,26 @@ type AccessAdapter struct {
 	txCache  *lru.Cache[flowgo.Identifier, TemporaryTransactionResult]
 }
 
+func (a *AccessAdapter) SubscribeTransactionStatusesFromStartBlockID(ctx context.Context, txID flowgo.Identifier, startBlockID flowgo.Identifier, requiredEventEncodingVersion entities.EventEncodingVersion) subscription.Subscription {
+	return nil
+}
+
+func (a *AccessAdapter) SubscribeTransactionStatusesFromStartHeight(ctx context.Context, txID flowgo.Identifier, startHeight uint64, requiredEventEncodingVersion entities.EventEncodingVersion) subscription.Subscription {
+	return nil
+}
+
+func (a *AccessAdapter) SubscribeTransactionStatusesFromLatest(ctx context.Context, txID flowgo.Identifier, requiredEventEncodingVersion entities.EventEncodingVersion) subscription.Subscription {
+	return nil
+}
+
+func (a *AccessAdapter) SubscribeTransactionStatuses(ctx context.Context, txID flowgo.Identifier, requiredEventEncodingVersion entities.EventEncodingVersion) subscription.Subscription {
+	return nil
+}
+
+func (a *AccessAdapter) SendAndSubscribeTransactionStatuses(ctx context.Context, tx *flowgo.TransactionBody, requiredEventEncodingVersion entities.EventEncodingVersion) subscription.Subscription {
+	return nil
+}
+
 // NewAccessAdapter returns a new AccessAdapter.
 func NewAccessAdapter(logger zerolog.Logger, store *storage.HeightBasedStorage) *AccessAdapter {
 	executor := &ScriptExecutor{
@@ -761,9 +781,5 @@ func (a *AccessAdapter) SubscribeBlockDigestsFromStartHeight(ctx context.Context
 }
 
 func (a *AccessAdapter) SubscribeBlockDigestsFromLatest(ctx context.Context, blockStatus flowgo.BlockStatus) subscription.Subscription {
-	return nil
-}
-
-func (a *AccessAdapter) SubscribeTransactionStatuses(ctx context.Context, tx *flowgo.TransactionBody, _ entities.EventEncodingVersion) subscription.Subscription {
 	return nil
 }

@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/gliderlabs/ssh"
 	"github.com/onflow/flow-go/fvm/evm"
-	"github.com/onflow/flow-go/fvm/evm/debug"
 	fvmState "github.com/onflow/flow-go/fvm/storage/state"
 	"github.com/onflow/flow-go/fvm/tracing"
 	"github.com/onflow/go-ethereum/common/math"
@@ -178,14 +177,14 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 	field := reflect.ValueOf(codesRef).Elem().FieldByName("codes")
 	codesInner := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface().(map[common.Location][]byte)
 	fmt.Println("codesInner", codesInner)
-	cadenceStorage := runtime.NewStorage(fvmEnvironment, fvmEnvironment)
+	cadenceStorage := runtime.NewStorage(fvmEnvironment, nil, runtime.StorageConfig{StorageFormatV2Enabled: true})
 
 	interpreterEnvironment := runtime.NewScriptInterpreterEnvironment(runtime.Config{
-		AttachmentsEnabled: true,
-		Debugger:           debugger,
+		StorageFormatV2Enabled: true,
+		Debugger:               debugger,
 	})
 
-	err = evm.SetupEnvironment(flowgo.Mainnet, fvmEnvironment, interpreterEnvironment, debug.NopTracer)
+	err = evm.SetupEnvironment(flowgo.Mainnet, fvmEnvironment, interpreterEnvironment)
 	if err != nil {
 		fmt.Println("Error in setup environment", err)
 		return err
@@ -206,8 +205,8 @@ func (r *REPL) StartAtHeight(height uint64, body *flowgo.TransactionBody) error 
 	checkerConfig := reflect.ValueOf(interpreterEnvironment).Elem().FieldByName("CheckerConfig").Interface().(*sema.Config)
 
 	cadenceRuntime := runtime.NewInterpreterRuntime(runtime.Config{
-		AttachmentsEnabled: true,
-		Debugger:           debugger,
+		StorageFormatV2Enabled: true,
+		Debugger:               debugger,
 	})
 
 	fmt.Println("CheckerConfig", checkerConfig)

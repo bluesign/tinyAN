@@ -12,7 +12,7 @@ import (
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/gorilla/mux"
 	"github.com/onflow/flow-evm-gateway/models"
-	"github.com/onflow/flow-go/engine/access/rest/routes"
+	"github.com/onflow/flow-go/engine/access/rest/router"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/onflow/flow-go/module"
 	"github.com/onflow/flow-go/module/metrics"
@@ -54,7 +54,7 @@ bml6cy1NYWNCb29rLVByby0yLmxvY2FsAQIDBA==
 -----END OPENSSH PRIVATE KEY-----`)))
 
 	var restCollector module.RestMetrics = metrics.NewNoopCollector()
-	builder := routes.NewRouterBuilder(logger, restCollector).AddRestRoutes(adapter, chain)
+	builder := router.NewRouterBuilder(logger, restCollector).AddRestRoutes(adapter, chain, 1<<14)
 	router := builder.Build()
 
 	r := &APIServer{
