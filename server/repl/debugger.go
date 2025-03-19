@@ -98,7 +98,10 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	codes := fmt.Sprintf("%s - C: %s ", string(d.codes[location]), comp)
 	codes = codes + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	precodes := codes[:statement.StartPosition().Offset]
-	coloredCodes := colorizeCode(codes[statement.StartPosition().Offset : statement.EndPosition(nil).Offset+1])
+	coloredCodes := ""
+	if statement.StartPosition().Offset <= statement.EndPosition(nil).Offset {
+		coloredCodes = colorizeCode(codes[statement.StartPosition().Offset : statement.EndPosition(nil).Offset+1])
+	}
 	postcodes := codes[statement.EndPosition(nil).Offset+1:]
 
 	codes = precodes + coloredCodes + postcodes
