@@ -96,7 +96,6 @@ func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.S
 	comp, _ := d.environment.ComputationUsed()
 
 	codes := fmt.Sprintf("%s - C: %s ", string(d.codes[location]), comp)
-	codes = codes + fmt.Sprintf("%s", d.environment.ComputationIntensities())
 	codes = codes + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	precodes := codes[:statement.StartPosition().Offset]
 	coloredCodes := ""
@@ -304,9 +303,10 @@ func (d *InteractiveDebugger) Where() {
 
 	fmt.Fprintf(
 		d.output,
-		"%s @ %d - C: %d \n",
+		"%s @ %d - C: %d \n %s \n",
 		d.stop.Interpreter.Location,
 		d.stop.Statement.StartPosition().Line,
 		comp,
+		d.environment.ComputationIntensities(),
 	)
 }
