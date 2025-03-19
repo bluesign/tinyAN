@@ -24,6 +24,7 @@ import (
 	"github.com/logrusorgru/aurora/v4"
 	"github.com/onflow/cadence/ast"
 	"github.com/onflow/cadence/common"
+	"github.com/onflow/flow-go/fvm/environment"
 	"io"
 	"strconv"
 	"strings"
@@ -60,27 +61,29 @@ var debuggerCommandSuggestions = []prompt.Suggest{
 }
 
 type InteractiveDebugger struct {
-	debugger *interpreter.Debugger
-	stop     interpreter.Stop
-	output   io.Writer
-	session  ssh.Session
-	Exit     bool
-	codes    map[common.Location][]byte
+	debugger    *interpreter.Debugger
+	stop        interpreter.Stop
+	output      io.Writer
+	session     ssh.Session
+	Exit        bool
+	codes       map[common.Location][]byte
+	environment environment.Environment
 }
 
-func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer, codes map[common.Location][]byte) *InteractiveDebugger {
+func NewInteractiveDebugger(debugger *interpreter.Debugger, stop interpreter.Stop, session ssh.Session, output io.Writer, codes map[common.Location][]byte, environment environment.Environment) *InteractiveDebugger {
 
 	d := &InteractiveDebugger{
-		debugger: debugger,
-		stop:     stop,
-		output:   output,
-		session:  session,
-		Exit:     false,
-		codes:    codes,
+		debugger:    debugger,
+		stop:        stop,
+		output:      output,
+		session:     session,
+		Exit:        false,
+		codes:       codes,
+		environment: environment,
 	}
 
 	d.Where()
-	d.ShowCode(stop.Interpreter.Location, stop.Statement, 0)
+	d.ShowCode(stop.Interpreter.Location, stop.Statement)
 	return d
 }
 
@@ -88,9 +91,11 @@ func (d *InteractiveDebugger) Continue() {
 	d.debugger.Continue()
 }
 
-func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement, compused uint64) {
+func (d *InteractiveDebugger) ShowCode(location common.Location, statement ast.Statement) {
 
-	codes := fmt.Sprintf("%s - C: %s ", string(d.codes[location]), compused)
+	comp, _ := d.environment.ComputationUsed()
+
+	codes := fmt.Sprintf("%s - C: %s ", string(d.codes[location]), comp)
 	codes = codes + "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	precodes := codes[:statement.StartPosition().Offset]
 	coloredCodes := colorizeCode(codes[statement.StartPosition().Offset : statement.EndPosition(nil).Offset+1])
