@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
+
 	"time"
 
 	"github.com/bluesign/tinyAN/workers"
@@ -83,7 +86,37 @@ func StartExecute(cmd *cobra.Command, args []string) {
 
 	//bootstrap
 	store.Sync()
+	fmt.Println("hello")
+	//fmt.Println("Latest block height", b.Height)
 
+	/*
+		b, _ := store.GetLatestBlock()
+
+		ledger := store.LedgerSnapshot(b.Height)
+
+		for i := 0; i < 38184000; i++ {
+
+			addr, err := flow.Mainnet.Chain().AddressAtIndex(uint64(i))
+
+			if err != nil {
+				panic("address")
+			}
+
+			k, err := ledger.Get(flow.AccountStatusRegisterID(addr))
+
+			if len(k) != 29 {
+				panic("length")
+			}
+
+			if err != nil {
+				panic(err)
+			}
+
+			//if i%10000 == 0 {
+			fmt.Println(i, addr, hex.EncodeToString(k))
+			//}
+		}
+	*/
 	//store.StorageForEVMHeight(714157).EVM().FixBroken()
 
 	access := server.NewAccessAdapter(zerolog.Logger{}, store)
@@ -101,6 +134,8 @@ func StartExecute(cmd *cobra.Command, args []string) {
 		go workers.UpdateExecution(s, chain)
 		go workers.UpdateBlocks(s, chain)
 	}
+
+	http.ListenAndServe(":6060", nil)
 
 	for {
 		time.Sleep(time.Second)
