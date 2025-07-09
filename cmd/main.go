@@ -25,7 +25,7 @@ func main() {
 			continue
 		}
 
-		fmt.Println(hex.EncodeToString(iter.Key()[4:12]), string(iter.Key()[14:len(iter.Key())-8]), hex.EncodeToString(iter.Value()))
+		fmt.Println(hex.EncodeToString(iter.Key()[4:12]), string(iter.Key()[18:len(iter.Key())-8]), hex.EncodeToString(iter.Value()))
 		break
 	}
 	defer iter.Close()
