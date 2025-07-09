@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/cockroachdb/pebble"
-	"github.com/onflow/flow-go/ledger"
-	"github.com/onflow/flow-go/ledger/common/convert"
-	"github.com/onflow/flow-go/model/flow"
-	"strings"
 )
 
 func main() {
 	checkpointDb := storage.MustOpenPebbleDB(fmt.Sprintf("db/%s/checkpoint", "mainnet26"))
-	ledgerDb := storage.MustOpenPebbleDB(fmt.Sprintf("db/%s/ledger", "mainnet26"))
+	//ledgerDb := storage.MustOpenPebbleDB(fmt.Sprintf("db/%s/ledger", "mainnet26"))
 
 	options := &pebble.IterOptions{
 		LowerBound: []byte(""),
