@@ -16,7 +16,7 @@ func main() {
 	if err != nil {
 		return
 	}
-
+	iter.First()
 	for iter.Next() {
 
 		fmt.Println(string(iter.Key()))
