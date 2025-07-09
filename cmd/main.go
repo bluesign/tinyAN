@@ -10,15 +10,13 @@ func main() {
 	checkpointDb := storage.MustOpenPebbleDB(fmt.Sprintf("db/%s/checkpoint", "mainnet-26"))
 	//ledgerDb := storage.MustOpenPebbleDB(fmt.Sprintf("db/%s/ledger", "mainnet26"))
 
-	options := &pebble.IterOptions{
-		LowerBound: []byte(""),
-		UpperBound: []byte("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"),
-	}
+	options := &pebble.IterOptions{}
 
 	iter, err := checkpointDb.NewIter(options)
 	if err != nil {
 		return
 	}
+
 	for iter.Next() {
 
 		fmt.Println(string(iter.Key()))
