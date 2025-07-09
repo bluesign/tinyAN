@@ -14,7 +14,6 @@ func main() {
 		LowerBound: []byte(""),
 		UpperBound: []byte("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"),
 	}
-	var k []byte
 
 	iter, err := checkpointDb.NewIter(options)
 	if err != nil {
