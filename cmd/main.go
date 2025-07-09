@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/bluesign/tinyAN/storage"
 	"github.com/cockroachdb/pebble"
@@ -16,10 +18,14 @@ func main() {
 	if err != nil {
 		return
 	}
+
 	iter.First()
 	for iter.Next() {
+		if !bytes.Contains(iter.Key(), []byte("public_key_")) {
+			continue
+		}
 
-		fmt.Println(string(iter.Key()))
+		fmt.Println(hex.EncodeToString(iter.Key()))
 		break
 	}
 	defer iter.Close()
